@@ -541,4 +541,27 @@ describe('ActivityDistributor', () => {
       activity
     ))
   })
+  it('will not deliver an activity to the actor', async () => {
+    const id = formatter.format({
+      username: 'test0',
+      type: 'intransitiveactivity',
+      nanoid: 'ubiKNmJow3A_D52IZOsRL'
+    })
+    const activity = await as2.import({
+      id,
+      type: 'IntransitiveActivity',
+      actor: formatter.format({ username: 'test0' }),
+      to: formatter.format({ username: 'test0' })
+    })
+    // Add to inbox and outbox to simulate real activity generation
+    await actorStorage.addToCollection('test0', 'inbox', activity)
+    await actorStorage.addToCollection('test0', 'outbox', activity)
+    await distributor.distribute(activity, 'test0')
+    await distributor.onIdle()
+    assert.ok(await actorStorage.isInCollection(
+      'test0',
+      'inbox',
+      activity
+    ))
+  })
 })
