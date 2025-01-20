@@ -1,5 +1,5 @@
 {
-  "name": "bots-rodeo",
+  "name": "activitypub-bot",
   "version": "0.1.0-dev",
   "description": "server-side ActivityPub bot framework",
   "type": "module",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/evanp/bots-rodeo.git"
+    "url": "git+ssh://git@github.com/evanp/activitypub-bot.git"
   },
   "keywords": [
     "activitypub",
@@ -20,9 +20,9 @@
   "author": "Evan Prodromou <evan@prodromou.name>",
   "license": "LGPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/evanp/bots-rodeo/issues"
+    "url": "https://github.com/evanp/activitypub-bot/issues"
   },
-  "homepage": "https://github.com/evanp/bots-rodeo#readme",
+  "homepage": "https://github.com/evanp/activitypub-bot#readme",
   "dependencies": {
     "@isaacs/ttlcache": "^1.4.1",
     "activitystrea.ms": "^3.1.0",
