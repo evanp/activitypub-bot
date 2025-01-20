@@ -1,13 +1,15 @@
-FROM node:22-slim AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json package-lock.json ./
 RUN npm install
 
-COPY . .
+COPY index.js .
+COPY lib .
+COPY README.md .
 
-FROM node:22-slim
+FROM node:22-alpine
 
 WORKDIR /app
 
