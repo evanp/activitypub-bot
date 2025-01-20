@@ -32,7 +32,7 @@ describe('Authorizer', () => {
   let remotePrivateObject = null
 
   before(async () => {
-    formatter = new UrlFormatter('https://botsrodeo.example')
+    formatter = new UrlFormatter('https://activitypubbot.example')
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
     actorStorage = new ActorStorage(connection, formatter)

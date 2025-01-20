@@ -11,7 +11,7 @@ const AS2 = 'https://www.w3.org/ns/activitystreams#'
 
 describe('microsyntax', async () => {
   const tagNamespace = 'https://tags.example/tag/'
-  const origin = 'https://botsrodeo.example'
+  const origin = 'https://activitypubbot.example'
 
   nockSetup('social.example')
 

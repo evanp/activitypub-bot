@@ -17,7 +17,7 @@ import bots from './fixtures/bots.js'
 import { nockSetup, postInbox, makeActor, nockFormat } from './utils/nock.js'
 
 describe('ActivityHandler', () => {
-  const domain = 'botsrodeo.example'
+  const domain = 'activitypubbot.example'
   const origin = `https://${domain}`
   let connection = null
   let botDataStorage = null
@@ -299,7 +299,7 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('accepter1')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://botsrodeo.example/user/ok/follow/1',
+      id: 'https://activitypubbot.example/user/ok/follow/1',
       actor: botId,
       object: actor.id,
       to: actor.id
@@ -330,7 +330,7 @@ describe('ActivityHandler', () => {
       type: 'Accept',
       id: 'https://social.example/user/accepter2/accept/1',
       actor: actor.id,
-      object: 'https://botsrodeo.example/user/ok/follow/69',
+      object: 'https://activitypubbot.example/user/ok/follow/69',
       to: botId
     })
     await handler.handleActivity(bot, activity)
@@ -342,7 +342,7 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('accepter3')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://botsrodeo.example/user/ok/follow/3',
+      id: 'https://activitypubbot.example/user/ok/follow/3',
       actor: botId,
       object: actor.id,
       to: actor.id
@@ -388,7 +388,7 @@ describe('ActivityHandler', () => {
     const actor6 = await makeActor('accepter6')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://botsrodeo.example/user/ok/follow/6',
+      id: 'https://activitypubbot.example/user/ok/follow/6',
       actor: botId,
       object: actor6.id,
       to: [actor6.id, 'as:Public']
@@ -420,8 +420,8 @@ describe('ActivityHandler', () => {
     const actor7 = await makeActor('accepter7')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://botsrodeo.example/user/calculon/follow/7',
-      actor: 'https://botsrodeo.example/user/calculon',
+      id: 'https://activitypubbot.example/user/calculon/follow/7',
+      actor: 'https://activitypubbot.example/user/calculon',
       object: actor7.id,
       to: [actor7.id, 'as:Public']
     })
@@ -452,7 +452,7 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('rejecter1')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://botsrodeo.example/user/ok/follow/101',
+      id: 'https://activitypubbot.example/user/ok/follow/101',
       actor: botId,
       object: actor.id,
       to: actor.id
@@ -483,7 +483,7 @@ describe('ActivityHandler', () => {
       type: 'Reject',
       id: 'https://social.example/user/rejecter2/reject/1',
       actor: actor.id,
-      object: 'https://botsrodeo.example/user/ok/follow/69',
+      object: 'https://activitypubbot.example/user/ok/follow/69',
       to: botId
     })
     await handler.handleActivity(bot, activity)
@@ -495,7 +495,7 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('rejecter3')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://botsrodeo.example/user/ok/follow/103',
+      id: 'https://activitypubbot.example/user/ok/follow/103',
       actor: botId,
       object: actor.id,
       to: actor.id
@@ -541,7 +541,7 @@ describe('ActivityHandler', () => {
     const actor6 = await makeActor('rejecter6')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://botsrodeo.example/user/ok/follow/106',
+      id: 'https://activitypubbot.example/user/ok/follow/106',
       actor: botId,
       object: actor6.id,
       to: [actor6.id, 'as:Public']
@@ -573,8 +573,8 @@ describe('ActivityHandler', () => {
     const actor7 = await makeActor('rejecter7')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://botsrodeo.example/user/calculon/follow/107',
-      actor: 'https://botsrodeo.example/user/calculon',
+      id: 'https://activitypubbot.example/user/calculon/follow/107',
+      actor: 'https://activitypubbot.example/user/calculon',
       object: actor7.id,
       to: [actor7.id, 'as:Public']
     })
@@ -652,7 +652,7 @@ describe('ActivityHandler', () => {
       type: 'Like',
       actor: actor.id,
       id: 'https://social.example/user/liker3/like/1',
-      object: 'https://botsrodeo.example/user/ok/note/doesnotexist',
+      object: 'https://activitypubbot.example/user/ok/note/doesnotexist',
       to: [botId, 'as:Public']
     })
     await handler.handleActivity(bot, activity)
@@ -858,7 +858,7 @@ describe('ActivityHandler', () => {
       type: 'Announce',
       actor: actor.id,
       id: 'https://social.example/user/announcer3/announce/1',
-      object: 'https://botsrodeo.example/user/ok/note/doesnotexist',
+      object: 'https://activitypubbot.example/user/ok/note/doesnotexist',
       to: [botId, 'as:Public']
     })
     await handler.handleActivity(bot, activity)
@@ -1221,7 +1221,7 @@ describe('ActivityHandler', () => {
         type: 'Like',
         id: 'https://social.example/user/undoer5/like/1',
         actor: actor.id,
-        object: 'https://botsrodeo.example/user/ok/note/doesnotexist',
+        object: 'https://activitypubbot.example/user/ok/note/doesnotexist',
         to: [botId, 'as:Public']
       },
       to: [botId, 'as:Public']
@@ -1428,7 +1428,7 @@ describe('ActivityHandler', () => {
     const likeActivity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/undoer10/like/1/botsrodeo.example/user/ok/note/nhzIHLcnHgU2l0lMb7dRl',
+      id: 'https://social.example/user/undoer10/like/1/activitypubbot.example/user/ok/note/nhzIHLcnHgU2l0lMb7dRl',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1440,7 +1440,7 @@ describe('ActivityHandler', () => {
     const undoActivity = await as2.import({
       type: 'Undo',
       actor: actor.id,
-      id: 'https://social.example/user/undoer2/undo/1/social.example/user/undoer10/like/1/botsrodeo.example/user/ok/note/nhzIHLcnHgU2l0lMb7dRl',
+      id: 'https://social.example/user/undoer2/undo/1/social.example/user/undoer10/like/1/activitypubbot.example/user/ok/note/nhzIHLcnHgU2l0lMb7dRl',
       object: likeActivity.id,
       to: [botId, 'as:Public']
     })

@@ -8,7 +8,7 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { nockSetup, nockFormat, getPublicKey } from './utils/nock.js'
 
 describe('RemoteKeyStorage', async () => {
-  const origin = 'https://botsrodeo.example'
+  const origin = 'https://activitypubbot.example'
   let connection = null
   let remoteKeyStorage = null
   let client = null

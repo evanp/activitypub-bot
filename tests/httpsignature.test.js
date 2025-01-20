@@ -9,7 +9,7 @@ import { nockSetup, nockSignature } from './utils/nock.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 
 describe('RemoteKeyStorage', async () => {
-  const origin = 'https://botsrodeo.example'
+  const origin = 'https://activitypubbot.example'
   let connection = null
   let remoteKeyStorage = null
   let client = null
@@ -51,7 +51,7 @@ describe('RemoteKeyStorage', async () => {
       {
         date,
         signature,
-        host: 'botsrodeo.example'
+        host: 'activitypubbot.example'
       }
     )
     assert.strictEqual(owner, `https://social.example/user/${username}`)

@@ -15,7 +15,7 @@ describe('ActorStorage', () => {
   before(async () => {
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
-    formatter = new UrlFormatter('https://botsrodeo.example')
+    formatter = new UrlFormatter('https://activitypubbot.example')
     other = await as2.import({
       id: 'https://social.example/user/test2',
       type: 'Person'
@@ -59,7 +59,7 @@ describe('ActorStorage', () => {
   it('can get an empty collection', async () => {
     const collection = await storage.getCollection('test', 'followers')
     assert.ok(collection)
-    assert.strictEqual(collection.id, 'https://botsrodeo.example/user/test/followers')
+    assert.strictEqual(collection.id, 'https://activitypubbot.example/user/test/followers')
     assert.strictEqual(collection.type, 'https://www.w3.org/ns/activitystreams#OrderedCollection')
     assert.strictEqual(collection.totalItems, 0)
     assert.ok(collection.first)
@@ -70,12 +70,12 @@ describe('ActorStorage', () => {
     assert.ok(page)
     assert.strictEqual(
       page.id,
-      'https://botsrodeo.example/user/test/followers/1'
+      'https://activitypubbot.example/user/test/followers/1'
     )
     assert.strictEqual(page.type, 'https://www.w3.org/ns/activitystreams#OrderedCollectionPage')
     assert.strictEqual(
       page.partOf.id,
-      'https://botsrodeo.example/user/test/followers'
+      'https://activitypubbot.example/user/test/followers'
     )
     assert.ok(!page.next)
     assert.ok(!page.prev)
@@ -122,7 +122,7 @@ describe('ActorStorage', () => {
     assert.strictEqual(collection.totalItems, 100)
     const page = await storage.getCollectionPage('test4', 'liked', 3)
     assert.strictEqual(page.items.length, 20)
-    assert.strictEqual(page.next.id, 'https://botsrodeo.example/user/test4/liked/2')
+    assert.strictEqual(page.next.id, 'https://activitypubbot.example/user/test4/liked/2')
   })
   it('can iterate over a collection', async () => {
     const seen = new Set()

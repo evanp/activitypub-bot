@@ -40,7 +40,7 @@ describe('ActivityPubClient', async () => {
     await connection.authenticate()
     keyStorage = new KeyStorage(connection)
     await keyStorage.initialize()
-    formatter = new UrlFormatter('https://botsrodeo.example')
+    formatter = new UrlFormatter('https://activitypubbot.example')
     const remote = 'https://social.example'
     nock(remote)
       .get(/\/user\/(\w+)$/)
@@ -105,7 +105,7 @@ describe('ActivityPubClient', async () => {
     assert.equal(typeof obj, 'object')
     assert.equal(obj.id, id)
     assert.ok(signature[id])
-    assert.match(signature[id], /^keyId="https:\/\/botsrodeo\.example\/user\/foobot\/publickey",headers="\(request-target\) host date",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature[id], /^keyId="https:\/\/activitypubbot\.example\/user\/foobot\/publickey",headers="\(request-target\) host date",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('can get a remote object without a username', async () => {
     const id = 'https://social.example/user/evan/note/1'
@@ -114,11 +114,11 @@ describe('ActivityPubClient', async () => {
     assert.equal(typeof obj, 'object')
     assert.equal(obj.id, id)
     assert.ok(signature[id])
-    assert.match(signature[id], /^keyId="https:\/\/botsrodeo\.example\/publickey",headers="\(request-target\) host date",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature[id], /^keyId="https:\/\/activitypubbot\.example\/publickey",headers="\(request-target\) host date",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('can deliver an activity', async () => {
     const obj = as2.follow()
-      .actor('https://botsrodeo.example/user/foobot')
+      .actor('https://activitypubbot.example/user/foobot')
       .object('https://social.example/user/evan')
       .to('https://social.example/user/evan')
       .publishedNow()
@@ -127,11 +127,11 @@ describe('ActivityPubClient', async () => {
     await client.post(inbox, obj, 'foobot')
     assert.ok(signature[inbox])
     assert.ok(digest[inbox])
-    assert.match(signature[inbox], /^keyId="https:\/\/botsrodeo\.example\/user\/foobot\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature[inbox], /^keyId="https:\/\/activitypubbot\.example\/user\/foobot\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('can deliver an activity', async () => {
     const obj = as2.follow()
-      .actor('https://botsrodeo.example/user/foobot')
+      .actor('https://activitypubbot.example/user/foobot')
       .object('https://social.example/user/evan')
       .to('https://social.example/user/evan')
       .publishedNow()
@@ -140,7 +140,7 @@ describe('ActivityPubClient', async () => {
     await client.post(inbox, obj, 'foobot')
     assert.ok(signature[inbox])
     assert.ok(digest[inbox])
-    assert.match(signature[inbox], /^keyId="https:\/\/botsrodeo\.example\/user\/foobot\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature[inbox], /^keyId="https:\/\/activitypubbot\.example\/user\/foobot\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('throws an error on a non-2xx response', async () => {
     const inbox = 'https://social.example/user/evan/inbox'

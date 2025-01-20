@@ -5,7 +5,7 @@ import bots from './fixtures/bots.js'
 
 describe('app', async () => {
   const databaseUrl = 'sqlite::memory:'
-  const origin = 'https://botsrodeo.test'
+  const origin = 'https://activitypubbot.test'
   let app = null
   it('should be a function', async () => {
     assert.strictEqual(typeof makeApp, 'function')

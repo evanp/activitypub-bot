@@ -56,7 +56,7 @@ describe('ActivityDistributor', () => {
   let postSharedInbox = {}
   let getActor = {}
   before(async () => {
-    formatter = new UrlFormatter('https://botsrodeo.example')
+    formatter = new UrlFormatter('https://activitypubbot.example')
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
     actorStorage = new ActorStorage(connection, formatter)
@@ -285,9 +285,9 @@ describe('ActivityDistributor', () => {
   })
   it('can distribute an activity to a single recipient', async () => {
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/1',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/1',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       to: ['https://social.example/user/test1']
     })
     await distributor.distribute(activity, 'test0')
@@ -297,14 +297,14 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 0)
     assert.ok(signature)
     assert.ok(digest)
-    assert.match(signature, /^keyId="https:\/\/botsrodeo\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('can distribute an activity to all followers', async () => {
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/2',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/2',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
-      to: ['https://botsrodeo.example/user/test0/followers']
+      actor: 'https://activitypubbot.example/user/test0',
+      to: ['https://activitypubbot.example/user/test0/followers']
     })
     await distributor.distribute(activity, 'test0')
     await distributor.onIdle()
@@ -313,13 +313,13 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 1)
     assert.ok(signature)
     assert.ok(digest)
-    assert.match(signature, /^keyId="https:\/\/botsrodeo\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('can distribute an activity to the public', async () => {
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/3',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/3',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       to: ['https://www.w3.org/ns/activitystreams#Public']
     })
     await distributor.distribute(activity, 'test0')
@@ -328,15 +328,15 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 1)
     assert.ok(signature)
     assert.ok(digest)
-    assert.match(signature, /^keyId="https:\/\/botsrodeo\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('can distribute an activity to an addressed actor and followers', async () => {
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/4',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/4',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       to: ['https://social.example/user/test1'],
-      cc: ['https://botsrodeo.example/user/test0/followers']
+      cc: ['https://activitypubbot.example/user/test0/followers']
     })
     await distributor.distribute(activity, 'test0')
     await distributor.onIdle()
@@ -344,13 +344,13 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 1)
     assert.ok(signature)
     assert.ok(digest)
-    assert.match(signature, /^keyId="https:\/\/botsrodeo\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('can distribute an activity to an addressed actor and the public', async () => {
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/5',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/5',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       to: ['https://social.example/user/test1'],
       cc: ['https://www.w3.org/ns/activitystreams#Public']
     })
@@ -360,15 +360,15 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 1)
     assert.ok(signature)
     assert.ok(digest)
-    assert.match(signature, /^keyId="https:\/\/botsrodeo\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('only sends once to an addressed follower', async () => {
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/6',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/6',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       to: ['https://other.example/user/test2'],
-      cc: ['https://botsrodeo.example/user/test0/followers']
+      cc: ['https://activitypubbot.example/user/test0/followers']
     })
     await distributor.distribute(activity, 'test0')
     await distributor.onIdle()
@@ -376,13 +376,13 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 1)
     assert.ok(postSignature)
     assert.ok(digest)
-    assert.match(postSignature, /^keyId="https:\/\/botsrodeo\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(postSignature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('only sends once to an addressed follower for the public', async () => {
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/7',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/7',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       to: ['https://other.example/user/test2'],
       cc: ['https://www.w3.org/ns/activitystreams#Public']
     })
@@ -392,13 +392,13 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 1)
     assert.ok(postSignature)
     assert.ok(digest)
-    assert.match(postSignature, /^keyId="https:\/\/botsrodeo\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(postSignature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('does not send bcc or bto over the wire', async () => {
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/8',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/8',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       bto: ['https://other.example/user/test2'],
       bcc: ['https://third.example/user/test3']
     })
@@ -413,9 +413,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1)
     const remotes = nums.map(n => `https://shared.example/user/test${n}`)
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/9',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/9',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       to: remotes
     })
     await distributor.distribute(activity, 'test0')
@@ -430,9 +430,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1)
     const remotes = nums.map(n => `https://shared.example/user/test${n}`)
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/10',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/10',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       to: remotes
     })
     await distributor.distribute(activity, 'test0')
@@ -446,9 +446,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1)
     const remotes = nums.map(n => `https://shared.example/user/test${n}`)
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/11',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/11',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       bto: remotes
     })
     await distributor.distribute(activity, 'test0')
@@ -462,9 +462,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1)
     const remotes = nums.map(n => `https://shared.example/user/test${n}`)
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/12',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/12',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       bto: remotes
     })
     await distributor.distribute(activity, 'test0')
@@ -478,9 +478,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1).map(n => n + 100)
     const remotes = nums.map(n => `https://shared.example/user/test${n}`)
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/13',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/13',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       bcc: remotes
     })
     await distributor.distribute(activity, 'test0')
@@ -494,9 +494,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1).map(n => n + 100)
     const remotes = nums.map(n => `https://shared.example/user/test${n}`)
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/14',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/14',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       bcc: remotes
     })
     await distributor.distribute(activity, 'test0')
@@ -508,9 +508,9 @@ describe('ActivityDistributor', () => {
   })
   it('retries delivery to a flaky recipient', async () => {
     const activity = await as2.import({
-      id: 'https://botsrodeo.example/user/test0/intransitiveactivity/15',
+      id: 'https://activitypubbot.example/user/test0/intransitiveactivity/15',
       type: 'IntransitiveActivity',
-      actor: 'https://botsrodeo.example/user/test0',
+      actor: 'https://activitypubbot.example/user/test0',
       to: ['https://flaky.example/user/test1']
     })
     try {

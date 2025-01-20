@@ -38,7 +38,7 @@ describe('BotContext', () => {
   let note = null
   let transformer = null
   before(async () => {
-    formatter = new UrlFormatter('https://botsrodeo.example')
+    formatter = new UrlFormatter('https://activitypubbot.example')
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
     botDataStorage = new BotDataStorage(connection)
@@ -51,7 +51,7 @@ describe('BotContext', () => {
     await actorStorage.initialize()
     client = new ActivityPubClient(keyStorage, formatter)
     distributor = new ActivityDistributor(client, formatter, actorStorage)
-    transformer = new Transformer('https://botsrodeo.example/tag/', client)
+    transformer = new Transformer('https://activitypubbot.example/tag/', client)
     await objectStorage.create(
       await as2.import({
         id: formatter.format({
@@ -143,7 +143,7 @@ describe('BotContext', () => {
     assert.strictEqual(await note.content.get(), `<p>${content}</p>`)
     const iter = note.attributedTo[Symbol.iterator]()
     const actor = iter.next().value
-    assert.strictEqual(actor.id, 'https://botsrodeo.example/user/test1')
+    assert.strictEqual(actor.id, 'https://activitypubbot.example/user/test1')
     const iter2 = note.to[Symbol.iterator]()
     const addressee = iter2.next().value
     assert.strictEqual(addressee.id, to)
@@ -364,7 +364,7 @@ describe('BotContext', () => {
     )
     const iter = note.attributedTo[Symbol.iterator]()
     const actor = iter.next().value
-    assert.strictEqual(actor.id, 'https://botsrodeo.example/user/test1')
+    assert.strictEqual(actor.id, 'https://activitypubbot.example/user/test1')
     const iter2 = note.to[Symbol.iterator]()
     const addressee = iter2.next().value
     assert.strictEqual(addressee.id, actor3.id)
@@ -386,7 +386,7 @@ describe('BotContext', () => {
     assert.strictEqual(
       note.content.get(),
       '<p>Thank you Sally! ' +
-        '<a href="https://botsrodeo.example/tag/gratitude">#gratitude</a></p>'
+        '<a href="https://activitypubbot.example/tag/gratitude">#gratitude</a></p>'
     )
     const tag = note.tag.first
     assert.strictEqual(
@@ -428,7 +428,7 @@ describe('BotContext', () => {
     assert.ok(note)
     assert.strictEqual(note.type, AS2_NS + 'Note')
     const actor = note.attributedTo?.first
-    assert.strictEqual(actor.id, 'https://botsrodeo.example/user/test1')
+    assert.strictEqual(actor.id, 'https://activitypubbot.example/user/test1')
     const recipients = [
       'https://social.example/user/test5',
       'https://www.w3.org/ns/activitystreams#Public'
@@ -442,13 +442,13 @@ describe('BotContext', () => {
 
   it('can reply to self', async () => {
     const original = await context.sendNote("s'alright?", { to: 'as:Public' })
-    const reply = await context.sendReply("@test1@botsrodeo.example s'alright.", original)
+    const reply = await context.sendReply("@test1@activitypubbot.example s'alright.", original)
     assert.ok(reply)
     assert.strictEqual(reply.type, AS2_NS + 'Note')
     const actor = reply.attributedTo?.first
-    assert.strictEqual(actor.id, 'https://botsrodeo.example/user/test1')
+    assert.strictEqual(actor.id, 'https://activitypubbot.example/user/test1')
     const recipients = [
-      'https://botsrodeo.example/user/test1',
+      'https://activitypubbot.example/user/test1',
       'https://www.w3.org/ns/activitystreams#Public'
     ]
     for (const addressee in reply.to) {
@@ -469,7 +469,7 @@ describe('BotContext', () => {
 
   it('does local delivery', async () => {
     const note = await context.sendNote('say OK please',
-      { to: 'https://botsrodeo.example/user/ok' }
+      { to: 'https://activitypubbot.example/user/ok' }
     )
     await context.onIdle()
     assert.ok(note)

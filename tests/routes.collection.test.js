@@ -6,7 +6,7 @@ import bots from './fixtures/bots.js'
 
 describe('actor collection routes', async () => {
   const databaseUrl = 'sqlite::memory:'
-  const origin = 'https://botsrodeo.test'
+  const origin = 'https://activitypubbot.test'
   const app = await makeApp(databaseUrl, origin, bots)
 
   for (const coll of ['outbox', 'liked', 'followers', 'following']) {

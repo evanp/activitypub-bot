@@ -10,7 +10,7 @@ import { makeDigest } from './utils/digest.js'
 import bots from './fixtures/bots.js'
 
 describe('routes.inbox', async () => {
-  const host = 'botsrodeo.test'
+  const host = 'activitypubbot.test'
   const origin = `https://${host}`
   const databaseUrl = 'sqlite::memory:'
   const botName = 'ok'
