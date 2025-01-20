@@ -440,6 +440,33 @@ describe('BotContext', () => {
     assert.strictEqual(postInbox.test5, 1)
   })
 
+  it('can reply to self', async () => {
+    const original = await context.sendNote("s'alright?", { to: 'as:Public' })
+    const reply = await context.sendReply("@test1@botsrodeo.example s'alright.", original)
+    assert.ok(reply)
+    assert.strictEqual(reply.type, AS2_NS + 'Note')
+    const actor = reply.attributedTo?.first
+    assert.strictEqual(actor.id, 'https://botsrodeo.example/user/test1')
+    const recipients = [
+      'https://botsrodeo.example/user/test1',
+      'https://www.w3.org/ns/activitystreams#Public'
+    ]
+    for (const addressee in reply.to) {
+      assert.ok(recipients.includes(addressee.id))
+    }
+    await context.onIdle()
+    assert.strictEqual(postInbox.test2, 2)
+    let found = false
+    for await (const item of actorStorage.items('test1', 'inbox')) {
+      const full = await objectStorage.read(item.id)
+      if (full.object?.first?.id === reply.id) {
+        found = true
+        break
+      }
+    }
+    assert.ok(found)
+  })
+
   it('does local delivery', async () => {
     const note = await context.sendNote('say OK please',
       { to: 'https://botsrodeo.example/user/ok' }

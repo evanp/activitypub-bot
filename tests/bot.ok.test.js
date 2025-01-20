@@ -10,7 +10,7 @@ import { makeDigest } from './utils/digest.js'
 import bots from './fixtures/bots.js'
 
 describe('OK bot', async () => {
-  const host = 'botsrodeo.test'
+  const host = 'botsrodeo.example'
   const origin = `https://${host}`
   const databaseUrl = 'sqlite::memory:'
   let app = null
