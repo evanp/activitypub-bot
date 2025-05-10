@@ -130,3 +130,6 @@ dist
 .pnp.*
 .eslintrc.js
 .vscode/*
+
+# Mac system files
+.DS_Store
