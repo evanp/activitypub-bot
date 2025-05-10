@@ -28,10 +28,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get Git commit hash
-        id: vars
-        run: echo "::set-output name=commit_hash::$(git rev-parse --short HEAD)"
-
       - name: Build and push image
         uses: docker/build-push-action@v2
         with:
@@ -41,5 +37,4 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ steps.vars.outputs.commit_hash }}
             ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest

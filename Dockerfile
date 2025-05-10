@@ -5,7 +5,7 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++ py3-setuptools
 
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm ci
 
 COPY index.js .
 COPY lib .
