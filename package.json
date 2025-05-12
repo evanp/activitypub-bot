@@ -5,7 +5,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_ENV=test node --test"
+    "test": "NODE_ENV=test node --test",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
