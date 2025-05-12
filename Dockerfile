@@ -9,6 +9,7 @@ RUN npm ci
 
 COPY index.js .
 COPY lib .
+COPY bots .
 COPY README.md .
 
 FROM node:20-alpine
