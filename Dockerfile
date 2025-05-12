@@ -8,8 +8,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY index.js .
-COPY lib .
-COPY bots .
+COPY lib lib
+COPY bots bots
 COPY README.md .
 
 FROM node:20-alpine
