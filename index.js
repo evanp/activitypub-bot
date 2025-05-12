@@ -3,7 +3,7 @@ import { makeApp } from './lib/app.js'
 const DATABASE_URL = process.env.DATABASE_URL || 'sqlite::memory:'
 const ORIGIN = process.env.ORIGIN || 'https://activitypubbot.test'
 const PORT = process.env.PORT || 9000 // HAL
-const BOTS_CONFIG_FILE = process.env.BOTS_CONFIG_FILE || './bots.js'
+const BOTS_CONFIG_FILE = process.env.BOTS_CONFIG_FILE || './bots/index.js'
 
 const bots = (await import(BOTS_CONFIG_FILE)).default
 
