@@ -7,7 +7,7 @@ import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { nockSetup, nockSignature } from './utils/nock.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
-
+import { Logger } from 'pino'
 describe('HTTPSignature', async () => {
   const origin = 'https://activitypubbot.example'
   let connection = null
@@ -32,7 +32,10 @@ describe('HTTPSignature', async () => {
   })
 
   it('can initialize', async () => {
-    httpSignature = new HTTPSignature(remoteKeyStorage)
+    const logger = Logger({
+      level: 'debug'
+    })
+    httpSignature = new HTTPSignature(remoteKeyStorage, logger)
     assert.ok(httpSignature)
   })
 
