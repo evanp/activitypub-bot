@@ -23,7 +23,7 @@ describe('actor collection routes', async () => {
   const privateNanoid = 'Ic3Sa_0xOQKvlPsWU16as'
 
   before(async () => {
-    app = await makeApp(databaseUrl, origin, bots)
+    app = await makeApp(databaseUrl, origin, bots, 'silent')
     const { formatter, objectStorage, actorStorage } = app.locals
     nockSetup('social.example')
     obj = await as2.import({

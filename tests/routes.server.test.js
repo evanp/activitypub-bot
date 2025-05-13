@@ -7,7 +7,7 @@ import bots from './fixtures/bots.js'
 describe('server routes', async () => {
   const databaseUrl = 'sqlite::memory:'
   const origin = 'https://activitypubbot.test'
-  const app = await makeApp(databaseUrl, origin, bots)
+  const app = await makeApp(databaseUrl, origin, bots, 'silent')
   describe('GET /', async () => {
     let response = null
     it('should work without an error', async () => {

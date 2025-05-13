@@ -18,7 +18,7 @@ describe('routes.inbox', async () => {
 
   before(async () => {
     nockSetup('social.example')
-    app = await makeApp(databaseUrl, origin, bots)
+    app = await makeApp(databaseUrl, origin, bots, 'silent')
   })
 
   describe('can handle an incoming activity', async () => {

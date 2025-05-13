@@ -11,7 +11,7 @@ describe('app', async () => {
     assert.strictEqual(typeof makeApp, 'function')
   })
   it('should return a function', async () => {
-    app = await makeApp(databaseUrl, origin, bots)
+    app = await makeApp(databaseUrl, origin, bots, 'silent')
     assert.strictEqual(typeof app, 'function')
   })
 })

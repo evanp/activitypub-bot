@@ -15,7 +15,7 @@ describe('DoNothing bot', async () => {
 
   before(async () => {
     nockSetup('social.example')
-    app = await makeApp(databaseUrl, origin, bots)
+    app = await makeApp(databaseUrl, origin, bots, 'silent')
   })
 
   describe('Bot exists', async () => {
