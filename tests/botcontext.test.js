@@ -17,6 +17,7 @@ import {
   makeActor,
   makeObject
 } from './utils/nock.js'
+import Logger from 'pino'
 
 import as2 from 'activitystrea.ms'
 
@@ -37,7 +38,11 @@ describe('BotContext', () => {
   let actor6 = null
   let note = null
   let transformer = null
+  let logger = null
   before(async () => {
+    logger = Logger({
+      level: 'silent'
+    })
     formatter = new UrlFormatter('https://activitypubbot.example')
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
@@ -50,7 +55,7 @@ describe('BotContext', () => {
     actorStorage = new ActorStorage(connection, formatter)
     await actorStorage.initialize()
     client = new ActivityPubClient(keyStorage, formatter)
-    distributor = new ActivityDistributor(client, formatter, actorStorage)
+    distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
     transformer = new Transformer('https://activitypubbot.example/tag/', client)
     await objectStorage.create(
       await as2.import({

@@ -8,6 +8,7 @@ import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import assert from 'node:assert'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
+import Logger from 'pino'
 
 const makeActor = (domain, username, shared = true) =>
   as2.import({
@@ -55,7 +56,9 @@ describe('ActivityDistributor', () => {
   let postSignature = null
   let postSharedInbox = {}
   let getActor = {}
+  let logger = null
   before(async () => {
+    logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter('https://activitypubbot.example')
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
@@ -263,6 +266,7 @@ describe('ActivityDistributor', () => {
     actorStorage = null
     keyStorage = null
     formatter = null
+    logger = null
   })
   beforeEach(async () => {
     signature = null
@@ -280,7 +284,7 @@ describe('ActivityDistributor', () => {
     postSignature = null
   })
   it('can create an instance', () => {
-    distributor = new ActivityDistributor(client, formatter, actorStorage)
+    distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
     assert.ok(distributor instanceof ActivityDistributor)
   })
   it('can distribute an activity to a single recipient', async () => {

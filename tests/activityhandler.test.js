@@ -35,6 +35,7 @@ describe('ActivityHandler', () => {
   const botName = 'ok'
   let bot = null
   before(async () => {
+    logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter(origin)
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
@@ -47,10 +48,9 @@ describe('ActivityHandler', () => {
     actorStorage = new ActorStorage(connection, formatter)
     await actorStorage.initialize()
     client = new ActivityPubClient(keyStorage, formatter)
-    distributor = new ActivityDistributor(client, formatter, actorStorage)
+    distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
     authz = new Authorizer(actorStorage, formatter, client)
     cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
-    logger = Logger({ level: 'silent' })
     botId = formatter.format({ username: botName })
     bot = bots[botName]
     await objectStorage.create(await as2.import({
