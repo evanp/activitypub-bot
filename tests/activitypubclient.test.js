@@ -16,8 +16,23 @@ const makeActor = (username) =>
     outbox: `https://social.example/user/${username}/outbox`,
     followers: `https://social.example/user/${username}/followers`,
     following: `https://social.example/user/${username}/following`,
-    liked: `https://social.example/user/${username}/liked`
+    liked: `https://social.example/user/${username}/liked`,
+    publicKey: {
+      id: `https://social.example/user/${username}/publickey`,
+      owner: `https://social.example/user/${username}`,
+      type: 'Key',
+      publicKeyPem: '-----BEGIN PUBLIC KEY-----\nFAKEFAKEFAKE\n-----END PUBLIC KEY-----'
+    }
   })
+
+const makeKey = (username) =>
+  as2.import({
+    id: `https://social.example/user/${username}/publickey`,
+    owner: `https://social.example/user/${username}`,
+    type: 'Key',
+    publicKeyPem: '-----BEGIN PUBLIC KEY-----\nFAKEFAKEFAKE\n-----END PUBLIC KEY-----'
+  })
+
 const makeNote = (username, num) =>
   as2.import({
     id: `https://social.example/user/${username}/note/${num}`,
@@ -84,6 +99,17 @@ describe('ActivityPubClient', async () => {
       .reply(async function (uri, requestBody) {
         return [403, 'Forbidden', { 'Content-Type': 'text/plain' }]
       })
+      .get(/\/user\/(\w+)\/publickey$/)
+      .reply(async function (uri, requestBody) {
+        const headers = this.req.headers
+        signature[remote + uri] = headers.signature
+        digest[remote + uri] = headers.digest
+        const username = uri.match(/\/user\/(\w+)\/publickey$/)[1]
+        const key = await makeKey(username)
+        const keyText = await key.write()
+        return [200, keyText, { 'Content-Type': 'application/activity+json' }]
+      })
+      .persist()
   })
   after(async () => {
     await connection.close()
@@ -115,6 +141,14 @@ describe('ActivityPubClient', async () => {
     assert.equal(obj.id, id)
     assert.ok(signature[id])
     assert.match(signature[id], /^keyId="https:\/\/activitypubbot\.example\/publickey",headers="\(request-target\) host date",signature=".*",algorithm="rsa-sha256"$/)
+  })
+  it('can get a remote key without a signature', async () => {
+    const id = 'https://social.example/user/evan/publickey'
+    const obj = await client.getKey(id)
+    assert.ok(obj)
+    assert.equal(typeof obj, 'object')
+    assert.equal(obj.id, id)
+    assert.equal(signature[id], undefined)
   })
   it('can deliver an activity', async () => {
     const obj = as2.follow()
