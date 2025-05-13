@@ -20,7 +20,7 @@ const makeActor = (username) =>
     publicKey: {
       id: `https://social.example/user/${username}/publickey`,
       owner: `https://social.example/user/${username}`,
-      type: 'Key',
+      type: 'CryptographicKey',
       publicKeyPem: '-----BEGIN PUBLIC KEY-----\nFAKEFAKEFAKE\n-----END PUBLIC KEY-----'
     }
   })
@@ -29,7 +29,7 @@ const makeKey = (username) =>
   as2.import({
     id: `https://social.example/user/${username}/publickey`,
     owner: `https://social.example/user/${username}`,
-    type: 'Key',
+    type: 'CryptographicKey',
     publicKeyPem: '-----BEGIN PUBLIC KEY-----\nFAKEFAKEFAKE\n-----END PUBLIC KEY-----'
   })
 

@@ -85,7 +85,7 @@ describe('actor routes', async () => {
       assert.strictEqual(response.body.publicKey.owner, origin + '/user/ok')
     })
     it('should return an object with a publicKey with a type', async () => {
-      assert.strictEqual(response.body.publicKey.type, 'PublicKey')
+      assert.strictEqual(response.body.publicKey.type, 'CryptographicKey')
     })
     it('should return an object with a publicKey with a to', async () => {
       assert.strictEqual(response.body.publicKey.to, 'as:Public')
@@ -195,7 +195,7 @@ describe('actor routes', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
     })
     it('should return an object with a type matching the request', async () => {
-      assert.strictEqual(response.body.type, 'PublicKey')
+      assert.strictEqual(response.body.type, 'CryptographicKey')
     })
     it('should return an object with a to', async () => {
       assert.strictEqual(typeof response.body.to, 'string')
