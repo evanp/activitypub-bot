@@ -76,4 +76,21 @@ describe('HTTPSignature', async () => {
     )
     assert.strictEqual(owner, 'https://onepage.pub/person/OpgJTNDppzYIDfl94BrAW')
   })
+
+  it('can validate a signature for a post from onepage.pub', { skip: true }, async () => {
+    const signature = 'keyId="https://onepage.pub/key/tUSax4RKetiJX0Oi6DPUs",headers="(request-target) host date digest",signature="L/Ja/APcLlt6aindEeJcNySkV1aobNFJ2+1NM/7xsHtPTvFl02wmb7KVUtmBxFLf0T+E6e2L97NQ7uhACm5zKNY+8Fi+jE9arpO0aFdzRpTYe8xlPdfgcQ1uk9ZZPehdK6q+DPWYYhiCV8RLIVa69ZmPHBOECwiejRA2fQUaDA8Lwhv8yOpEgHZEdxkXtCB4CiI/bWLp3xlYRT/8N//4a2sVDcXDQa7LgYR5UQcpzh0etdJuYk6yVqAR3oJNAWLGcn5sWvyXJJtD+CHup8uKTGFQ6ud7M4vJhvjR24o1UOZQqITLk37uxgcBelPFE1dwdNID06NQGM5CfW+KM/m7tA==",algorithm="rsa-sha256"'
+
+    const owner = await httpSignature.validate(
+      signature,
+      'POST',
+      '/user/ok/inbox',
+      {
+        date: 'Tue, 13 May 2025 14:27:07 GMT',
+        digest: 'sha-256=/FIIuRB2CW92o3TaIk9uJM2P/gfL6rEQO+h64TnJuFw=',
+        signature,
+        host: 'activitypub.bot'
+      }
+    )
+    assert.strictEqual(owner, 'https://onepage.pub/person/OpgJTNDppzYIDfl94BrAW')
+  })
 })
