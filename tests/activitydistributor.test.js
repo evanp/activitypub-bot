@@ -175,7 +175,7 @@ describe('ActivityDistributor', () => {
       .persist()
     nock('https://shared.example')
       .get(/\/user\/(\w+)$/)
-      .reply(async (uri, requestBody) => {
+      .reply(async function (uri, requestBody) {
         const username = uri.match(/\/user\/(\w+)$/)[1]
         if (username in postInbox) {
           getActor[username] += 1
@@ -188,7 +188,7 @@ describe('ActivityDistributor', () => {
       })
       .persist()
       .post(/\/user\/(\w+)\/inbox$/)
-      .reply(async (uri, requestBody) => {
+      .reply(async function (uri, requestBody) {
         const username = uri.match(/\/user\/(\w+)\/inbox$/)[1]
         if (username in postInbox) {
           postInbox[username] += 1
@@ -202,7 +202,7 @@ describe('ActivityDistributor', () => {
       })
       .persist()
       .post(/\/sharedInbox$/)
-      .reply(async (uri, requestBody) => {
+      .reply(async function (uri, requestBody) {
         const domain = 'shared.example'
         if (domain in postSharedInbox) {
           postSharedInbox[domain] += 1
@@ -216,7 +216,7 @@ describe('ActivityDistributor', () => {
       })
       .persist()
       .get(/\/user\/(\w+)\/object\/(\d+)$/)
-      .reply(async (uri, requestBody) => {
+      .reply(async function (uri, requestBody) {
         const match = uri.match(/\/user\/(\w+)\/object\/(\d+)$/)
         const username = match[1]
         const num = match[2]
@@ -231,7 +231,7 @@ describe('ActivityDistributor', () => {
 
     nock('https://flaky.example')
       .get(/\/user\/(\w+)$/)
-      .reply(async (uri, requestBody) => {
+      .reply(async function (uri, requestBody) {
         const username = uri.match(/\/user\/(\w+)$/)[1]
         if (username in postInbox) {
           getActor[username] += 1
@@ -244,7 +244,7 @@ describe('ActivityDistributor', () => {
       })
       .persist()
       .post(/\/user\/(\w+)\/inbox$/)
-      .reply(async (uri, requestBody) => {
+      .reply(async function (uri, requestBody) {
         const username = uri.match(/\/user\/(\w+)\/inbox$/)[1]
         if (username in postInbox) {
           postInbox[username] += 1
@@ -256,7 +256,7 @@ describe('ActivityDistributor', () => {
       })
       .persist()
       .post(/\/sharedInbox$/)
-      .reply(async (uri, requestBody) => {
+      .reply(async function (uri, requestBody) {
         const domain = 'flaky.example'
         if (domain in postSharedInbox) {
           postSharedInbox[domain] += 1
@@ -268,7 +268,7 @@ describe('ActivityDistributor', () => {
       })
       .persist()
       .get(/\/user\/(\w+)\/object\/(\d+)$/)
-      .reply(async (uri, requestBody) => {
+      .reply(async function (uri, requestBody) {
         const match = uri.match(/\/user\/(\w+)\/object\/(\d+)$/)
         const username = match[1]
         const num = match[2]
