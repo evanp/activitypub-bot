@@ -45,6 +45,7 @@ describe('ActivityDistributor', () => {
   let actor3 = null
   let signature = null
   let digest = null
+  let date = null
   let gotTest1 = 0
   let gotTest2 = 0
   let postedTest1Inbox = 0
@@ -107,6 +108,8 @@ describe('ActivityDistributor', () => {
       .reply(function (uri, requestBody) {
         gotTest1 += 1
         signature = this.req.headers.signature
+        digest = this.req.headers.digest
+        date = this.req.headers.date
         return [200, actor1Text,
           { 'Content-Type': 'application/activity+json' }]
       })
@@ -116,6 +119,7 @@ describe('ActivityDistributor', () => {
         postedTest1Inbox += 1
         postSignature = signature = this.req.headers.signature
         digest = this.req.headers.digest
+        date = this.req.headers.date
         return [202, 'accepted']
       })
       .persist()
@@ -124,6 +128,8 @@ describe('ActivityDistributor', () => {
       .reply(function (uri, requestBody) {
         gotTest2 += 1
         signature = this.req.headers.signature
+        digest = this.req.headers.digest
+        date = this.req.headers.date
         return [200, actor2Text,
           { 'Content-Type': 'application/activity+json' }]
       })
@@ -140,6 +146,7 @@ describe('ActivityDistributor', () => {
         }
         postSignature = signature = this.req.headers.signature
         digest = this.req.headers.digest
+        date = this.req.headers.date
         return [202, 'accepted']
       })
       .persist()
@@ -160,6 +167,9 @@ describe('ActivityDistributor', () => {
         if (obj.bto) {
           btoSeen += 1
         }
+        postSignature = signature = this.req.headers.signature
+        digest = this.req.headers.digest
+        date = this.req.headers.date
         return [202, 'accepted']
       })
       .persist()
@@ -185,6 +195,9 @@ describe('ActivityDistributor', () => {
         } else {
           postInbox[username] = 1
         }
+        postSignature = signature = this.req.headers.signature
+        digest = this.req.headers.digest
+        date = this.req.headers.date
         return [202, 'accepted']
       })
       .persist()
@@ -196,6 +209,9 @@ describe('ActivityDistributor', () => {
         } else {
           postSharedInbox[domain] = 1
         }
+        postSignature = signature = this.req.headers.signature
+        digest = this.req.headers.digest
+        date = this.req.headers.date
         return [202, 'accepted']
       })
       .persist()
@@ -206,6 +222,9 @@ describe('ActivityDistributor', () => {
         const num = match[2]
         const obj = await makeObject('shared.example', username, num)
         const objText = await obj.write()
+        postSignature = signature = this.req.headers.signature
+        digest = this.req.headers.digest
+        date = this.req.headers.date
         return [200, objText, { 'Content-Type': 'application/activity+json' }]
       })
       .persist()
@@ -282,6 +301,8 @@ describe('ActivityDistributor', () => {
     postSharedInbox = {}
     getActor = {}
     postSignature = null
+    digest = null
+    date = null
   })
   it('can create an instance', () => {
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
@@ -301,7 +322,10 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 0)
     assert.ok(signature)
     assert.ok(digest)
+    assert.ok(date)
     assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
   it('can distribute an activity to all followers', async () => {
     const activity = await as2.import({
@@ -317,7 +341,10 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 1)
     assert.ok(signature)
     assert.ok(digest)
+    assert.ok(date)
     assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
   it('can distribute an activity to the public', async () => {
     const activity = await as2.import({
@@ -332,7 +359,10 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 1)
     assert.ok(signature)
     assert.ok(digest)
+    assert.ok(date)
     assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
   it('can distribute an activity to an addressed actor and followers', async () => {
     const activity = await as2.import({
@@ -348,7 +378,10 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 1)
     assert.ok(signature)
     assert.ok(digest)
+    assert.ok(date)
     assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
   it('can distribute an activity to an addressed actor and the public', async () => {
     const activity = await as2.import({
@@ -364,7 +397,10 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest2Inbox, 1)
     assert.ok(signature)
     assert.ok(digest)
+    assert.ok(date)
     assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
   it('only sends once to an addressed follower', async () => {
     const activity = await as2.import({
@@ -378,9 +414,6 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.equal(postedTest1Inbox, 0)
     assert.equal(postedTest2Inbox, 1)
-    assert.ok(postSignature)
-    assert.ok(digest)
-    assert.match(postSignature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('only sends once to an addressed follower for the public', async () => {
     const activity = await as2.import({
@@ -395,8 +428,6 @@ describe('ActivityDistributor', () => {
     assert.equal(postedTest1Inbox, 0)
     assert.equal(postedTest2Inbox, 1)
     assert.ok(postSignature)
-    assert.ok(digest)
-    assert.match(postSignature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
   })
   it('does not send bcc or bto over the wire', async () => {
     const activity = await as2.import({

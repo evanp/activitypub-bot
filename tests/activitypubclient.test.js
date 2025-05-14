@@ -50,6 +50,7 @@ describe('ActivityPubClient', async () => {
   let postInbox = null
   let signature = null
   let digest = null
+  let date = null
   before(async () => {
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
@@ -63,6 +64,7 @@ describe('ActivityPubClient', async () => {
         const headers = this.req.headers
         signature[remote + uri] = headers.signature
         digest[remote + uri] = headers.digest
+        date[remote + uri] = headers.date
         const username = uri.match(/\/user\/(\w+)$/)[1]
         const actor = await makeActor(username)
         const actorText = await actor.write()
@@ -74,6 +76,7 @@ describe('ActivityPubClient', async () => {
         const headers = this.req.headers
         signature[remote + uri] = headers.signature
         digest[remote + uri] = headers.digest
+        date[remote + uri] = headers.date
         const username = uri.match(/\/user\/(\w+)\/inbox$/)[1]
         if (username in postInbox) {
           postInbox[username] += 1
@@ -88,6 +91,7 @@ describe('ActivityPubClient', async () => {
         const headers = this.req.headers
         signature[remote + uri] = headers.signature
         digest[remote + uri] = headers.digest
+        date[remote + uri] = headers.date
         const match = uri.match(/\/user\/(\w+)\/note\/(\d+)$/)
         const username = match[1]
         const num = match[2]
@@ -104,6 +108,7 @@ describe('ActivityPubClient', async () => {
         const headers = this.req.headers
         signature[remote + uri] = headers.signature
         digest[remote + uri] = headers.digest
+        date[remote + uri] = headers.date
         const username = uri.match(/\/user\/(\w+)\/publickey$/)[1]
         const key = await makeKey(username)
         const keyText = await key.write()
@@ -120,6 +125,7 @@ describe('ActivityPubClient', async () => {
     signature = {}
     digest = {}
     postInbox = {}
+    date = {}
   })
   it('can initialize', () => {
     client = new ActivityPubClient(keyStorage, formatter)
@@ -132,6 +138,12 @@ describe('ActivityPubClient', async () => {
     assert.equal(obj.id, id)
     assert.ok(signature[id])
     assert.match(signature[id], /^keyId="https:\/\/activitypubbot\.example\/user\/foobot\/publickey",headers="\(request-target\) host date",signature=".*",algorithm="rsa-sha256"$/)
+    assert.equal(typeof digest[id], 'undefined')
+    assert.equal(typeof date[id], 'string')
+    assert.match(date[id], /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
+    assert.doesNotThrow(() => {
+      Date.parse(date[id])
+    })
   })
   it('can get a remote object without a username', async () => {
     const id = 'https://social.example/user/evan/note/1'
@@ -141,6 +153,12 @@ describe('ActivityPubClient', async () => {
     assert.equal(obj.id, id)
     assert.ok(signature[id])
     assert.match(signature[id], /^keyId="https:\/\/activitypubbot\.example\/publickey",headers="\(request-target\) host date",signature=".*",algorithm="rsa-sha256"$/)
+    assert.equal(typeof digest[id], 'undefined')
+    assert.equal(typeof date[id], 'string')
+    assert.match(date[id], /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
+    assert.doesNotThrow(() => {
+      Date.parse(date[id])
+    })
   })
   it('can get a remote key without a signature', async () => {
     const id = 'https://social.example/user/evan/publickey'
@@ -149,6 +167,12 @@ describe('ActivityPubClient', async () => {
     assert.equal(typeof obj, 'object')
     assert.equal(obj.id, id)
     assert.equal(signature[id], undefined)
+    assert.equal(typeof digest[id], 'undefined')
+    assert.equal(typeof date[id], 'string')
+    assert.match(date[id], /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
+    assert.doesNotThrow(() => {
+      Date.parse(date[id])
+    })
   })
   it('can deliver an activity', async () => {
     const obj = as2.follow()
@@ -162,19 +186,12 @@ describe('ActivityPubClient', async () => {
     assert.ok(signature[inbox])
     assert.ok(digest[inbox])
     assert.match(signature[inbox], /^keyId="https:\/\/activitypubbot\.example\/user\/foobot\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
-  })
-  it('can deliver an activity', async () => {
-    const obj = as2.follow()
-      .actor('https://activitypubbot.example/user/foobot')
-      .object('https://social.example/user/evan')
-      .to('https://social.example/user/evan')
-      .publishedNow()
-      .get()
-    const inbox = 'https://social.example/user/evan/inbox'
-    await client.post(inbox, obj, 'foobot')
-    assert.ok(signature[inbox])
-    assert.ok(digest[inbox])
-    assert.match(signature[inbox], /^keyId="https:\/\/activitypubbot\.example\/user\/foobot\/publickey",headers="\(request-target\) host date digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(digest[inbox], /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.equal(typeof date[inbox], 'string')
+    assert.match(date[inbox], /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
+    assert.doesNotThrow(() => {
+      Date.parse(date[inbox])
+    })
   })
   it('throws an error on a non-2xx response', async () => {
     const inbox = 'https://social.example/user/evan/inbox'
