@@ -5,7 +5,7 @@ import { Sequelize } from 'sequelize'
 import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
-import { nockSetup, nockSignature } from './utils/nock.js'
+import { nockSetup, nockSignature, nockSignatureFragment } from './utils/nock.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 
@@ -44,6 +44,27 @@ describe('HTTPSignature', async () => {
     const username = 'test'
     const date = new Date().toUTCString()
     const signature = await nockSignature({
+      url: `${origin}/user/ok/outbox`,
+      date,
+      username
+    })
+    const owner = await httpSignature.validate(
+      signature,
+      'GET',
+      '/user/ok/outbox',
+      {
+        date,
+        signature,
+        host: 'activitypubbot.example'
+      }
+    )
+    assert.strictEqual(owner, `https://social.example/user/${username}`)
+  })
+
+  it('can validate a signature with a fragment', async () => {
+    const username = 'test'
+    const date = new Date().toUTCString()
+    const signature = await nockSignatureFragment({
       url: `${origin}/user/ok/outbox`,
       date,
       username

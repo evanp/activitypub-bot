@@ -66,6 +66,26 @@ export const nockSignature = async ({ method = 'GET', url, date, digest = null, 
   return `keyId="${keyId}",headers="(request-target) host date${(digest) ? ' digest' : ''}",signature="${signature.replace(/"/g, '\\"')}",algorithm="rsa-sha256"`
 }
 
+export const nockSignatureFragment = async ({ method = 'GET', url, date, digest = null, username, domain = 'social.example' }) => {
+  const keyId = nockFormat({ username, domain }) + '#main-key'
+  const privateKey = await getPrivateKey(username, domain)
+  const parsed = new URL(url)
+  const target = (parsed.search && parsed.search.length)
+    ? `${parsed.pathname}?${parsed.search}`
+    : `${parsed.pathname}`
+  let data = `(request-target): ${method.toLowerCase()} ${target}\n`
+  data += `host: ${parsed.host}\n`
+  data += `date: ${date}`
+  if (digest) {
+    data += `\ndigest: ${digest}`
+  }
+  const signer = crypto.createSign('sha256')
+  signer.update(data)
+  const signature = signer.sign(privateKey).toString('base64')
+  signer.end()
+  return `keyId="${keyId}",headers="(request-target) host date${(digest) ? ' digest' : ''}",signature="${signature.replace(/"/g, '\\"')}",algorithm="rsa-sha256"`
+}
+
 export const makeActor = async (username, domain = 'social.example') =>
   await as2.import({
     '@context': [
