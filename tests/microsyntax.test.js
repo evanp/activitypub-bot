@@ -6,6 +6,9 @@ import { UrlFormatter } from '../lib/urlformatter.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { nockSetup } from './utils/nock.js'
+import { HTTPSignature } from '../lib/httpsignature.js'
+import Logger from 'pino'
+import { Digester } from '../lib/digester.js'
 
 const AS2 = 'https://www.w3.org/ns/activitystreams#'
 
@@ -15,12 +18,17 @@ describe('microsyntax', async () => {
 
   nockSetup('social.example')
 
+  const logger = Logger({
+    level: 'silent'
+  })
+  const digester = new Digester(logger)
   const connection = new Sequelize('sqlite::memory:', { logging: false })
   await connection.authenticate()
   const keyStorage = new KeyStorage(connection)
   await keyStorage.initialize()
   const formatter = new UrlFormatter(origin)
-  const client = new ActivityPubClient(keyStorage, formatter)
+  const signer = new HTTPSignature(logger)
+  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
   const transformer = new Transformer(tagNamespace, client)
 
   it('has transformer', () => {

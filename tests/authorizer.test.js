@@ -9,6 +9,9 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import as2 from 'activitystrea.ms'
 import assert from 'node:assert/strict'
 import { nanoid } from 'nanoid'
+import { HTTPSignature } from '../lib/httpsignature.js'
+import Logger from 'pino'
+import { Digester } from '../lib/digester.js'
 
 describe('Authorizer', () => {
   let authorizer = null
@@ -41,7 +44,12 @@ describe('Authorizer', () => {
     await objectStorage.initialize()
     keyStorage = new KeyStorage(connection)
     await keyStorage.initialize()
-    client = new ActivityPubClient(actorStorage, objectStorage, client)
+    const logger = new Logger({
+      level: 'silent'
+    })
+    const signer = new HTTPSignature(logger)
+    const digester = new Digester(logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
     actor1 = await actorStorage.getActor('test1')
     actor2 = await actorStorage.getActor('test2')
     await actorStorage.addToCollection(

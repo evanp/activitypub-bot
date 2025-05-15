@@ -18,8 +18,9 @@ import {
   makeObject
 } from './utils/nock.js'
 import Logger from 'pino'
-
 import as2 from 'activitystrea.ms'
+import { HTTPSignature } from '../lib/httpsignature.js'
+import { Digester } from '../lib/digester.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 
@@ -54,7 +55,9 @@ describe('BotContext', () => {
     await keyStorage.initialize()
     actorStorage = new ActorStorage(connection, formatter)
     await actorStorage.initialize()
-    client = new ActivityPubClient(keyStorage, formatter)
+    const signer = new HTTPSignature(logger)
+    const digester = new Digester(logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
     transformer = new Transformer('https://activitypubbot.example/tag/', client)
     await objectStorage.create(

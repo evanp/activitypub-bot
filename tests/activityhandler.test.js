@@ -15,6 +15,8 @@ import as2 from 'activitystrea.ms'
 import Logger from 'pino'
 import bots from './fixtures/bots.js'
 import { nockSetup, postInbox, makeActor, nockFormat } from './utils/nock.js'
+import { Digester } from '../lib/digester.js'
+import { HTTPSignature } from '../lib/httpsignature.js'
 
 describe('ActivityHandler', () => {
   const domain = 'activitypubbot.example'
@@ -47,7 +49,9 @@ describe('ActivityHandler', () => {
     await keyStorage.initialize()
     actorStorage = new ActorStorage(connection, formatter)
     await actorStorage.initialize()
-    client = new ActivityPubClient(keyStorage, formatter)
+    const signer = new HTTPSignature(logger)
+    const digester = new Digester(logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
     authz = new Authorizer(actorStorage, formatter, client)
     cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })

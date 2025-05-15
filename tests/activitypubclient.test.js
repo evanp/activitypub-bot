@@ -6,6 +6,9 @@ import assert from 'node:assert'
 import { Sequelize } from 'sequelize'
 import nock from 'nock'
 import as2 from 'activitystrea.ms'
+import Logger from 'pino'
+import { HTTPSignature } from '../lib/httpsignature.js'
+import { Digester } from '../lib/digester.js'
 
 const makeActor = (username) =>
   as2.import({
@@ -51,7 +54,15 @@ describe('ActivityPubClient', async () => {
   let signature = null
   let digest = null
   let date = null
+  let signer = null
+  let digester = null
+  let logger = null
   before(async () => {
+    logger = new Logger({
+      level: 'silent'
+    })
+    digester = new Digester(logger)
+    signer = new HTTPSignature(logger)
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
     keyStorage = new KeyStorage(connection)
@@ -120,6 +131,13 @@ describe('ActivityPubClient', async () => {
     await connection.close()
     keyStorage = null
     connection = null
+    formatter = null
+    client = null
+    postInbox = null
+    signature = null
+    logger = null
+    digester = null
+    signer = null
   })
   beforeEach(async () => {
     signature = {}
@@ -128,7 +146,8 @@ describe('ActivityPubClient', async () => {
     date = {}
   })
   it('can initialize', () => {
-    client = new ActivityPubClient(keyStorage, formatter)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+    assert.ok(client)
   })
   it('can get a remote object with a username', async () => {
     const id = 'https://social.example/user/evan/note/1'

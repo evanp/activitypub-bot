@@ -6,6 +6,9 @@ import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { nockSetup, nockFormat, getPublicKey } from './utils/nock.js'
+import { HTTPSignature } from '../lib/httpsignature.js'
+import Logger from 'pino'
+import { Digester } from '../lib/digester.js'
 
 describe('RemoteKeyStorage', async () => {
   const origin = 'https://activitypubbot.example'
@@ -19,7 +22,12 @@ describe('RemoteKeyStorage', async () => {
     const keyStorage = new KeyStorage(connection)
     await keyStorage.initialize()
     const formatter = new UrlFormatter(origin)
-    client = new ActivityPubClient(keyStorage, formatter)
+    const logger = new Logger({
+      level: 'silent'
+    })
+    const digester = new Digester(logger)
+    const signer = new HTTPSignature(logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
     nockSetup('social.example')
   })
 

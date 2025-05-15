@@ -9,6 +9,8 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import assert from 'node:assert'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
 import Logger from 'pino'
+import { HTTPSignature } from '../lib/httpsignature.js'
+import { Digester } from '../lib/digester.js'
 
 const makeActor = (domain, username, shared = true) =>
   as2.import({
@@ -67,7 +69,9 @@ describe('ActivityDistributor', () => {
     await actorStorage.initialize()
     keyStorage = new KeyStorage(connection)
     await keyStorage.initialize()
-    client = new ActivityPubClient(keyStorage, formatter)
+    const signer = new HTTPSignature(logger)
+    const digester = new Digester(logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
     actor1 = await as2.import({
       id: 'https://social.example/user/test1',
       type: 'Person',
