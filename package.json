@@ -38,7 +38,7 @@
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
-    "nock": "^13.5.0",
+    "nock": "^14.0.4",
     "standard": "^17.1.2",
     "supertest": "^7.1.0"
   },
