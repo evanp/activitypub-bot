@@ -1,6 +1,6 @@
 {
   "name": "activitypub-bot",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "server-side ActivityPub bot framework",
   "type": "module",
   "main": "index.js",
