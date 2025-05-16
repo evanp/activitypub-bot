@@ -83,7 +83,7 @@ describe('HTTPSignature', async () => {
     const headers = {
       date: new Date().toUTCString(),
       host: URL.parse(origin).host,
-      digest: digester.digest(body),
+      digest: await digester.digest(body),
       'content-type': 'application/activity+json',
       'User-Agent': 'activitypubbot-test/0.0.1'
     }
@@ -126,7 +126,7 @@ describe('HTTPSignature', async () => {
     const headers = {
       date: new Date().toUTCString(),
       host: URL.parse(origin).host,
-      digest: digester.digest(body),
+      digest: await digester.digest(body),
       'User-Agent': 'activitypubbot-test/0.0.1'
     }
     const privateKey = await getPrivateKey('test')
