@@ -35,6 +35,9 @@ describe('Authorizer', () => {
   let remotePrivateObject = null
 
   before(async () => {
+    const logger = Logger({
+      level: 'silent'
+    })
     formatter = new UrlFormatter('https://activitypubbot.example')
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
@@ -42,11 +45,8 @@ describe('Authorizer', () => {
     await actorStorage.initialize()
     objectStorage = new ObjectStorage(connection)
     await objectStorage.initialize()
-    keyStorage = new KeyStorage(connection)
+    keyStorage = new KeyStorage(connection, logger)
     await keyStorage.initialize()
-    const logger = new Logger({
-      level: 'silent'
-    })
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)

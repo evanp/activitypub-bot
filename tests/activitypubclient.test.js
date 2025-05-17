@@ -65,7 +65,7 @@ describe('ActivityPubClient', async () => {
     signer = new HTTPSignature(logger)
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
-    keyStorage = new KeyStorage(connection)
+    keyStorage = new KeyStorage(connection, logger)
     await keyStorage.initialize()
     formatter = new UrlFormatter('https://activitypubbot.example')
     const remote = 'https://social.example'

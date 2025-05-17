@@ -45,7 +45,7 @@ describe('ActivityHandler', () => {
     await botDataStorage.initialize()
     objectStorage = new ObjectStorage(connection)
     await objectStorage.initialize()
-    keyStorage = new KeyStorage(connection)
+    keyStorage = new KeyStorage(connection, logger)
     await keyStorage.initialize()
     actorStorage = new ActorStorage(connection, formatter)
     await actorStorage.initialize()

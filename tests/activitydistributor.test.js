@@ -67,7 +67,7 @@ describe('ActivityDistributor', () => {
     await connection.authenticate()
     actorStorage = new ActorStorage(connection, formatter)
     await actorStorage.initialize()
-    keyStorage = new KeyStorage(connection)
+    keyStorage = new KeyStorage(connection, logger)
     await keyStorage.initialize()
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)

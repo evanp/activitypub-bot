@@ -24,7 +24,7 @@ describe('microsyntax', async () => {
   const digester = new Digester(logger)
   const connection = new Sequelize('sqlite::memory:', { logging: false })
   await connection.authenticate()
-  const keyStorage = new KeyStorage(connection)
+  const keyStorage = new KeyStorage(connection, logger)
   await keyStorage.initialize()
   const formatter = new UrlFormatter(origin)
   const signer = new HTTPSignature(logger)

@@ -15,16 +15,16 @@ describe('RemoteKeyStorage', async () => {
   let connection = null
   let remoteKeyStorage = null
   let client = null
-
+  let logger = null
   before(async () => {
-    connection = new Sequelize('sqlite::memory:', { logging: false })
-    await connection.authenticate()
-    const keyStorage = new KeyStorage(connection)
-    await keyStorage.initialize()
-    const formatter = new UrlFormatter(origin)
-    const logger = new Logger({
+    logger = Logger({
       level: 'silent'
     })
+    connection = new Sequelize('sqlite::memory:', { logging: false })
+    await connection.authenticate()
+    const keyStorage = new KeyStorage(connection, logger)
+    await keyStorage.initialize()
+    const formatter = new UrlFormatter(origin)
     const digester = new Digester(logger)
     const signer = new HTTPSignature(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
@@ -33,6 +33,7 @@ describe('RemoteKeyStorage', async () => {
 
   after(async () => {
     await connection.close()
+    logger = null
   })
 
   it('can initialize', async () => {

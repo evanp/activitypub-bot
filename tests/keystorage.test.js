@@ -2,19 +2,26 @@ import { describe, before, after, it } from 'node:test'
 import { KeyStorage } from '../lib/keystorage.js'
 import assert from 'node:assert'
 import { Sequelize } from 'sequelize'
+import Logger from 'pino'
 
 describe('KeyStorage', async () => {
   let connection = null
   let storage = null
+  let logger = null
   before(async () => {
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    logger = new Logger({
+      level: 'silent'
+    })
   })
   after(async () => {
     await connection.close()
+    connection = null
+    logger = null
   })
   it('can initialize', async () => {
-    storage = new KeyStorage(connection)
+    storage = new KeyStorage(connection, logger)
     await storage.initialize()
   })
   it('can get a public key', async () => {

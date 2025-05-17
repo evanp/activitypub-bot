@@ -19,7 +19,7 @@ describe('HTTPSignature', async () => {
     })
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
-    const keyStorage = new KeyStorage(connection)
+    const keyStorage = new KeyStorage(connection, logger)
     await keyStorage.initialize()
     nockSetup('social.example')
     digester = new Digester(logger)
