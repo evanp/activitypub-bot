@@ -37,7 +37,7 @@ describe('RemoteKeyStorage', async () => {
   })
 
   it('can initialize', async () => {
-    remoteKeyStorage = new RemoteKeyStorage(client, connection)
+    remoteKeyStorage = new RemoteKeyStorage(client, connection, logger)
     assert.ok(remoteKeyStorage)
     await remoteKeyStorage.initialize()
     assert.ok(true)
