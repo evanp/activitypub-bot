@@ -86,6 +86,9 @@ export const nockSignatureFragment = async ({ method = 'GET', url, date, digest 
   return `keyId="${keyId}",headers="(request-target) host date${(digest) ? ' digest' : ''}",signature="${signature.replace(/"/g, '\\"')}",algorithm="rsa-sha256"`
 }
 
+export const nockKeyRotate = async (username, domain = 'social.example') =>
+  domains.get(domain).set(username, await newKeyPair(username))
+
 export const makeActor = async (username, domain = 'social.example') =>
   await as2.import({
     '@context': [

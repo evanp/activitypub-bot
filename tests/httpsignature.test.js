@@ -2,7 +2,7 @@ import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
 import { Sequelize } from 'sequelize'
 import { KeyStorage } from '../lib/keystorage.js'
-import { nockSetup, nockSignature, getPublicKey, getPrivateKey, nockFormat } from './utils/nock.js'
+import { nockSetup, nockSignature, nockKeyRotate, getPublicKey, getPrivateKey, nockFormat } from './utils/nock.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
@@ -53,6 +53,40 @@ describe('HTTPSignature', async () => {
     const path = '/user/ok/outbox'
     const result = await httpSignature.validate(publicKeyPem, signature, method, path, headers)
     assert.ok(result)
+  })
+
+  it('can handle key rotation', async () => {
+    const username = 'rotate'
+    const date = new Date().toUTCString()
+    const signature = await nockSignature({
+      url: `${origin}/user/ok/outbox`,
+      date,
+      username
+    })
+    const headers = {
+      date,
+      signature,
+      host: URL.parse(origin).host
+    }
+    const publicKeyPem = await getPublicKey(username)
+    const method = 'GET'
+    const path = '/user/ok/outbox'
+    await httpSignature.validate(publicKeyPem, signature, method, path, headers)
+    await nockKeyRotate(username)
+    const signature2 = await nockSignature({
+      url: `${origin}/user/ok/outbox`,
+      date,
+      username
+    })
+    const headers2 = {
+      date,
+      signature,
+      host: URL.parse(origin).host
+    }
+    const publicKeyPem2 = await getPublicKey(username)
+    assert.notStrictEqual(publicKeyPem, publicKeyPem2)
+    const result2 = await httpSignature.validate(publicKeyPem2, signature2, method, path, headers2)
+    assert.ok(result2)
   })
 
   it('can sign a GET request', async () => {
