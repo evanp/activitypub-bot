@@ -98,7 +98,8 @@ describe('BotContext', () => {
       client,
       distributor,
       formatter,
-      transformer
+      transformer,
+      logger
     )
   })
   it('can get the bot ID', () => {
@@ -498,5 +499,13 @@ describe('BotContext', () => {
       }
     }
     assert.ok(found)
+  })
+
+  it('has a working logger', async () => {
+    assert.ok(context.logger)
+    assert.doesNotThrow(() => context.logger.debug('debug'))
+    assert.doesNotThrow(() => context.logger.info('info'))
+    assert.doesNotThrow(() => context.logger.warn('warn'))
+    assert.doesNotThrow(() => context.logger.error('error'))
   })
 })
