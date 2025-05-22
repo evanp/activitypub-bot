@@ -370,10 +370,41 @@ describe('HTTPSignatureAuthenticator', async () => {
     await authenticator.authenticate(req, res, failNext)
   })
 
-  it('can refuse a request with a date outside of the skew window', async () => {
+  it('can refuse a request with a past date outside of the skew window', async () => {
     const username = 'test'
     // 10 days ago
     const date = (new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)).toUTCString()
+    logger.debug(date)
+    const signature = await nockSignature({
+      url: `${origin}/user/ok/outbox`,
+      date,
+      username
+    })
+    const headers = {
+      signature,
+      host: URL.parse(origin).host
+    }
+    const method = 'GET'
+    const path = '/user/ok/outbox'
+    const res = {
+
+    }
+    const req = {
+      headers,
+      path,
+      method,
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      }
+    }
+    await authenticator.authenticate(req, res, failNext)
+  })
+
+  it('can refuse a request with a future date outside of the skew window', async () => {
+    const username = 'test'
+    // 10 days ago
+    const date = (new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)).toUTCString()
+    logger.debug(date)
     const signature = await nockSignature({
       url: `${origin}/user/ok/outbox`,
       date,
