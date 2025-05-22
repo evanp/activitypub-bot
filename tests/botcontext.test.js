@@ -115,6 +115,15 @@ describe('BotContext', () => {
   it('can delete a value', async () => {
     await context.deleteData('key1')
   })
+  it('can return the correct flag for an unset key', async () => {
+    const result = await context.hasData('doesnotexist')
+    assert.strictEqual(result, false)
+  })
+  it('can return the correct flag for a set key', async () => {
+    await context.setData('setkey', 'value')
+    const result = await context.hasData('setkey')
+    assert.strictEqual(result, true)
+  })
   it('can get a local object', async () => {
     const id = formatter.format({
       username: 'test1',
