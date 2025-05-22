@@ -127,7 +127,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const date2 = new Date().toUTCString()
     const signature2 = await nockSignature({
       url: `${origin}/user/ok/outbox`,
-      date2,
+      date: date2,
       username
     })
     const headers2 = {
