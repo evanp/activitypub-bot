@@ -5,7 +5,7 @@ import { Sequelize } from 'sequelize'
 import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
-import { nockSetup, nockFormat, getPublicKey } from './utils/nock.js'
+import { nockSetup, nockFormat, getPublicKey, nockKeyRotate } from './utils/nock.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
@@ -59,5 +59,18 @@ describe('RemoteKeyStorage', async () => {
     const publicKey = await getPublicKey(username, domain)
     const remote = await remoteKeyStorage.getPublicKey(id)
     assert.equal(remote.publicKeyPem, publicKey)
+  })
+
+  it('can get the right public key after key rotation', async () => {
+    const username = 'test'
+    const domain = 'social.example'
+    const id = nockFormat({ username, key: true, domain })
+    const publicKey = await getPublicKey(username, domain)
+    const remote = await remoteKeyStorage.getPublicKey(id)
+    assert.equal(remote.publicKeyPem, publicKey)
+    await nockKeyRotate(username)
+    const publicKey2 = await getPublicKey(username, domain)
+    const remote2 = await remoteKeyStorage.getPublicKey(id, false)
+    assert.equal(remote2.publicKeyPem, publicKey2)
   })
 })
