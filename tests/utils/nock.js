@@ -51,7 +51,7 @@ export const nockSignature = async ({ method = 'GET', url, date, digest = null, 
   const keyId = nockFormat({ username, key: true, domain })
   const parsed = new URL(url)
   const target = (parsed.search && parsed.search.length)
-    ? `${parsed.pathname}?${parsed.search}`
+    ? `${parsed.pathname}${parsed.search}`
     : `${parsed.pathname}`
   let data = `(request-target): ${method.toLowerCase()} ${target}\n`
   data += `host: ${parsed.host}\n`
