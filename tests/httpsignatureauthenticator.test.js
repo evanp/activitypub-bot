@@ -13,7 +13,8 @@ import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from 'activitystrea.ms'
 
 describe('HTTPSignatureAuthenticator', async () => {
-  const origin = 'https://activitypubbot.example'
+  const domain = 'activitypubbot.example'
+  const origin = `https://${domain}`
   let authenticator = null
   let logger = null
   let signer = null
@@ -81,13 +82,43 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host
     }
     const method = 'GET'
-    const path = '/user/ok/outbox'
+    const originalUrl = '/user/ok/outbox'
     const res = {
 
     }
     const req = {
       headers,
-      path,
+      originalUrl,
+      method,
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      }
+    }
+    await authenticator.authenticate(req, res, next)
+  })
+
+  it('can authenticate a valid GET request with parameters', async () => {
+    const lname = 'ok'
+    const username = 'test'
+    const date = new Date().toUTCString()
+    const signature = await nockSignature({
+      url: `${origin}/.well-known/webfinger?resource=acct:${lname}@${domain}`,
+      date,
+      username
+    })
+    const headers = {
+      date,
+      signature,
+      host: URL.parse(origin).host
+    }
+    const method = 'GET'
+    const originalUrl = `/.well-known/webfinger?resource=acct:${lname}@${domain}`
+    const res = {
+
+    }
+    const req = {
+      headers,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
@@ -110,13 +141,13 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host
     }
     const method = 'GET'
-    const path = '/user/ok/outbox'
+    const originalUrl = '/user/ok/outbox'
     const res = {
 
     }
     const req = {
       headers,
-      path,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
@@ -137,7 +168,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const req2 = {
       headers: headers2,
-      path,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
@@ -157,10 +188,10 @@ describe('HTTPSignatureAuthenticator', async () => {
     const digest = await digester.digest(rawBodyText)
     const date = new Date().toUTCString()
     const method = 'POST'
-    const path = '/user/ok/inbox'
+    const originalUrl = '/user/ok/inbox'
     const signature = await nockSignature({
       username,
-      url: `${origin}${path}`,
+      url: `${origin}${originalUrl}`,
       date,
       digest,
       method
@@ -176,7 +207,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const req = {
       headers,
-      path,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
@@ -189,7 +220,7 @@ describe('HTTPSignatureAuthenticator', async () => {
   it('skips a request that is not signed', async () => {
     const date = new Date().toUTCString()
     const method = 'GET'
-    const path = '/user/ok/outbox'
+    const originalUrl = '/user/ok/outbox'
     const headers = {
       date,
       host: URL.parse(origin).host
@@ -199,7 +230,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const req = {
       headers,
-      path,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
@@ -222,13 +253,13 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host
     }
     const method = 'GET'
-    const path = '/user/ok/outbox'
+    const originalUrl = '/user/ok/outbox'
     const res = {
 
     }
     const req = {
       headers,
-      path,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
@@ -248,10 +279,10 @@ describe('HTTPSignatureAuthenticator', async () => {
     const digest = await digester.digest('This does not match the rawBodyText')
     const date = new Date().toUTCString()
     const method = 'POST'
-    const path = '/user/ok/inbox'
+    const originalUrl = '/user/ok/inbox'
     const signature = await nockSignature({
       username,
-      url: `${origin}${path}`,
+      url: `${origin}${originalUrl}`,
       date,
       digest,
       method
@@ -267,7 +298,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const req = {
       headers,
-      path,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
@@ -287,10 +318,10 @@ describe('HTTPSignatureAuthenticator', async () => {
     const rawBodyText = await activity.write()
     const date = new Date().toUTCString()
     const method = 'POST'
-    const path = '/user/ok/inbox'
+    const originalUrl = '/user/ok/inbox'
     const signature = await nockSignature({
       username,
-      url: `${origin}${path}`,
+      url: `${origin}${originalUrl}`,
       date,
       method
     })
@@ -304,7 +335,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const req = {
       headers,
-      path,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
@@ -327,13 +358,13 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host
     }
     const method = 'GET'
-    const path = '/user/ok/outbox'
+    const originalUrl = '/user/ok/outbox'
     const res = {
 
     }
     const req = {
       headers,
-      path,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
@@ -355,13 +386,13 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host
     }
     const method = 'GET'
-    const path = '/user/ok/outbox'
+    const originalUrl = '/user/ok/outbox'
     const res = {
 
     }
     const req = {
       headers,
-      path,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
@@ -385,13 +416,13 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host
     }
     const method = 'GET'
-    const path = '/user/ok/outbox'
+    const originalUrl = '/user/ok/outbox'
     const res = {
 
     }
     const req = {
       headers,
-      path,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
@@ -415,13 +446,13 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host
     }
     const method = 'GET'
-    const path = '/user/ok/outbox'
+    const originalUrl = '/user/ok/outbox'
     const res = {
 
     }
     const req = {
       headers,
-      path,
+      originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
