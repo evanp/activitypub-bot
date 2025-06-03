@@ -16,7 +16,7 @@ describe('HTTPSignature', async () => {
   let digester = null
   before(async () => {
     logger = Logger({
-      level: 'debug'
+      level: 'silent'
     })
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
