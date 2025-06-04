@@ -13,7 +13,6 @@ describe('routes.inbox', async () => {
   const host = 'activitypubbot.test'
   const origin = `https://${host}`
   const databaseUrl = 'sqlite::memory:'
-  const botName = 'ok'
   let app = null
 
   before(async () => {
@@ -23,6 +22,7 @@ describe('routes.inbox', async () => {
 
   describe('can handle an incoming activity', async () => {
     const username = 'actor1'
+    const botName = 'test0'
     const path = `/user/${botName}/inbox`
     const url = `${origin}${path}`
     const date = new Date().toUTCString()
@@ -66,6 +66,70 @@ describe('routes.inbox', async () => {
           activity
         )
       )
+    })
+  })
+  describe('can handle a duplicate incoming activity', async () => {
+    const username = 'actor2'
+    const botName = 'test1'
+    const path = `/user/${botName}/inbox`
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    const activity = await as2.import({
+      type: 'Activity',
+      actor: nockFormat({ username }),
+      id: nockFormat({ username, type: 'activity', num: 2 }),
+      to: 'as:Public'
+    })
+    const body = await activity.write()
+    const digest = makeDigest(body)
+    const signature = await nockSignature({
+      method: 'POST',
+      username,
+      url,
+      digest,
+      date
+    })
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should appear in the inbox', async () => {
+      const { actorStorage } = app.locals
+      assert.strictEqual(
+        true,
+        await actorStorage.isInCollection(
+          botName,
+          'inbox',
+          activity
+        )
+      )
+    })
+    it('should fail the second time', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 400 status', async () => {
+      assert.strictEqual(response.status, 400)
     })
   })
 })
