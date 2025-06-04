@@ -3,6 +3,8 @@ import assert from 'node:assert'
 import { makeApp } from '../lib/app.js'
 import request from 'supertest'
 import bots from './fixtures/bots.js'
+import as2 from 'activitystrea.ms'
+import { nanoid } from 'nanoid'
 
 describe('actor collection routes', async () => {
   const databaseUrl = 'sqlite::memory:'
@@ -389,6 +391,39 @@ describe('actor collection routes', async () => {
     })
     it('should return an object with a detail matching the request', async () => {
       assert.strictEqual(response.body.detail, 'No access to inbox collection')
+    })
+  })
+
+  describe('GET /user/{botid}/outbox/1 with contents', async () => {
+    let response = null
+    const username = 'test0'
+    const actorStorage = app.locals.actorStorage
+    const objectStorage = app.locals.objectStorage
+    const formatter = app.locals.formatter
+
+    for (let i = 0; i < 20; i++) {
+      const activity = await as2.import({
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        to: 'as:Public',
+        actor: formatter.format({ username }),
+        type: 'IntransitiveActivity',
+        id: formatter.format({
+          username,
+          type: 'intransitiveactivity',
+          nanoid: nanoid()
+        }),
+        summary: 'An intransitive activity by the test0 bot',
+        published: (new Date()).toISOString()
+      })
+      await objectStorage.create(activity)
+      await actorStorage.addToCollection(username, 'outbox', activity)
+    }
+
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${username}/outbox/1`)
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
     })
   })
 })
