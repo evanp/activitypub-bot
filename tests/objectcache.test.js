@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import { ObjectCache } from '../lib/objectcache.js'
 import assert from 'node:assert/strict'
-import as2 from 'activitystrea.ms'
+import as2 from '../lib/activitystreams.js'
 
 describe('ObjectCache', async () => {
   let cache = null

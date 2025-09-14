@@ -3,7 +3,7 @@ import assert from 'node:assert'
 import { makeApp } from '../lib/app.js'
 import request from 'supertest'
 import bots from './fixtures/bots.js'
-import as2 from 'activitystrea.ms'
+import as2 from '../lib/activitystreams.js'
 import { nockSetup, nockFormat, nockSignature, makeActor } from './utils/nock.js'
 
 const uppercase = (string) => string.charAt(0).toUpperCase() + string.slice(1)

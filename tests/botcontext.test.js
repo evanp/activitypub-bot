@@ -18,7 +18,7 @@ import {
   makeObject
 } from './utils/nock.js'
 import Logger from 'pino'
-import as2 from 'activitystrea.ms'
+import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 

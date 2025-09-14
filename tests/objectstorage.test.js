@@ -1,5 +1,5 @@
 import { describe, it, before, after } from 'node:test'
-import as2 from 'activitystrea.ms'
+import as2 from '../lib/activitystreams.js'
 import assert from 'node:assert'
 import { ObjectStorage, NoSuchObjectError } from '../lib/objectstorage.js'
 import { Sequelize } from 'sequelize'

@@ -1,6 +1,6 @@
 import { describe, it, before } from 'node:test'
 import assert from 'node:assert'
-import as2 from 'activitystrea.ms'
+import as2 from '../lib/activitystreams.js'
 import request from 'supertest'
 
 import { makeApp } from '../lib/app.js'

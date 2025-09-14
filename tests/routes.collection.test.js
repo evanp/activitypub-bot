@@ -3,7 +3,7 @@ import assert from 'node:assert'
 import { makeApp } from '../lib/app.js'
 import request from 'supertest'
 import bots from './fixtures/bots.js'
-import as2 from 'activitystrea.ms'
+import as2 from '../lib/activitystreams.js'
 import { nanoid } from 'nanoid'
 
 describe('actor collection routes', async () => {
@@ -26,6 +26,7 @@ describe('actor collection routes', async () => {
         })
         it('should return an object', async () => {
           assert.strictEqual(typeof response.body, 'object')
+          console.dir(response.body)
         })
         it('should return an object with an id', async () => {
           assert.strictEqual(typeof response.body.id, 'string')
@@ -63,6 +64,10 @@ describe('actor collection routes', async () => {
         })
         it('should return an object with a last', async () => {
           assert.strictEqual(typeof response.body.last, 'string')
+        })
+        it(`should return an object with a ${coll}Of to the actor`, async () => {
+          assert.strictEqual(typeof response.body[coll + 'Of'], 'string')
+          assert.strictEqual(response.body[coll + 'Of'], origin + '/user/ok')
         })
       })
       describe('GET collection for non-existent user', async () => {

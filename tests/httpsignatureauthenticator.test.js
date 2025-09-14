@@ -10,7 +10,7 @@ import { Digester } from '../lib/digester.js'
 import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
-import as2 from 'activitystrea.ms'
+import as2 from '../lib/activitystreams.js'
 
 describe('HTTPSignatureAuthenticator', async () => {
   const domain = 'activitypubbot.example'

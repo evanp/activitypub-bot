@@ -1,4 +1,4 @@
-import as2 from 'activitystrea.ms'
+import as2 from '../../lib/activitystreams.js'
 import nock from 'nock'
 import crypto from 'node:crypto'
 import { promisify } from 'node:util'

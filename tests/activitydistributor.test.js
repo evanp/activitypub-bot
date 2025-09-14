@@ -2,7 +2,7 @@ import { describe, it, before, after, beforeEach } from 'node:test'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { Sequelize } from 'sequelize'
 import { UrlFormatter } from '../lib/urlformatter.js'
-import as2 from 'activitystrea.ms'
+import as2 from '../lib/activitystreams.js'
 import nock from 'nock'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
@@ -82,7 +82,7 @@ describe('ActivityDistributor', () => {
       following: 'https://social.example/user/test1/following',
       liked: 'https://social.example/user/test1/liked'
     })
-    const actor1Text = await actor1.export()
+    const actor1Text = await actor1.export({ useOriginalContext: true })
     actor2 = await as2.import({
       id: 'https://other.example/user/test2',
       type: 'Person',
@@ -93,7 +93,7 @@ describe('ActivityDistributor', () => {
       following: 'https://other.example/user/test2/following',
       liked: 'https://other.example/user/test2/liked'
     })
-    const actor2Text = await actor2.export()
+    const actor2Text = await actor2.export({ useOriginalContext: true })
     actor3 = await as2.import({
       id: 'https://third.example/user/test3',
       type: 'Person',
@@ -104,7 +104,7 @@ describe('ActivityDistributor', () => {
       following: 'https://third.example/user/test3/following',
       liked: 'https://third.example/user/test3/liked'
     })
-    const actor3Text = await actor3.export()
+    const actor3Text = await actor3.export({ useOriginalContext: true })
     await actorStorage.addToCollection('test0', 'followers', actor2)
     await actorStorage.addToCollection('test0', 'followers', actor3)
     nock('https://social.example')

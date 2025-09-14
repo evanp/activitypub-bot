@@ -3,7 +3,7 @@ import assert from 'node:assert'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { Sequelize } from 'sequelize'
 import { UrlFormatter } from '../lib/urlformatter.js'
-import as2 from 'activitystrea.ms'
+import as2 from '../lib/activitystreams.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 
