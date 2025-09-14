@@ -188,6 +188,10 @@ describe('actor collection routes', async () => {
       assert.strictEqual(typeof response.body.last, 'string')
       assert.strictEqual(response.body.last, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/replies/1`)
     })
+    it('should return an object with the right repliesOf', async () => {
+      assert.strictEqual(typeof response.body.repliesOf, 'string')
+      assert.strictEqual(response.body.repliesOf, `${origin}/user/${username}/${type}/${nanoid}`)
+    })
   })
 
   describe('GET /user/{username}/{type}/{nanoid}/replies/1', async () => {
@@ -261,6 +265,10 @@ describe('actor collection routes', async () => {
       assert.strictEqual(typeof response.body.last, 'string')
       assert.strictEqual(response.body.last, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/likes/1`)
     })
+    it('should return an object with the right likesOf', async () => {
+      assert.strictEqual(typeof response.body.likesOf, 'string')
+      assert.strictEqual(response.body.likesOf, `${origin}/user/${username}/${type}/${nanoid}`)
+    })
   })
 
   describe('GET /user/{username}/{type}/{nanoid}/likes/1', async () => {
@@ -333,6 +341,10 @@ describe('actor collection routes', async () => {
     it('should return an object with the right last', async () => {
       assert.strictEqual(typeof response.body.last, 'string')
       assert.strictEqual(response.body.last, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/shares/1`)
+    })
+    it('should return an object with the right sharesOf', async () => {
+      assert.strictEqual(typeof response.body.sharesOf, 'string')
+      assert.strictEqual(response.body.sharesOf, `${origin}/user/${username}/${type}/${nanoid}`)
     })
   })
 
