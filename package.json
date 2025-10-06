@@ -35,7 +35,7 @@
     "node-fetch": "^3.3.2",
     "p-queue": "^8.1.0",
     "pino": "^9.7.0",
-    "pino-http": "^10.4.0",
+    "pino-http": "^11.0.0",
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
