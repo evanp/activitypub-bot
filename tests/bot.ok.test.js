@@ -76,12 +76,26 @@ describe('OK bot', async () => {
     it('should deliver the reply to the mentioned actor', async () => {
       assert.strictEqual(postInbox.actor2, 1)
     })
+    let reply = null
+    let note = null
     it('should have the reply in its outbox', async () => {
-      const { actorStorage } = app.locals
+      const { actorStorage, objectStorage } = app.locals
       const outbox = await actorStorage.getCollection('ok', 'outbox')
       assert.strictEqual(outbox.totalItems, 1)
       const outboxPage = await actorStorage.getCollectionPage('ok', 'outbox', 1)
       assert.strictEqual(outboxPage.items.length, 1)
+      const arry = Array.from(outboxPage.items)
+      reply = await objectStorage.read(arry[0].id)
+      assert.ok(reply)
+      const objects = Array.from(reply.object)
+      note = await objectStorage.read(objects[0].id)
+      assert.ok(note)
+    })
+    it('should have the inReplyTo property', async () => {
+      assert.strictEqual(
+        Array.from(note.inReplyTo)[0].id,
+        Array.from(activity.object)[0].id
+      )
     })
   })
 })
