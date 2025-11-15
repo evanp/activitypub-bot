@@ -120,14 +120,34 @@ export const makeActor = async (username, domain = 'social.example') =>
 // Just the types we use here
 const isActivityType = (type) => ['Create', 'Update', 'Delete', 'Add', 'Remove', 'Follow', 'Accept', 'Reject', 'Like', 'Block', 'Flag', 'Undo'].includes(uppercase(type))
 
-export const makeObject = async (username, type, num, domain = 'social.example') =>
-  as2.import({
+export async function makeObject (
+  username,
+  type,
+  num,
+  domain = 'social.example') {
+  const props = {
+    '@context': [
+      'https://www.w3.org/ns/activitystreams',
+      'https://purl.archive.org/socialweb/thread/1.0',
+      { ostatus: 'http://ostatus.org/schema/1.0/' }
+    ],
     id: nockFormat({ username, type, num, domain }),
     type: uppercase(type),
-    to: 'as:Public',
-    actor: (isActivityType(type) ? nockFormat({ username, domain }) : undefined),
-    attributedTo: (isActivityType(type) ? undefined : nockFormat({ username, domain }))
-  })
+    to: 'as:Public'
+  }
+  if (isActivityType(type)) {
+    props.actor = nockFormat({ username, domain })
+  } else {
+    props.attributedTo = nockFormat({ username, domain })
+    props.replies = nockFormat({ username, type, num, domain, obj: 'replies' })
+    props.shares = nockFormat({ username, type, num, domain, obj: 'shares' })
+    props.likes = nockFormat({ username, type, num, domain, obj: 'likes' })
+    props.thread = nockFormat({ username, type, num, domain, obj: 'thread' })
+    props.context = nockFormat({ username, type, num, domain, obj: 'context' })
+    props['ostatus:conversation'] = nockFormat({ username, type, num, domain, obj: 'conversation' })
+  }
+  return as2.import(props)
+}
 
 export const makeTransitive = (username, type, num, obj, domain = 'social.example') =>
   as2.import({
@@ -220,7 +240,7 @@ export const nockSetup = (domain) =>
       const type = uppercase(match[2])
       const num = match[3]
       const obj = await makeObject(username, type, num, domain)
-      const objText = await obj.write()
+      const objText = await obj.prettyWrite({ useOriginalContext: true })
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })
     .persist()

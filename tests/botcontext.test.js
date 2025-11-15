@@ -589,4 +589,86 @@ describe('BotContext', () => {
       assert.ok(conversation)
     })
   })
+
+  describe('reactions in a reply', async () => {
+    let note = null
+    before(async () => {
+      const noteIn = await makeObject('test8', 'Note', 1)
+      const content = '@test8@social.example OK'
+      note = await context.sendReply(content, noteIn)
+    })
+
+    it('has a replies property', async () => {
+      const repliesProp = note.get('replies')
+      assert.ok(repliesProp)
+      const replieses = Array.from(repliesProp)
+      assert.strictEqual(replieses.length, 1)
+      const replies = replieses[0]
+      assert.ok(replies.id)
+    })
+
+    it('has a shares property', async () => {
+      const sharesProp = note.get('shares')
+      assert.ok(sharesProp)
+      const shareses = Array.from(sharesProp)
+      assert.strictEqual(shareses.length, 1)
+      const shares = shareses[0]
+      assert.ok(shares.id)
+    })
+
+    it('has a likes property', async () => {
+      const likesProp = note.get('likes')
+      assert.ok(likesProp)
+      const likeses = Array.from(likesProp)
+      assert.strictEqual(likeses.length, 1)
+      const likes = likeses[0]
+      assert.ok(likes.id)
+    })
+  })
+
+  describe('threads in a reply', async () => {
+    let note = null
+    let noteIn = null
+    before(async () => {
+      noteIn = await makeObject('test8', 'Note', 2)
+      const content = '@test8@social.example OK'
+      note = await context.sendReply(content, noteIn)
+    })
+
+    it('has a matching thread property', async () => {
+      const propName = 'https://purl.archive.org/socialweb/thread#thread'
+      const threadProp = note.get(propName)
+      assert.ok(threadProp)
+      const threads = Array.from(threadProp)
+      assert.strictEqual(threads.length, 1)
+      const thread = threads[0]
+      assert.ok(thread.id)
+      const threadIn = Array.from(noteIn.get(propName))[0]
+      assert.strictEqual(thread.id, threadIn.id)
+    })
+
+    it('has a matching context property', async () => {
+      const propName = 'context'
+      const contextProp = note.get(propName)
+      assert.ok(contextProp)
+      const contexts = Array.from(contextProp)
+      assert.strictEqual(contexts.length, 1)
+      const context = contexts[0]
+      assert.ok(context.id)
+      const contextIn = Array.from(noteIn.get(propName))[0]
+      assert.strictEqual(context.id, contextIn.id)
+    })
+
+    it('has a matching ostatus:conversation property', async () => {
+      const propName = 'http://ostatus.org/schema/1.0/conversation'
+      const conversationProp = note.get(propName)
+      assert.ok(conversationProp)
+      const conversations = Array.from(conversationProp)
+      assert.strictEqual(conversations.length, 1)
+      const conversation = conversations[0]
+      assert.ok(conversation)
+      const conversationIn = Array.from(noteIn.get(propName))[0]
+      assert.strictEqual(context.id, conversationIn.id)
+    })
+  })
 })
