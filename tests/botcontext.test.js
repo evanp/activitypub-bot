@@ -517,4 +517,76 @@ describe('BotContext', () => {
     assert.doesNotThrow(() => context.logger.warn('warn'))
     assert.doesNotThrow(() => context.logger.error('error'))
   })
+
+  describe('reactions in new content', async () => {
+    let note = null
+    before(async () => {
+      const content = 'Hello World'
+      const to = 'https://www.w3.org/ns/activitystreams#Public'
+      note = await context.sendNote(content, { to })
+    })
+
+    it('has a replies property', async () => {
+      const repliesProp = note.get('replies')
+      assert.ok(repliesProp)
+      const replieses = Array.from(repliesProp)
+      assert.strictEqual(replieses.length, 1)
+      const replies = replieses[0]
+      assert.ok(replies.id)
+    })
+
+    it('has a shares property', async () => {
+      const sharesProp = note.get('shares')
+      assert.ok(sharesProp)
+      const shareses = Array.from(sharesProp)
+      assert.strictEqual(shareses.length, 1)
+      const shares = shareses[0]
+      assert.ok(shares.id)
+    })
+
+    it('has a likes property', async () => {
+      const likesProp = note.get('likes')
+      assert.ok(likesProp)
+      const likeses = Array.from(likesProp)
+      assert.strictEqual(likeses.length, 1)
+      const likes = likeses[0]
+      assert.ok(likes.id)
+    })
+  })
+
+  describe('threads in new content', async () => {
+    let note = null
+    before(async () => {
+      const content = 'Hello World'
+      const to = 'https://www.w3.org/ns/activitystreams#Public'
+      note = await context.sendNote(content, { to })
+    })
+
+    it('has a thread property', async () => {
+      const threadProp = note.get('https://purl.archive.org/socialweb/thread#thread')
+      assert.ok(threadProp)
+      const threads = Array.from(threadProp)
+      assert.strictEqual(threads.length, 1)
+      const thread = threads[0]
+      assert.ok(thread.id)
+    })
+
+    it('has a context property', async () => {
+      const contextProp = note.get('context')
+      assert.ok(contextProp)
+      const contexts = Array.from(contextProp)
+      assert.strictEqual(contexts.length, 1)
+      const context = contexts[0]
+      assert.ok(context.id)
+    })
+
+    it('has an ostatus:conversation property', async () => {
+      const conversationProp = note.get('http://ostatus.org/schema/1.0/conversation')
+      assert.ok(conversationProp)
+      const conversations = Array.from(conversationProp)
+      assert.strictEqual(conversations.length, 1)
+      const conversation = conversations[0]
+      assert.ok(conversation)
+    })
+  })
 })
