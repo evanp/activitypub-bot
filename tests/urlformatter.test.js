@@ -84,4 +84,81 @@ describe('UrlFormatter', () => {
     const username = formatter.getUserName('https://activitypubbot.example/user/megabot')
     assert.equal(username, 'megabot')
   })
+  it('refuses to unformat a remote URL', () => {
+    assert.throws(() => formatter.unformat(
+      'https://remote.example/some/unrelated/33/path/format'
+    ))
+  })
+  it('can unformat a user URL', () => {
+    const parts = formatter.unformat(
+      'https://activitypubbot.example/user/megabot'
+    )
+    assert.equal(parts.username, 'megabot')
+  })
+  it('can unformat a public key URL', () => {
+    const parts = formatter.unformat(
+      'https://activitypubbot.example/user/megabot/publickey'
+    )
+    assert.equal(parts.username, 'megabot')
+    assert.equal(parts.type, 'publickey')
+  })
+  it('can unformat an inbox URL', () => {
+    const parts = formatter.unformat(
+      'https://activitypubbot.example/user/megabot/inbox'
+    )
+    assert.equal(parts.username, 'megabot')
+    assert.equal(parts.collection, 'inbox')
+  })
+  it('can unformat an inbox page URL', () => {
+    const parts = formatter.unformat(
+      'https://activitypubbot.example/user/megabot/inbox/3'
+    )
+    assert.equal(parts.username, 'megabot')
+    assert.equal(parts.collection, 'inbox')
+    assert.equal(parts.page, 3)
+  })
+  it('can unformat an activity URL', () => {
+    const parts = formatter.unformat(
+      'https://activitypubbot.example/user/megabot/like/LNPUlv9kmvhAdr4eoqkil'
+    )
+    assert.equal(parts.username, 'megabot')
+    assert.equal(parts.type, 'like')
+    assert.equal(parts.nanoid, 'LNPUlv9kmvhAdr4eoqkil')
+  })
+  it('can unformat a note URL', () => {
+    const parts = formatter.unformat(
+      'https://activitypubbot.example/user/megabot/note/LNPUlv9kmvhAdr4eoqkil'
+    )
+    assert.equal(parts.username, 'megabot')
+    assert.equal(parts.type, 'note')
+    assert.equal(parts.nanoid, 'LNPUlv9kmvhAdr4eoqkil')
+  })
+  it('can unformat a note replies URL', () => {
+    const parts = formatter.unformat(
+      'https://activitypubbot.example/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies'
+    )
+    assert.equal(parts.username, 'megabot')
+    assert.equal(parts.type, 'note')
+    assert.equal(parts.nanoid, 'LNPUlv9kmvhAdr4eoqkil')
+    assert.equal(parts.collection, 'replies')
+  })
+  it('can unformat a note replies page URL', () => {
+    const parts = formatter.unformat(
+      'https://activitypubbot.example/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies/4'
+    )
+    assert.equal(parts.username, 'megabot')
+    assert.equal(parts.type, 'note')
+    assert.equal(parts.nanoid, 'LNPUlv9kmvhAdr4eoqkil')
+    assert.equal(parts.collection, 'replies')
+    assert.equal(parts.page, 4)
+  })
+  it('can unformat a server URL', () => {
+    const parts = formatter.unformat('https://activitypubbot.example/')
+    assert.ok(parts.server)
+  })
+  it('can unformat a server public key URL', () => {
+    const parts = formatter.unformat('https://activitypubbot.example/publickey')
+    assert.ok(parts.server)
+    assert.equal(parts.type, 'publickey')
+  })
 })
