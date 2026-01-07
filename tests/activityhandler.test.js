@@ -2140,4 +2140,46 @@ describe('ActivityHandler', () => {
     await handler.handleActivity(bot, undoActivity)
     assert.ok(true)
   })
+  it('manages a thread with a direct reply', async () => {
+    const idProps = {
+      username: botName,
+      type: 'note',
+      nanoid: 'lbsAZQ6JeLiq060MgImdF'
+    }
+    const oid = formatter.format(idProps)
+    const threadId = formatter.format({ ...idProps, collection: 'thread' })
+    const original = await as2.import({
+      '@context': [
+        'https://www.w3.org/ns/activitystreams',
+        'https://purl.archive.org/socialweb/thread/1.0'
+      ],
+      id: oid,
+      type: 'Note',
+      attributedTo: formatter.format({ username: botName }),
+      to: 'as:Public',
+      content: 'Original note',
+      thread: threadId,
+      context: threadId
+    })
+    await objectStorage.create(original)
+    await objectStorage.addToCollection(oid, 'thread', original)
+    const activity = await as2.import({
+      type: 'Create',
+      actor: 'https://social.example/user/remote1',
+      id: 'https://social.example/user/remote1/object/23',
+      object: {
+        inReplyTo: oid,
+        id: 'https://social.example/user/remote1/object/24',
+        type: 'Note',
+        content: 'Reply note',
+        to: 'as:Public',
+        thread: threadId
+      },
+      to: 'as:Public'
+    })
+    await handler.handleActivity(bot, activity)
+    const collection2 = await objectStorage.getCollection(oid, 'thread')
+    assert.equal(collection2.totalItems, 2)
+    await handler.onIdle()
+  })
 })
