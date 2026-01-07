@@ -46,7 +46,7 @@ describe('ActorStorage', () => {
   })
 
   it('can get an actor by id', async () => {
-    const actor = await storage.getActorById('https://social.example/user/test')
+    const actor = await storage.getActorById('https://activitypubbot.example/user/test')
     assert.ok(actor)
     assert.ok(actor.id)
     assert.ok(actor.inbox)
