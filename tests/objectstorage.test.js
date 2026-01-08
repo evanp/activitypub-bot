@@ -124,7 +124,18 @@ describe('ObjectStorage', async () => {
     assert.ok(page.next)
     // assert.ok(page.prev)
     assert.ok(page.items)
-    assert.equal(Array.from(page.items).length, 20)
+    const items = Array.from(page.items)
+    assert.equal(items.length, 20)
+    for (let i = 0; i < items.length; i++) {
+      assert.ok(items[i])
+      for (let j = i + 1; j < items.length; j++) {
+        assert.ok(items[j])
+        assert.ok(
+          items[i].id > items[j].id,
+          `item ${i} (${items[i].id}) <= item ${j} (${items[j].id})`
+        )
+      }
+    }
   })
   it('can iterate over a collection', async () => {
     const seen = new Set()

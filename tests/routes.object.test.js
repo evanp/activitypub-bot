@@ -8,7 +8,7 @@ import { nockSetup, nockFormat, nockSignature, makeActor } from './utils/nock.js
 
 const uppercase = (string) => string.charAt(0).toUpperCase() + string.slice(1)
 
-describe('actor collection routes', async () => {
+describe('object collection routes', async () => {
   const databaseUrl = 'sqlite::memory:'
   const origin = 'https://activitypubbot.test'
   const username = 'ok'
@@ -39,6 +39,7 @@ describe('actor collection routes', async () => {
       to: ['as:Public']
     })
     await objectStorage.create(obj)
+    await objectStorage.addToCollection(obj.id, 'thread', obj)
     reply = await as2.import({
       id: nockFormat({
         domain: 'social.example',
@@ -56,6 +57,7 @@ describe('actor collection routes', async () => {
       to: [formatter.format({ username }), 'as:Public']
     })
     await objectStorage.addToCollection(obj.id, 'replies', reply)
+    await objectStorage.addToCollection(obj.id, 'thread', reply)
     like = await as2.import({
       id: nockFormat({
         domain: 'social.example',
@@ -434,6 +436,84 @@ describe('actor collection routes', async () => {
     })
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
+    })
+  })
+
+  describe('GET /user/{username}/{type}/{nanoid}/thread', async () => {
+    let response = null
+    const url = `/user/${username}/${type}/${nanoid}/thread`
+    it('should work without an error', async () => {
+      response = await request(app)
+        .get(url)
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return AS2', async () => {
+      assert.strictEqual(response.type, 'application/activity+json')
+    })
+    it('should return an object', async () => {
+      assert.strictEqual(typeof response.body, 'object')
+    })
+    it('should return an object the right id', async () => {
+      assert.strictEqual(typeof response.body.id, 'string')
+      assert.strictEqual(response.body.id, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/thread`)
+    })
+    it('should return an object with the right type', async () => {
+      assert.strictEqual(typeof response.body.type, 'string')
+      assert.strictEqual(response.body.type, 'OrderedCollection')
+    })
+    it('should return an object with the right totalItems', async () => {
+      assert.strictEqual(typeof response.body.totalItems, 'number')
+      assert.strictEqual(response.body.totalItems, 2)
+    })
+    it('should return an object with the right first', async () => {
+      assert.strictEqual(typeof response.body.first, 'string')
+      assert.strictEqual(response.body.first, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/thread/1`)
+    })
+    it('should return an object with the right last', async () => {
+      assert.strictEqual(typeof response.body.last, 'string')
+      assert.strictEqual(response.body.last, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/thread/1`)
+    })
+    it('should return an object with the right root', async () => {
+      assert.strictEqual(typeof response.body.root, 'string')
+      assert.strictEqual(response.body.root, `${origin}/user/${username}/${type}/${nanoid}`)
+    })
+  })
+
+  describe('GET /user/{username}/{type}/{nanoid}/thread/1', async () => {
+    let response = null
+    const url = `/user/${username}/${type}/${nanoid}/thread/1`
+    it('should work without an error', async () => {
+      response = await request(app)
+        .get(url)
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return AS2', async () => {
+      assert.strictEqual(response.type, 'application/activity+json')
+    })
+    it('should return an object', async () => {
+      assert.strictEqual(typeof response.body, 'object')
+    })
+    it('should return an object the right id', async () => {
+      assert.strictEqual(typeof response.body.id, 'string')
+      assert.strictEqual(response.body.id, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/thread/1`)
+    })
+    it('should return an object with the right type', async () => {
+      assert.strictEqual(typeof response.body.type, 'string')
+      assert.strictEqual(response.body.type, 'OrderedCollectionPage')
+    })
+    it('should return an object with the right partOf', async () => {
+      assert.strictEqual(typeof response.body.partOf, 'string')
+      assert.strictEqual(response.body.partOf, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/thread`)
+    })
+    it('should return an object with the right items', async () => {
+      assert.strictEqual(typeof response.body.items, 'object')
+      assert.strictEqual(response.body.items.length, 2)
+      assert.strictEqual(response.body.items[0], reply.id)
+      assert.strictEqual(response.body.items[1], obj.id)
     })
   })
 })
