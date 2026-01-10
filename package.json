@@ -1,5 +1,5 @@
 {
-  "name": "activitypub-bot",
+  "name": "@evanp/activitypub-bot",
   "version": "0.8.0",
   "description": "server-side ActivityPub bot framework",
   "type": "module",
