@@ -1,5 +1,6 @@
 import DoNothingBot from '../../lib/bots/donothing.js'
 import OKBot from '../../lib/bots/ok.js'
+import ProvinceBotFactory from './provincebotfactory.js'
 
 export default {
   ok: new OKBot('ok'),
@@ -11,5 +12,6 @@ export default {
   test4: new DoNothingBot('test4'),
   test5: new DoNothingBot('test5'),
   test6: new DoNothingBot('test6'),
-  test7: new DoNothingBot('test7')
+  test7: new DoNothingBot('test7'),
+  '*': new ProvinceBotFactory()
 }
