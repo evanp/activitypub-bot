@@ -68,6 +68,7 @@ describe('routes.inbox', async () => {
       )
     })
   })
+
   describe('can handle a duplicate incoming activity', async () => {
     const username = 'actor2'
     const botName = 'test1'
