@@ -47,7 +47,7 @@ export default class ProvinceBotFactory extends BotFactory {
     }
     const [name, type] = ProvinceBotFactory.#provinces[username]
     const bot = new ProvinceBot(username, name, type)
-    await bot.initialize(this._context)
+    await bot.initialize(await this._context.duplicate(username))
     return bot
   }
 }
