@@ -38,4 +38,31 @@ describe('webfinger routes', async () => {
       assert.strictEqual(response.body.links[0].href, 'https://activitypubbot.test/user/ok')
     })
   })
+  describe('Webfinger discovery for non-existent user', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get('/.well-known/webfinger?resource=acct%3Adne%40activitypubbot.test')
+    })
+    it('should return 404 Not Found', async () => {
+      assert.strictEqual(response.status, 404)
+    })
+  })
+  describe('Webfinger discovery for wrong domain', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get('/.well-known/webfinger?resource=acct%3Adne%wrongdomain.test')
+    })
+    it('should return 400 Bad Request', async () => {
+      assert.strictEqual(response.status, 400)
+    })
+  })
+  describe('Webfinger discovery for HTTPS', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get('/.well-known/webfinger?resource=' + encodeURIComponent('https://activitypubbot.test/user/ok'))
+    })
+    it('should return 400 Bad Request', async () => {
+      assert.strictEqual(response.status, 400)
+    })
+  })
 })
