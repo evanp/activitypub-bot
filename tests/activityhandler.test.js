@@ -18,6 +18,8 @@ import { nockSetup, postInbox, makeActor, nockFormat } from './utils/nock.js'
 import { Digester } from '../lib/digester.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { runMigrations } from '../lib/migrations/index.js'
+import { BotContext } from '../lib/botcontext.js'
+import { Transformer } from '../lib/microsyntax.js'
 
 describe('ActivityHandler', () => {
   const domain = 'activitypubbot.example'
@@ -37,6 +39,10 @@ describe('ActivityHandler', () => {
   let botId = null
   const botName = 'ok'
   let bot = null
+  const loggerBotName = 'logging'
+  let lb = null
+  let lbId = null
+  let transformer = null
   before(async () => {
     logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter(origin)
@@ -53,8 +59,26 @@ describe('ActivityHandler', () => {
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
     authz = new Authorizer(actorStorage, formatter, client)
     cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
+    transformer = new Transformer(`${origin}/tag/`, client)
+    await Promise.all(
+      Object.values(bots).map(bot => bot.initialize(
+        new BotContext(
+          bot.username,
+          botDataStorage,
+          objectStorage,
+          actorStorage,
+          client,
+          distributor,
+          formatter,
+          transformer,
+          logger
+        )
+      ))
+    )
     botId = formatter.format({ username: botName })
+    lbId = formatter.format({ username: loggerBotName })
     bot = bots[botName]
+    lb = bots[loggerBotName]
     await objectStorage.create(await as2.import({
       id: formatter.format({ username: 'test1', type: 'object', nanoid: '_pEWsKke-7lACTdM3J_qd' }),
       type: 'Object',
@@ -296,6 +320,19 @@ describe('ActivityHandler', () => {
       await actorStorage.isInCollection(botName, 'followers', actor))
     await handler.onIdle()
     assert.ok(!postInbox.follower3)
+  })
+  it('notifies the bot of a follow activity', async () => {
+    const actor = await makeActor('follower4')
+    const activity = await as2.import({
+      type: 'Follow',
+      id: 'https://social.example/user/follower4/follow/1',
+      actor: actor.id,
+      object: lbId,
+      to: lbId
+    })
+    await handler.handleActivity(lb, activity)
+    assert.ok(lb.follows.has(activity.id))
+    await handler.onIdle()
   })
   it('can handle an accept activity', async () => {
     const actor = await makeActor('accepter1')
