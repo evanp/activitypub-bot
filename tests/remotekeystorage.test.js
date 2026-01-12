@@ -12,7 +12,9 @@ import { Digester } from '../lib/digester.js'
 import { runMigrations } from '../lib/migrations/index.js'
 
 describe('RemoteKeyStorage', async () => {
-  const origin = 'https://activitypubbot.example'
+  const host = 'activitypubbot.example'
+  const remoteHost = 'social.example'
+  const origin = `https://${host}`
   let connection = null
   let remoteKeyStorage = null
   let client = null
@@ -29,7 +31,7 @@ describe('RemoteKeyStorage', async () => {
     const digester = new Digester(logger)
     const signer = new HTTPSignature(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
-    nockSetup('social.example')
+    nockSetup(remoteHost)
   })
 
   after(async () => {
@@ -45,7 +47,7 @@ describe('RemoteKeyStorage', async () => {
 
   it('can get a remote public key', async () => {
     const username = 'test'
-    const domain = 'social.example'
+    const domain = remoteHost
     const id = nockFormat({ username, key: true, domain })
     const publicKey = await getPublicKey(username, domain)
     const remote = await remoteKeyStorage.getPublicKey(id)
@@ -54,7 +56,7 @@ describe('RemoteKeyStorage', async () => {
 
   it('can get the same remote public key twice', async () => {
     const username = 'test'
-    const domain = 'social.example'
+    const domain = remoteHost
     const id = nockFormat({ username, key: true, domain })
     const publicKey = await getPublicKey(username, domain)
     const remote = await remoteKeyStorage.getPublicKey(id)
@@ -63,7 +65,7 @@ describe('RemoteKeyStorage', async () => {
 
   it('can get the right public key after key rotation', async () => {
     const username = 'test'
-    const domain = 'social.example'
+    const domain = remoteHost
     const id = nockFormat({ username, key: true, domain })
     const publicKey = await getPublicKey(username, domain)
     const remote = await remoteKeyStorage.getPublicKey(id)
