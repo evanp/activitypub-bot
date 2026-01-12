@@ -48,4 +48,94 @@ describe('ProvinceBotFactory', async () => {
       assert.strictEqual(response.body.links[0].href, 'https://activitypubbot.example/user/qc')
     })
   })
+
+  describe('Actor for province', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get('/user/qc')
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return AS2', async () => {
+      assert.strictEqual(response.type, 'application/activity+json')
+    })
+    it('should return an object', async () => {
+      assert.strictEqual(typeof response.body, 'object')
+    })
+    it('should return an object with an id', async () => {
+      assert.strictEqual(typeof response.body.id, 'string')
+    })
+    it('should return an object with an id matching the request', async () => {
+      assert.strictEqual(response.body.id, origin + '/user/qc')
+    })
+    it('should return an object with a type', async () => {
+      assert.strictEqual(typeof response.body.type, 'string')
+    })
+    it('should return an object with a type matching the request', async () => {
+      assert.strictEqual(response.body.type, 'Service')
+    })
+    it('should return an object with a preferredUsername', async () => {
+      assert.strictEqual(typeof response.body.preferredUsername, 'string')
+    })
+    it('should return an object with a preferredUsername matching the request', async () => {
+      assert.strictEqual(response.body.preferredUsername, 'qc')
+    })
+    it('should return an object with an inbox', async () => {
+      assert.strictEqual(typeof response.body.inbox, 'string')
+    })
+    it('should return an object with an outbox', async () => {
+      assert.strictEqual(typeof response.body.outbox, 'string')
+    })
+    it('should return an object with a followers', async () => {
+      assert.strictEqual(typeof response.body.followers, 'string')
+    })
+    it('should return an object with a following', async () => {
+      assert.strictEqual(typeof response.body.following, 'string')
+    })
+    it('should return an object with a liked', async () => {
+      assert.strictEqual(typeof response.body.liked, 'string')
+    })
+    it('should return an object with a to', async () => {
+      assert.strictEqual(typeof response.body.to, 'string')
+    })
+    it('should return an object with a to matching the request', async () => {
+      assert.strictEqual(response.body.to, 'as:Public')
+    })
+    it('should return an object with a summary', async () => {
+      assert.strictEqual(typeof response.body.summary, 'string')
+    })
+    it('should return an object with a summary matching the request', async () => {
+      assert.strictEqual(response.body.summary, 'The province of Quebec')
+    })
+    it('should return an object with a name', async () => {
+      assert.strictEqual(typeof response.body.name, 'string')
+    })
+    it('should return an object with a name matching the request', async () => {
+      assert.strictEqual(response.body.name, 'Quebec')
+    })
+    it('should return an object with a publicKey', async () => {
+      assert.strictEqual(typeof response.body.publicKey, 'object')
+      assert.ok(response.body.publicKey)
+    })
+    it('should return an object with a publicKey matching the request', async () => {
+      assert.strictEqual(response.body.publicKey.id, origin + '/user/qc/publickey')
+    })
+    it('should return an object with a publicKey with an owner matching the request', async () => {
+      assert.strictEqual(response.body.publicKey.owner, origin + '/user/qc')
+    })
+    it('should return an object with a publicKey with a type', async () => {
+      assert.strictEqual(response.body.publicKey.type, 'CryptographicKey')
+    })
+    it('should return an object with a publicKey with a to', async () => {
+      assert.strictEqual(response.body.publicKey.to, 'as:Public')
+    })
+    it('should return an object with a publicKey with a publicKeyPem', async () => {
+      assert.strictEqual(typeof response.body.publicKey.publicKeyPem, 'string')
+    })
+    it('publicKeyPem should be an RSA PKCS-8 key', async () => {
+      assert.match(response.body.publicKey.publicKeyPem, /^-----BEGIN PUBLIC KEY-----\n/)
+      assert.match(response.body.publicKey.publicKeyPem, /\n-----END PUBLIC KEY-----\n$/)
+    })
+  })
 })
