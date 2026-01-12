@@ -60,7 +60,7 @@ describe('ObjectStorage', async () => {
     })
     await storage.update(doc2)
     const read = await storage.read(doc2.id)
-    assert.equal(read.name.get('en'), 'test2')
+    assert.equal(read.name.get(), 'test2')
   })
   it('can delete a created object', async () => {
     await storage.delete(doc)
