@@ -1,10 +1,13 @@
 import { describe, it, before } from 'node:test'
 import assert from 'node:assert'
 import request from 'supertest'
+import as2 from '../lib/activitystreams.js'
 
 import { makeApp } from '../lib/app.js'
 
-import { nockSetup } from './utils/nock.js'
+import { nockSetup, nockSignature, nockFormat } from './utils/nock.js'
+import { makeDigest } from './utils/digest.js'
+
 import bots from './fixtures/bots.js'
 
 describe('ProvinceBotFactory', async () => {
@@ -373,6 +376,55 @@ describe('ProvinceBotFactory', async () => {
     })
     it('should return an object with a detail matching the request', async () => {
       assert.strictEqual(response.body.detail, 'No access to inbox collection')
+    })
+  })
+
+  describe('Province inbox incoming activity', async () => {
+    const username = 'actor1'
+    const botName = 'qc'
+    const path = `/user/${botName}/inbox`
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    const activity = await as2.import({
+      type: 'Activity',
+      actor: nockFormat({ username }),
+      id: nockFormat({ username, type: 'activity', num: 1 })
+    })
+    const body = await activity.write()
+    const digest = makeDigest(body)
+    const signature = await nockSignature({
+      method: 'POST',
+      username,
+      url,
+      digest,
+      date
+    })
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should appear in the inbox', async () => {
+      const { actorStorage } = app.locals
+      assert.strictEqual(
+        true,
+        await actorStorage.isInCollection(
+          botName,
+          'inbox',
+          activity
+        )
+      )
     })
   })
 })
