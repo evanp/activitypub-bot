@@ -671,4 +671,12 @@ describe('BotContext', () => {
       assert.strictEqual(context.id, conversationIn.id)
     })
   })
+
+  it('can duplicate', async () => {
+    const username = 'dupe1'
+    let dupe = null
+    dupe = await context.duplicate(username)
+    assert.ok(dupe)
+    assert.strictEqual(dupe.botId, username)
+  })
 })
