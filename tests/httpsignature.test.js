@@ -6,6 +6,7 @@ import { nockSetup, nockSignature, nockKeyRotate, getPublicKey, getPrivateKey, n
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
+import { runMigrations } from '../lib/migrations/index.js'
 
 describe('HTTPSignature', async () => {
   const domain = 'activitypubbot.example'
@@ -20,8 +21,8 @@ describe('HTTPSignature', async () => {
     })
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    await runMigrations(connection)
     const keyStorage = new KeyStorage(connection, logger)
-    await keyStorage.initialize()
     nockSetup('social.example')
     digester = new Digester(logger)
   })

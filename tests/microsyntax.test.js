@@ -9,6 +9,7 @@ import { nockSetup } from './utils/nock.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
+import { runMigrations } from '../lib/migrations/index.js'
 
 const AS2 = 'https://www.w3.org/ns/activitystreams#'
 
@@ -24,8 +25,8 @@ describe('microsyntax', async () => {
   const digester = new Digester(logger)
   const connection = new Sequelize('sqlite::memory:', { logging: false })
   await connection.authenticate()
+  await runMigrations(connection)
   const keyStorage = new KeyStorage(connection, logger)
-  await keyStorage.initialize()
   const formatter = new UrlFormatter(origin)
   const signer = new HTTPSignature(logger)
   const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)

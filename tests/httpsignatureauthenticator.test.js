@@ -11,6 +11,7 @@ import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
+import { runMigrations } from '../lib/migrations/index.js'
 
 describe('HTTPSignatureAuthenticator', async () => {
   const domain = 'activitypubbot.example'
@@ -41,14 +42,13 @@ describe('HTTPSignatureAuthenticator', async () => {
     })
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    await runMigrations(connection)
     signer = new HTTPSignature(logger)
     digester = new Digester(logger)
     const formatter = new UrlFormatter(origin)
     const keyStorage = new KeyStorage(connection, logger)
-    await keyStorage.initialize()
     const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
     remoteKeyStorage = new RemoteKeyStorage(client, connection, logger)
-    await remoteKeyStorage.initialize()
     nockSetup('social.example')
   })
 

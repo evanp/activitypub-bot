@@ -3,6 +3,7 @@ import { KeyStorage } from '../lib/keystorage.js'
 import assert from 'node:assert'
 import { Sequelize } from 'sequelize'
 import Logger from 'pino'
+import { runMigrations } from '../lib/migrations/index.js'
 
 describe('KeyStorage', async () => {
   let connection = null
@@ -15,6 +16,7 @@ describe('KeyStorage', async () => {
   before(async () => {
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    await runMigrations(connection)
     logger = new Logger({
       level: 'silent'
     })
@@ -26,7 +28,6 @@ describe('KeyStorage', async () => {
   })
   it('can initialize', async () => {
     storage = new KeyStorage(connection, logger)
-    await storage.initialize()
   })
   it('can get a public key', async () => {
     firstPublicKey = await storage.getPublicKey('test1')

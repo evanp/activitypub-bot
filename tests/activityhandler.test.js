@@ -17,6 +17,7 @@ import bots from './fixtures/bots.js'
 import { nockSetup, postInbox, makeActor, nockFormat } from './utils/nock.js'
 import { Digester } from '../lib/digester.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
+import { runMigrations } from '../lib/migrations/index.js'
 
 describe('ActivityHandler', () => {
   const domain = 'activitypubbot.example'
@@ -41,14 +42,11 @@ describe('ActivityHandler', () => {
     formatter = new UrlFormatter(origin)
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    await runMigrations(connection)
     botDataStorage = new BotDataStorage(connection)
-    await botDataStorage.initialize()
     objectStorage = new ObjectStorage(connection)
-    await objectStorage.initialize()
     keyStorage = new KeyStorage(connection, logger)
-    await keyStorage.initialize()
     actorStorage = new ActorStorage(connection, formatter)
-    await actorStorage.initialize()
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)

@@ -3,6 +3,7 @@ import as2 from '../lib/activitystreams.js'
 import assert from 'node:assert'
 import { ObjectStorage, NoSuchObjectError } from '../lib/objectstorage.js'
 import { Sequelize } from 'sequelize'
+import { runMigrations } from '../lib/migrations/index.js'
 
 describe('ObjectStorage', async () => {
   let doc = null
@@ -35,13 +36,13 @@ describe('ObjectStorage', async () => {
     })
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    await runMigrations(connection)
   })
   after(async () => {
     await connection.close()
   })
   it('can initialize', async () => {
     storage = new ObjectStorage(connection)
-    await storage.initialize()
   })
   it('can create a new object', async () => {
     await storage.create(doc)

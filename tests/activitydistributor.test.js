@@ -11,6 +11,7 @@ import { ActivityDistributor } from '../lib/activitydistributor.js'
 import Logger from 'pino'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
+import { runMigrations } from '../lib/migrations/index.js'
 
 const makeActor = (domain, username, shared = true) =>
   as2.import({
@@ -65,10 +66,9 @@ describe('ActivityDistributor', () => {
     formatter = new UrlFormatter('https://activitypubbot.example')
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    await runMigrations(connection)
     actorStorage = new ActorStorage(connection, formatter)
-    await actorStorage.initialize()
     keyStorage = new KeyStorage(connection, logger)
-    await keyStorage.initialize()
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)

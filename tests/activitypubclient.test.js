@@ -9,6 +9,7 @@ import as2 from '../lib/activitystreams.js'
 import Logger from 'pino'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
+import { runMigrations } from '../lib/migrations/index.js'
 
 const makeActor = (username) =>
   as2.import({
@@ -65,8 +66,8 @@ describe('ActivityPubClient', async () => {
     signer = new HTTPSignature(logger)
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    await runMigrations(connection)
     keyStorage = new KeyStorage(connection, logger)
-    await keyStorage.initialize()
     formatter = new UrlFormatter('https://activitypubbot.example')
     const remote = 'https://social.example'
     nock(remote)

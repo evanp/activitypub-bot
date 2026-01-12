@@ -12,6 +12,7 @@ import { nanoid } from 'nanoid'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
+import { runMigrations } from '../lib/migrations/index.js'
 
 describe('Authorizer', () => {
   let authorizer = null
@@ -41,12 +42,10 @@ describe('Authorizer', () => {
     formatter = new UrlFormatter('https://activitypubbot.example')
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    await runMigrations(connection)
     actorStorage = new ActorStorage(connection, formatter)
-    await actorStorage.initialize()
     objectStorage = new ObjectStorage(connection)
-    await objectStorage.initialize()
     keyStorage = new KeyStorage(connection, logger)
-    await keyStorage.initialize()
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)

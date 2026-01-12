@@ -4,6 +4,7 @@ import { ActorStorage } from '../lib/actorstorage.js'
 import { Sequelize } from 'sequelize'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
+import { runMigrations } from '../lib/migrations/index.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 
@@ -15,6 +16,7 @@ describe('ActorStorage', () => {
   before(async () => {
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    await runMigrations(connection)
     formatter = new UrlFormatter('https://activitypubbot.example')
     other = await as2.import({
       id: 'https://social.example/user/test2',
@@ -31,7 +33,6 @@ describe('ActorStorage', () => {
     assert.ok(storage instanceof ActorStorage)
   })
   it('can initialize the storage', async () => {
-    await storage.initialize()
   })
   it('can get an actor', async () => {
     const actor = await storage.getActor('test')

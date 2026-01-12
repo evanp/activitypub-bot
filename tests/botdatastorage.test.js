@@ -2,6 +2,7 @@ import { describe, before, after, it } from 'node:test'
 import { BotDataStorage, NoSuchValueError } from '../lib/botdatastorage.js'
 import assert from 'node:assert'
 import { Sequelize } from 'sequelize'
+import { runMigrations } from '../lib/migrations/index.js'
 
 describe('BotDataStorage', async () => {
   let connection = null
@@ -9,13 +10,13 @@ describe('BotDataStorage', async () => {
   before(async () => {
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    await runMigrations(connection)
   })
   after(async () => {
     await connection.close()
   })
   it('can initialize', async () => {
     storage = new BotDataStorage(connection)
-    await storage.initialize()
   })
   it('can set a value', async () => {
     await storage.set('test', 'key1', 'value1')

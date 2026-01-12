@@ -21,6 +21,7 @@ import Logger from 'pino'
 import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
+import { runMigrations } from '../lib/migrations/index.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 
@@ -47,14 +48,11 @@ describe('BotContext', () => {
     formatter = new UrlFormatter('https://activitypubbot.example')
     connection = new Sequelize('sqlite::memory:', { logging: false })
     await connection.authenticate()
+    await runMigrations(connection)
     botDataStorage = new BotDataStorage(connection)
-    await botDataStorage.initialize()
     objectStorage = new ObjectStorage(connection)
-    await objectStorage.initialize()
     keyStorage = new KeyStorage(connection, logger)
-    await keyStorage.initialize()
     actorStorage = new ActorStorage(connection, formatter)
-    await actorStorage.initialize()
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
