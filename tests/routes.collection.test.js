@@ -26,7 +26,6 @@ describe('actor collection routes', async () => {
         })
         it('should return an object', async () => {
           assert.strictEqual(typeof response.body, 'object')
-          console.dir(response.body)
         })
         it('should return an object with an id', async () => {
           assert.strictEqual(typeof response.body.id, 'string')
