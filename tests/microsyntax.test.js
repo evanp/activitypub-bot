@@ -23,7 +23,7 @@ describe('microsyntax', async () => {
     level: 'silent'
   })
   const digester = new Digester(logger)
-  const connection = new Sequelize('sqlite::memory:', { logging: false })
+  const connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
   await connection.authenticate()
   await runMigrations(connection)
   const keyStorage = new KeyStorage(connection, logger)

@@ -40,7 +40,7 @@ describe('Authorizer', () => {
       level: 'silent'
     })
     formatter = new UrlFormatter('https://activitypubbot.example')
-    connection = new Sequelize('sqlite::memory:', { logging: false })
+    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     await connection.authenticate()
     await runMigrations(connection)
     actorStorage = new ActorStorage(connection, formatter)

@@ -46,7 +46,7 @@ describe('ActivityHandler', () => {
   before(async () => {
     logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter(origin)
-    connection = new Sequelize('sqlite::memory:', { logging: false })
+    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     await connection.authenticate()
     await runMigrations(connection)
     botDataStorage = new BotDataStorage(connection)

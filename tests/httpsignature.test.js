@@ -19,7 +19,7 @@ describe('HTTPSignature', async () => {
     logger = Logger({
       level: 'silent'
     })
-    connection = new Sequelize('sqlite::memory:', { logging: false })
+    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     await connection.authenticate()
     await runMigrations(connection)
     const keyStorage = new KeyStorage(connection, logger)

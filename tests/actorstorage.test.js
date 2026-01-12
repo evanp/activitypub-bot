@@ -14,7 +14,7 @@ describe('ActorStorage', () => {
   let formatter = null
   let other = null
   before(async () => {
-    connection = new Sequelize('sqlite::memory:', { logging: false })
+    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     await connection.authenticate()
     await runMigrations(connection)
     formatter = new UrlFormatter('https://activitypubbot.example')

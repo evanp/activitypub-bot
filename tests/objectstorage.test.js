@@ -34,7 +34,7 @@ describe('ObjectStorage', async () => {
       name: 'test',
       content: 'test'
     })
-    connection = new Sequelize('sqlite::memory:', { logging: false })
+    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     await connection.authenticate()
     await runMigrations(connection)
   })
