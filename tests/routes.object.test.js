@@ -10,7 +10,9 @@ const uppercase = (string) => string.charAt(0).toUpperCase() + string.slice(1)
 
 describe('object collection routes', async () => {
   const databaseUrl = 'sqlite::memory:'
-  const origin = 'https://activitypubbot.test'
+  const host = 'activitypubbot.test'
+  const origin = `https://${host}`
+  const remote = 'social.example'
   const username = 'ok'
   const type = 'object'
   const nanoid = 'hUQC9HWian7dzOxZJlJBA'
@@ -25,7 +27,7 @@ describe('object collection routes', async () => {
   before(async () => {
     app = await makeApp(databaseUrl, origin, bots, 'silent')
     const { formatter, objectStorage, actorStorage } = app.locals
-    nockSetup('social.example')
+    nockSetup(remote)
     obj = await as2.import({
       id: formatter.format({ username, type, nanoid }),
       type: uppercase(type),
@@ -42,14 +44,14 @@ describe('object collection routes', async () => {
     await objectStorage.addToCollection(obj.id, 'thread', obj)
     reply = await as2.import({
       id: nockFormat({
-        domain: 'social.example',
+        domain: remote,
         username: 'replier1',
         type: 'note',
         num: 1
       }),
       type: 'Note',
       attributedTo: nockFormat({
-        domain: 'social.example',
+        domain: remote,
         username: 'replier1'
       }),
       content: 'This is a reply to the test object',
@@ -60,7 +62,7 @@ describe('object collection routes', async () => {
     await objectStorage.addToCollection(obj.id, 'thread', reply)
     like = await as2.import({
       id: nockFormat({
-        domain: 'social.example',
+        domain: remote,
         username: 'liker1',
         type: 'like',
         num: 1,
@@ -68,7 +70,7 @@ describe('object collection routes', async () => {
       }),
       type: 'Like',
       attributedTo: nockFormat({
-        domain: 'social.example',
+        domain: remote,
         username: 'liker1'
       }),
       object: obj.id,
@@ -77,7 +79,7 @@ describe('object collection routes', async () => {
     await objectStorage.addToCollection(obj.id, 'likes', like)
     share = await as2.import({
       id: nockFormat({
-        domain: 'social.example',
+        domain: remote,
         username: 'sharer1',
         type: 'announce',
         num: 1,
@@ -85,7 +87,7 @@ describe('object collection routes', async () => {
       }),
       type: 'Announce',
       attributedTo: nockFormat({
-        domain: 'social.example',
+        domain: remote,
         username: 'sharer1'
       }),
       object: obj.id,
@@ -105,10 +107,14 @@ describe('object collection routes', async () => {
       to: formatter.format({ username, collection: 'followers' })
     })
     await objectStorage.create(privateObj)
+    const follower = await makeActor('follower1', remote)
     await actorStorage.addToCollection(
       username,
       'followers',
-      await makeActor('follower1', 'social.example')
+      follower
+    )
+    assert.ok(
+      await actorStorage.isInCollection(username, 'followers', follower)
     )
   })
 
@@ -130,7 +136,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object with the right id', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
-      assert.strictEqual(response.body.id, `https://activitypubbot.test/user/${username}/${type}/${nanoid}`)
+      assert.strictEqual(response.body.id, `${origin}/user/${username}/${type}/${nanoid}`)
     })
     it('should return an object with the right type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
@@ -142,15 +148,15 @@ describe('object collection routes', async () => {
     })
     it('should return an object with the right replies', async () => {
       assert.strictEqual(typeof response.body.replies, 'string')
-      assert.strictEqual(response.body.replies, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/replies`)
+      assert.strictEqual(response.body.replies, `${origin}/user/${username}/${type}/${nanoid}/replies`)
     })
     it('should return an object with the right likes', async () => {
       assert.strictEqual(typeof response.body.likes, 'string')
-      assert.strictEqual(response.body.likes, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/likes`)
+      assert.strictEqual(response.body.likes, `${origin}/user/${username}/${type}/${nanoid}/likes`)
     })
     it('should return an object with the right shares', async () => {
       assert.strictEqual(typeof response.body.shares, 'string')
-      assert.strictEqual(response.body.shares, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/shares`)
+      assert.strictEqual(response.body.shares, `${origin}/user/${username}/${type}/${nanoid}/shares`)
     })
   })
 
@@ -172,7 +178,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object the right id', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
-      assert.strictEqual(response.body.id, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/replies`)
+      assert.strictEqual(response.body.id, `${origin}/user/${username}/${type}/${nanoid}/replies`)
     })
     it('should return an object with the right type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
@@ -184,11 +190,11 @@ describe('object collection routes', async () => {
     })
     it('should return an object with the right first', async () => {
       assert.strictEqual(typeof response.body.first, 'string')
-      assert.strictEqual(response.body.first, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/replies/1`)
+      assert.strictEqual(response.body.first, `${origin}/user/${username}/${type}/${nanoid}/replies/1`)
     })
     it('should return an object with the right last', async () => {
       assert.strictEqual(typeof response.body.last, 'string')
-      assert.strictEqual(response.body.last, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/replies/1`)
+      assert.strictEqual(response.body.last, `${origin}/user/${username}/${type}/${nanoid}/replies/1`)
     })
     it('should return an object with the right repliesOf', async () => {
       assert.strictEqual(typeof response.body.repliesOf, 'string')
@@ -214,7 +220,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object the right id', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
-      assert.strictEqual(response.body.id, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/replies/1`)
+      assert.strictEqual(response.body.id, `${origin}/user/${username}/${type}/${nanoid}/replies/1`)
     })
     it('should return an object with the right type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
@@ -222,7 +228,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object with the right partOf', async () => {
       assert.strictEqual(typeof response.body.partOf, 'string')
-      assert.strictEqual(response.body.partOf, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/replies`)
+      assert.strictEqual(response.body.partOf, `${origin}/user/${username}/${type}/${nanoid}/replies`)
     })
     it('should return an object with the right items', async () => {
       assert.strictEqual(typeof response.body.items, 'object')
@@ -249,7 +255,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object the right id', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
-      assert.strictEqual(response.body.id, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/likes`)
+      assert.strictEqual(response.body.id, `${origin}/user/${username}/${type}/${nanoid}/likes`)
     })
     it('should return an object with the right type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
@@ -261,11 +267,11 @@ describe('object collection routes', async () => {
     })
     it('should return an object with the right first', async () => {
       assert.strictEqual(typeof response.body.first, 'string')
-      assert.strictEqual(response.body.first, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/likes/1`)
+      assert.strictEqual(response.body.first, `${origin}/user/${username}/${type}/${nanoid}/likes/1`)
     })
     it('should return an object with the right last', async () => {
       assert.strictEqual(typeof response.body.last, 'string')
-      assert.strictEqual(response.body.last, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/likes/1`)
+      assert.strictEqual(response.body.last, `${origin}/user/${username}/${type}/${nanoid}/likes/1`)
     })
     it('should return an object with the right likesOf', async () => {
       assert.strictEqual(typeof response.body.likesOf, 'string')
@@ -291,7 +297,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object the right id', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
-      assert.strictEqual(response.body.id, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/likes/1`)
+      assert.strictEqual(response.body.id, `${origin}/user/${username}/${type}/${nanoid}/likes/1`)
     })
     it('should return an object with the right type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
@@ -299,7 +305,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object with the right partOf', async () => {
       assert.strictEqual(typeof response.body.partOf, 'string')
-      assert.strictEqual(response.body.partOf, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/likes`)
+      assert.strictEqual(response.body.partOf, `${origin}/user/${username}/${type}/${nanoid}/likes`)
     })
     it('should return an object with the right items', async () => {
       assert.strictEqual(typeof response.body.items, 'object')
@@ -326,7 +332,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object the right id', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
-      assert.strictEqual(response.body.id, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/shares`)
+      assert.strictEqual(response.body.id, `${origin}/user/${username}/${type}/${nanoid}/shares`)
     })
     it('should return an object with the right type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
@@ -338,11 +344,11 @@ describe('object collection routes', async () => {
     })
     it('should return an object with the right first', async () => {
       assert.strictEqual(typeof response.body.first, 'string')
-      assert.strictEqual(response.body.first, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/shares/1`)
+      assert.strictEqual(response.body.first, `${origin}/user/${username}/${type}/${nanoid}/shares/1`)
     })
     it('should return an object with the right last', async () => {
       assert.strictEqual(typeof response.body.last, 'string')
-      assert.strictEqual(response.body.last, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/shares/1`)
+      assert.strictEqual(response.body.last, `${origin}/user/${username}/${type}/${nanoid}/shares/1`)
     })
     it('should return an object with the right sharesOf', async () => {
       assert.strictEqual(typeof response.body.sharesOf, 'string')
@@ -368,7 +374,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object the right id', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
-      assert.strictEqual(response.body.id, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/shares/1`)
+      assert.strictEqual(response.body.id, `${origin}/user/${username}/${type}/${nanoid}/shares/1`)
     })
     it('should return an object with the right type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
@@ -376,7 +382,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object with the right partOf', async () => {
       assert.strictEqual(typeof response.body.partOf, 'string')
-      assert.strictEqual(response.body.partOf, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/shares`)
+      assert.strictEqual(response.body.partOf, `${origin}/user/${username}/${type}/${nanoid}/shares`)
     })
     it('should return an object with the right items', async () => {
       assert.strictEqual(typeof response.body.items, 'object')
@@ -423,16 +429,16 @@ describe('object collection routes', async () => {
 
   describe('Get private object with follower', async () => {
     let response = null
-    const path = `/user/${username}/${type}/${privateNanoid}`
-    const url = `${origin}${path}`
-    const date = new Date().toISOString()
-    const signature = await nockSignature({ username: 'follower1', url, date })
     it('should work without an error', async () => {
+      const path = `/user/${username}/${type}/${privateNanoid}`
+      const url = `${origin}${path}`
+      const date = new Date().toISOString()
+      const signature = await nockSignature({ username: 'follower1', url, date })
       response = await request(app)
         .get(path)
         .set('Signature', signature)
         .set('Date', date)
-        .set('Host', 'activitypubbot.test')
+        .set('Host', host)
     })
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
@@ -457,7 +463,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object the right id', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
-      assert.strictEqual(response.body.id, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/thread`)
+      assert.strictEqual(response.body.id, `${origin}/user/${username}/${type}/${nanoid}/thread`)
     })
     it('should return an object with the right type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
@@ -469,11 +475,11 @@ describe('object collection routes', async () => {
     })
     it('should return an object with the right first', async () => {
       assert.strictEqual(typeof response.body.first, 'string')
-      assert.strictEqual(response.body.first, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/thread/1`)
+      assert.strictEqual(response.body.first, `${origin}/user/${username}/${type}/${nanoid}/thread/1`)
     })
     it('should return an object with the right last', async () => {
       assert.strictEqual(typeof response.body.last, 'string')
-      assert.strictEqual(response.body.last, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/thread/1`)
+      assert.strictEqual(response.body.last, `${origin}/user/${username}/${type}/${nanoid}/thread/1`)
     })
     it('should return an object with the right root', async () => {
       assert.strictEqual(typeof response.body.root, 'string')
@@ -499,7 +505,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object the right id', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
-      assert.strictEqual(response.body.id, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/thread/1`)
+      assert.strictEqual(response.body.id, `${origin}/user/${username}/${type}/${nanoid}/thread/1`)
     })
     it('should return an object with the right type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
@@ -507,7 +513,7 @@ describe('object collection routes', async () => {
     })
     it('should return an object with the right partOf', async () => {
       assert.strictEqual(typeof response.body.partOf, 'string')
-      assert.strictEqual(response.body.partOf, `https://activitypubbot.test/user/${username}/${type}/${nanoid}/thread`)
+      assert.strictEqual(response.body.partOf, `${origin}/user/${username}/${type}/${nanoid}/thread`)
     })
     it('should return an object with the right items', async () => {
       assert.strictEqual(typeof response.body.items, 'object')
