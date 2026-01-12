@@ -138,6 +138,7 @@ describe('actor routes', async () => {
       assert.strictEqual(response.body.detail, 'User dne not found')
     })
   })
+
   describe('GET /user/{dne}/publickey', async () => {
     let response = null
     it('should work without an error', async () => {
