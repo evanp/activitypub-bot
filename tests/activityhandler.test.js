@@ -846,6 +846,34 @@ describe('ActivityHandler', () => {
       await objectStorage.isInCollection(note.id, 'likes', activity2)
     )
   })
+  it('notifies the bot of a like activity', async () => {
+    const actor = await makeActor('liker9')
+    const note = await as2.import({
+      attributedTo: lbId,
+      id: formatter.format({
+        username: loggerBotName,
+        type: 'note',
+        nanoid: 'IGeAucyHD-s3Ywg9X9sCo'
+      }),
+      type: 'Note',
+      content: 'Hello, world!',
+      to: 'as:Public'
+    })
+    await objectStorage.create(note)
+    const activity = await as2.import({
+      type: 'Like',
+      actor: actor.id,
+      id: nockFormat({
+        username: 'liker9',
+        type: 'Like',
+        nanoid: '3fKK6LcMtqrAp1Ekn471u'
+      }),
+      object: note.id,
+      to: [lbId, 'as:Public']
+    })
+    await handler.handleActivity(lb, activity)
+    assert.ok(lb.likes.has(activity.id))
+  })
   it('can handle an announce activity', async () => {
     const actor = await makeActor('announcer1')
     const note = await as2.import({

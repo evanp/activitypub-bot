@@ -3,6 +3,7 @@ import Bot from '../../lib/bot.js'
 export default class EventLoggingBot extends Bot {
   #follows = new Map()
   #mentions = new Map()
+  #likes = new Map()
 
   get fullname () {
     return 'Event-logging bot'
@@ -20,11 +21,19 @@ export default class EventLoggingBot extends Bot {
     this.#follows.set(activity.id, activity)
   }
 
+  async onLike (object, activity) {
+    this.#likes.set(activity.id, activity)
+  }
+
   get follows () {
     return this.#follows
   }
 
   get mentions () {
     return this.#mentions
+  }
+
+  get likes () {
+    return this.#likes
   }
 }
