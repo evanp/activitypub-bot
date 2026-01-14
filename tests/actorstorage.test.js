@@ -13,6 +13,7 @@ describe('ActorStorage', () => {
   let storage = null
   let formatter = null
   let other = null
+  let unfollowed = null
   before(async () => {
     connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     await connection.authenticate()
@@ -20,6 +21,10 @@ describe('ActorStorage', () => {
     formatter = new UrlFormatter('https://activitypubbot.example')
     other = await as2.import({
       id: 'https://social.example/user/test2',
+      type: 'Person'
+    })
+    unfollowed = await as2.import({
+      id: 'https://social.example/user/test3',
       type: 'Person'
     })
   })
@@ -253,10 +258,26 @@ describe('ActorStorage', () => {
     assert.strictEqual(actor.get('preferredUsername').first, 'test8')
     assert.strictEqual(actor.name.get(), 'Test User')
     assert.strictEqual(actor.summary.get(), 'A test user')
-    console.log(actor.type)
-    console.log(await actor.write())
     assert.ok(Array.isArray(actor.type))
     assert.ok(actor.type.includes(AS2_NS + 'Person'))
     assert.ok(actor.type.includes(AS2_NS + 'Service'))
+  })
+
+  it('can get all actors with an object in a collection', async () => {
+    for (const i of [101, 102, 103, 104, 105]) {
+      await storage.addToCollection(`test${i}`, 'following', other)
+    }
+    const usernames = await storage.getUsernamesWith('following', other)
+    assert.strictEqual(usernames.length, 5)
+    assert.ok(usernames.includes('test101'))
+    assert.ok(usernames.includes('test102'))
+    assert.ok(usernames.includes('test103'))
+    assert.ok(usernames.includes('test104'))
+    assert.ok(usernames.includes('test105'))
+  })
+
+  it('gets zero usernames when an object is in no collection', async () => {
+    const usernames = await storage.getUsernamesWith('following', unfollowed)
+    assert.strictEqual(usernames.length, 0)
   })
 })
