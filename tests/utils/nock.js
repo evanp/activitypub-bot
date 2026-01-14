@@ -256,10 +256,12 @@ export const nockSetup = (domain) =>
       return [200, actText, { 'Content-Type': 'application/activity+json' }]
     })
 
-export function nockFormat ({ username, type, num, obj, key, domain = 'social.example' }) {
+export function nockFormat ({ username, type, num, obj, key, collection, domain = 'social.example' }) {
   let url = `https://${domain}/user/${username}`
   if (key) {
     url = `${url}/publickey`
+  } else if (collection) {
+    url = `${url}/${collection}`
   } else {
     if (type && num) {
       url = `${url}/${lowercase(type)}/${num}`
