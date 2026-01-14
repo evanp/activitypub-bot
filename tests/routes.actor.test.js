@@ -97,6 +97,12 @@ describe('actor routes', async () => {
       assert.match(response.body.publicKey.publicKeyPem, /^-----BEGIN PUBLIC KEY-----\n/)
       assert.match(response.body.publicKey.publicKeyPem, /\n-----END PUBLIC KEY-----\n$/)
     })
+    it('should include endpoints', async () => {
+      assert.strictEqual(typeof response.body.endpoints, 'object')
+    })
+    it('should include a sharedInbox endpoint', async () => {
+      assert.strictEqual(typeof response.body.endpoints.sharedInbox, 'string')
+    })
   })
 
   describe('GET non-existent user', async () => {
