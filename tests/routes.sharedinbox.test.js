@@ -5,7 +5,7 @@ import request from 'supertest'
 
 import { makeApp } from '../lib/app.js'
 
-import { nockSetup, nockSignature, nockFormat, makeActor } from './utils/nock.js'
+import { nockSetup, nockSignature, nockFormat, makeActor, addFollower } from './utils/nock.js'
 import { makeDigest } from './utils/digest.js'
 import bots from './fixtures/bots.js'
 
@@ -95,6 +95,8 @@ describe('routes.sharedinbox', async () => {
     before(async () => {
       actor = await makeActor(username, remoteHost)
       for (const botName of botNames) {
+        const botId = formatter.format({ username: botName })
+        addFollower(username, botId, remoteHost)
         await actorStorage.addToCollection(botName, 'following', actor)
       }
       activity = await as2.import({
