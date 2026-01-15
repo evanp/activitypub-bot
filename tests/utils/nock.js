@@ -8,6 +8,9 @@ const generateKeyPair = promisify(crypto.generateKeyPair)
 const domains = new Map()
 domains['social.example'] = new Map()
 
+const graph = new Map()
+graph['social.example'] = new Map()
+
 const newKeyPair = async () => {
   return await generateKeyPair(
     'rsa',
@@ -44,6 +47,26 @@ export const getPublicKey = async (username, domain = 'social.example') => {
 export const getPrivateKey = async (username, domain = 'social.example') => {
   const pair = await getPair(username, domain)
   return pair.privateKey
+}
+
+function ensureGraph (domain, username) {
+  if (!graph.has(domain)) {
+    graph.set(domain, new Map())
+  }
+  if (!graph.get(domain).has(username)) {
+    graph.get(domain).set(username, new Map())
+    graph.get(domain).get(username).set('followers', [])
+    graph.get(domain).get(username).set('following', [])
+  }
+  return graph.get(domain).get(username)
+}
+
+export function addFollower (username, id, domain = 'social.example') {
+  ensureGraph(domain, username).get('followers').unshift(id)
+}
+
+export function addFollowing (username, id, domain = 'social.example') {
+  ensureGraph(domain, username).get('following').unshift(id)
 }
 
 export const nockSignature = async ({ method = 'GET', url, date, digest = null, username, domain = 'social.example' }) => {
@@ -231,6 +254,52 @@ export const nockSetup = (domain) =>
         { additional_context: 'https://w3id.org/security/v1' }
       )
       return [200, publicKeyText, { 'Content-Type': 'application/activity+json' }]
+    })
+    .persist()
+    .get(/^\/user\/(\w+)\/followers$/)
+    .reply(async (uri, requestBody) => {
+      const username = uri.match(/^\/user\/(\w+)\/followers$/)[1]
+      const items = ensureGraph(domain, username).get('followers')
+      const followers = await as2.import({
+        '@context': [
+          'https://www.w3.org/ns/activitystreams',
+          'https://w3id.org/fep/5711'
+        ],
+        id: `https://${domain}/user/${username}/followers`,
+        attributedTo: `https://${domain}/user/${username}`,
+        to: 'as:Public',
+        followersOf: `https://${domain}/user/${username}`,
+        type: 'OrderedCollection',
+        totalItems: items.length,
+        items
+      })
+      const followersText = await followers.prettyWrite(
+        { additional_context: 'https://w3id.org/fep/5711' }
+      )
+      return [200, followersText, { 'Content-Type': 'application/activity+json' }]
+    })
+    .persist()
+    .get(/^\/user\/(\w+)\/following$/)
+    .reply(async (uri, requestBody) => {
+      const username = uri.match(/^\/user\/(\w+)\/following$/)[1]
+      const items = ensureGraph(domain, username).get('following')
+      const following = await as2.import({
+        '@context': [
+          'https://www.w3.org/ns/activitystreams',
+          'https://w3id.org/fep/5711'
+        ],
+        id: `https://${domain}/user/${username}/following`,
+        attributedTo: `https://${domain}/user/${username}`,
+        to: 'as:Public',
+        followersOf: `https://${domain}/user/${username}`,
+        type: 'OrderedCollection',
+        totalItems: items.length,
+        items
+      })
+      const followingText = await following.prettyWrite(
+        { additional_context: 'https://w3id.org/fep/5711' }
+      )
+      return [200, followingText, { 'Content-Type': 'application/activity+json' }]
     })
     .persist()
     .get(/^\/user\/(\w+)\/(\w+)\/(\d+)$/)
