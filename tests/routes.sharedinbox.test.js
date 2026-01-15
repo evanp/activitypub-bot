@@ -143,4 +143,54 @@ describe('routes.sharedinbox', async () => {
       }
     })
   })
+
+  describe('can handle an incoming public activity', async () => {
+    const username = 'actor3'
+    const path = '/shared/inbox'
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    let response = null
+    let signature = null
+    let body = null
+    let digest = null
+    let activity = null
+    let actor = null
+    before(async () => {
+      actor = await makeActor(username, remoteHost)
+      activity = await as2.import({
+        type: 'Activity',
+        actor: actor.id,
+        id: nockFormat({ username, type: 'activity', num: 1 }),
+        to: 'as:Public'
+      })
+      body = await activity.write()
+      digest = makeDigest(body)
+      signature = await nockSignature({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date
+      })
+    })
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should appear in all inboxes', async () => {
+      const lb = bots.logging
+      assert.ok(lb.publics.has(activity.id))
+    })
+  })
 })
