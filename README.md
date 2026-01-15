@@ -81,7 +81,7 @@ The path to the [config file](#config_file) for this server, which defines the u
 
 The config file defines the bots provided by this server.
 
-The config file is implemented as a JavaScript module. It should export a single object mapping a string name for the bot to an instance of a classes that implements the [Bot](#bot) interface.
+The config file is implemented as a JavaScript module. It should export a single object mapping a string name for the bot to an instance of a class that implements the [Bot](#bot) or [BotFactory](#botfactory) interface.
 
 For example, the default config file declares two bot accounts: an [OKBot](#okbot) named `ok` and a [DoNothingBot](#donothingbot) named `null`.
 
@@ -92,6 +92,18 @@ import OKBot from '../lib/bots/ok.js'
 export default {
   ok: new OKBot('ok'),
   null: new DoNothingBot('null')
+}
+```
+
+For another example, the `ProvinceBotFactory` defines bots for all the Canadian provinces and territories ('ab' for Alberta, 'bc' for British Columbia, and so on). The special `*` value is used for identifying a bot factory (only one allowed per server). Named bots will be identified first, and the bot factory will be used as a fallback.
+
+```js
+import ProvinceBotFactory from './provincebotfactory.js'
+import DoNothingBot from '../../lib/bots/donothing.js'
+
+export default {
+  'other', new DoNothingBot('other')
+  '*', new ProvinceBotFactory()
 }
 ```
 
@@ -109,7 +121,11 @@ A *DoNothingBot* instance will only do default stuff, like accepting follows.
 
 ## API
 
-New bot classes must implement the [Bot](#bot) interface, which is easiest if you inherit from the `Bot` class. Bots will receive a [BotContext](#botcontext) object at initialization. The BotContext is the main way to access data or execute activities.
+Custom bots can implement the [Bot](#bot) interface, which is easiest if you inherit from the `Bot` class.
+
+Alternatively, you can implement a whole class of bots with the [BotFactory](#botfactory) interface, inheriting from the `BotFactory` class.
+
+Bots will receive a [BotContext](#botcontext) object at initialization. The BotContext is the main way to access data or execute activities.
 
 ### Bot
 
@@ -143,6 +159,36 @@ getter is needed to retrieve it.)
 #### async onMention (object, activity)
 
 Called when the bot is mentioned in an incoming object. Can be used to implement conversational interfaces. `object` is the object of a `Create` activity, like a `Note`, that mentions the bot; it's represented in [activitystrea.ms](#activitystreams) format. `activity` is the activity itself.
+
+#### async onFollow (actor, activity)
+
+Called when the bot is followed by another actor. The first argument is the actor, and the second is the `Follow` activity itself. This method is called after the acceptance has been sent and the new
+follower has been added to the `followers` collection.
+
+#### async onLike (object, activity)
+
+Called when one of the bot's objects is liked by another actor. The first argument is the object, and the second is the `Like` activity itself. This method is called after the like has been added to the
+`likes` collection.
+
+#### async onPublic (activity)
+
+Called when the server receives a public activity to its shared inbox. This can be used to skim through ActivityPub network content.
+
+### BotFactory
+
+The BotFactory interface lets you have a lot of bots that act in a similar way without declaring them explicitly in the bots config file.
+
+#### async canCreate (username)
+
+Can this factory create a bot with this username? Boolean response. For example, the `ProvinceBotFactory` checks that there is a matching 2-letter province code for the username.
+
+#### async create (username)
+
+Create a bot with this username and return it. The bot must implement the [Bot](#bot) interface.
+
+#### async onPublic (activity)
+
+When a public activity is received at the shared inbox of the server, this method is called for the bot factory.
 
 ### BotContext
 
