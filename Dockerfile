@@ -1,23 +1,12 @@
-FROM node:24-alpine AS builder
-
-WORKDIR /app
-
-RUN apk add --no-cache python3 make g++ py3-setuptools
-
-COPY package.json package-lock.json ./
-RUN npm ci
-
-COPY index.js .
-COPY lib lib
-COPY bots bots
-COPY README.md .
-
 FROM node:24-alpine
 
 WORKDIR /app
 
 RUN apk add --no-cache libstdc++ sqlite sqlite-libs
 
-COPY --from=builder /app/ ./
+ARG PACKAGE_VERSION
 
-CMD ["npm", "start"]
+RUN npm init -y \
+  && npm install --omit=dev @evanp/activitypub-bot@${PACKAGE_VERSION:-latest}
+
+CMD ["node", "node_modules/@evanp/activitypub-bot/index.js"]
