@@ -9,4 +9,4 @@ ARG PACKAGE_VERSION
 RUN npm init -y \
   && npm install --omit=dev @evanp/activitypub-bot@${PACKAGE_VERSION:-latest}
 
-CMD ["node", "node_modules/@evanp/activitypub-bot/index.js"]
+CMD ["sh", "-c", "node_modules/.bin/bot-server --database-url \"${DATABASE_URL-}\" --origin \"${ORIGIN-}\" --port \"${PORT-}\" --bots-config-file \"${BOTS_CONFIG_FILE-}\" --log-level \"${LOG_LEVEL-}\""]

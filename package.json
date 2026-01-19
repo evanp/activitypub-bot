@@ -3,7 +3,10 @@
   "version": "0.10.0",
   "description": "server-side ActivityPub bot framework",
   "type": "module",
-  "main": "index.js",
+  "main": "bot-server.js",
+  "bin": {
+    "bot-server": "./bot-server.js"
+  },
   "scripts": {
     "test": "NODE_ENV=test node --test",
     "start": "node index.js"
