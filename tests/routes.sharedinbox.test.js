@@ -25,7 +25,7 @@ describe('routes.sharedinbox', async () => {
     actorStorage = app.locals.actorStorage
   })
 
-  describe('can handle an directly addressed incoming activity', async () => {
+  describe('can handle an directly addressed activity', async () => {
     const username = 'actor1'
     const botName = 'test0'
     const path = '/shared/inbox'
@@ -80,7 +80,7 @@ describe('routes.sharedinbox', async () => {
     })
   })
 
-  describe('can handle an incoming followers-only activity', async () => {
+  describe('can handle an followers-only activity', async () => {
     const username = 'actor2'
     const botNames = ['test1', 'test2']
     const path = '/shared/inbox'
@@ -144,7 +144,7 @@ describe('routes.sharedinbox', async () => {
     })
   })
 
-  describe('can handle an incoming public activity', async () => {
+  describe('can handle an public activity', async () => {
     const username = 'actor3'
     const path = '/shared/inbox'
     const url = `${origin}${path}`
@@ -191,6 +191,74 @@ describe('routes.sharedinbox', async () => {
     it('should appear in all inboxes', async () => {
       const lb = bots.logging
       assert.ok(lb.publics.has(activity.id))
+    })
+  })
+
+  describe('can handle an activity to local followers collection', async () => {
+    const username = 'actor4'
+    const botNames = ['test3', 'test4', 'test5']
+    const followedBot = 'test6'
+    const path = '/shared/inbox'
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    let response = null
+    let signature = null
+    let body = null
+    let digest = null
+    let activity = null
+    let actor = null
+    before(async () => {
+      actor = await makeActor(username, remoteHost)
+      const followed = await as2.import({
+        id: formatter.format({ username: followedBot })
+      })
+      for (const botName of botNames) {
+        const botId = formatter.format({ username: botName })
+        actorStorage.addToCollection(followedBot, 'followers', botId)
+        await actorStorage.addToCollection(botName, 'following', followed)
+      }
+      activity = await as2.import({
+        type: 'Activity',
+        actor: actor.id,
+        id: nockFormat({ username, type: 'activity', num: 1 }),
+        to: formatter.format({ username: followedBot, collection: 'followers' })
+      })
+      body = await activity.write()
+      digest = makeDigest(body)
+      signature = await nockSignature({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date
+      })
+    })
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should appear in all inboxes', async () => {
+      for (const botName of botNames) {
+        assert.strictEqual(
+          true,
+          await actorStorage.isInCollection(
+            botName,
+            'inbox',
+            activity
+          )
+        )
+      }
     })
   })
 })
