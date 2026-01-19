@@ -14,6 +14,14 @@ export default {
   test5: new DoNothingBot('test5'),
   test6: new DoNothingBot('test6'),
   test7: new DoNothingBot('test7'),
+  test8: new DoNothingBot('test8'),
+  test9: new DoNothingBot('test9'),
+  test10: new DoNothingBot('test10'),
+  test11: new DoNothingBot('test11'),
+  test12: new DoNothingBot('test12'),
+  test13: new DoNothingBot('test13'),
+  test14: new DoNothingBot('test14'),
+  test15: new DoNothingBot('test15'),
   logging: new EventLoggingBot('logging'),
   '*': new ProvinceBotFactory()
 }
