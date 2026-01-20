@@ -237,8 +237,9 @@ const captureRequestHeaders = (domain, uri, req) => {
   requestHeaders.set(url, headers)
 }
 
-export const nockSetup = (domain) =>
+export const nockSetup = (domain, logger = null) =>
   nock(`https://${domain}`)
+    .persist()
     .get(/^\/.well-known\/webfinger/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -267,12 +268,11 @@ export const nockSetup = (domain) =>
       captureRequestHeaders(domain, uri, this?.req)
       const username = uri.match(/^\/user\/(\w+)$/)[1]
       const actor = await makeActor(username, domain)
-      const actorText = await actor.prettyWrite(
+      const actorText = await actor.write(
         { additional_context: 'https://w3id.org/security/v1' }
       )
       return [200, actorText, { 'Content-Type': 'application/activity+json' }]
     })
-    .persist()
     .post(/^\/user\/(\w+)\/inbox$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -284,12 +284,10 @@ export const nockSetup = (domain) =>
       }
       return [202, 'accepted']
     })
-    .persist()
     .get(/^\/user\/(\w+)\/inbox$/)
     .reply(async function (uri, requestBody) {
       return [403, 'forbidden']
     })
-    .persist()
     .get(/^\/user\/(\w+)\/publickey$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -304,12 +302,11 @@ export const nockSetup = (domain) =>
         type: 'CryptographicKey',
         publicKeyPem: await getPublicKey(username, domain)
       })
-      const publicKeyText = await publicKey.prettyWrite(
+      const publicKeyText = await publicKey.write(
         { additional_context: 'https://w3id.org/security/v1' }
       )
       return [200, publicKeyText, { 'Content-Type': 'application/activity+json' }]
     })
-    .persist()
     .get(/^\/user\/(\w+)\/followers$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -328,12 +325,11 @@ export const nockSetup = (domain) =>
         totalItems: items.length,
         items
       })
-      const followersText = await followers.prettyWrite(
+      const followersText = await followers.write(
         { additional_context: 'https://w3id.org/fep/5711' }
       )
       return [200, followersText, { 'Content-Type': 'application/activity+json' }]
     })
-    .persist()
     .get(/^\/user\/(\w+)\/following$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -352,26 +348,30 @@ export const nockSetup = (domain) =>
         totalItems: items.length,
         items
       })
-      const followingText = await following.prettyWrite(
+      const followingText = await following.write(
         { additional_context: 'https://w3id.org/fep/5711' }
       )
       return [200, followingText, { 'Content-Type': 'application/activity+json' }]
     })
-    .persist()
     .get(/^\/user\/(\w+)\/collection\/(\d+)$/)
     .reply(async function (uri, requestBody) {
+      logger?.debug('Capturing request headers')
       captureRequestHeaders(domain, uri, this?.req)
+      logger?.debug('Matching parameters')
       const match = uri.match(/^\/user\/(\w+)\/collection\/(\d+)$/)
       const username = match[1]
       const type = 'Collection'
       const num = parseInt(match[2])
+      logger?.debug('Ensuring collection')
       const items = ensureCollection(domain, username, num)
+      logger?.debug('Making collection object')
       const summary = `${num} collection by ${username}`
       const obj = await makeObject(username, type, num, domain, { items, summary })
-      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      logger?.debug('Writing collection object to text')
+      const objText = await obj.write({ useOriginalContext: true })
+      logger?.debug('Sending output')
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })
-    .persist()
     .get(/^\/user\/(\w+)\/orderedcollection\/(\d+)$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -382,10 +382,9 @@ export const nockSetup = (domain) =>
       const orderedItems = ensureCollection(domain, username, num)
       const summary = `${num} ordered collection by ${username}`
       const obj = await makeObject(username, type, num, domain, { orderedItems, summary })
-      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      const objText = await obj.write({ useOriginalContext: true })
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })
-    .persist()
     .get(/^\/user\/(\w+)\/pagedcollection\/(\d+)$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -399,10 +398,9 @@ export const nockSetup = (domain) =>
         ? nockFormat({ username, domain, type: 'PagedCollection', num, page: 0 })
         : undefined
       const obj = await makeObject(username, type, num, domain, { totalItems, first })
-      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      const objText = await obj.write({ useOriginalContext: true })
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })
-    .persist()
     .get(/^\/user\/(\w+)\/pagedcollection\/(\d+)\/page\/(\d+)$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -417,10 +415,9 @@ export const nockSetup = (domain) =>
         ? nockFormat({ username, domain, type: 'PagedCollection', num, page: page + 1 })
         : undefined
       const obj = await makeObject(username, type, num, domain, { items, next })
-      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      const objText = await obj.write({ useOriginalContext: true })
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })
-    .persist()
     .get(/^\/user\/(\w+)\/pagedorderedcollection\/(\d+)$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -434,10 +431,9 @@ export const nockSetup = (domain) =>
         ? nockFormat({ username, domain, type: 'PagedOrderedCollection', num, page: 0 })
         : undefined
       const obj = await makeObject(username, type, num, domain, { totalItems, first })
-      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      const objText = await obj.write({ useOriginalContext: true })
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })
-    .persist()
     .get(/^\/user\/(\w+)\/pagedorderedcollection\/(\d+)\/page\/(\d+)$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -452,10 +448,9 @@ export const nockSetup = (domain) =>
         ? nockFormat({ username, domain, type: 'PagedOrderedCollection', num, page: page + 1 })
         : undefined
       const obj = await makeObject(username, type, num, domain, { orderedItems, next })
-      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      const objText = await obj.write({ useOriginalContext: true })
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })
-    .persist()
     .get(/^\/user\/(\w+)\/(\w+)\/(\d+)$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -464,10 +459,9 @@ export const nockSetup = (domain) =>
       const type = uppercase(match[2])
       const num = match[3]
       const obj = await makeObject(username, type, num, domain)
-      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      const objText = await obj.write({ useOriginalContext: true })
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })
-    .persist()
     .get(/^\/user\/(\w+)\/(\w+)\/(\d+)\/(.*)$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)

@@ -43,7 +43,7 @@ describe('ActivityPubClient', async () => {
     keyStorage = new KeyStorage(connection, logger)
     formatter = new UrlFormatter('https://activitypubbot.example')
     const remote = 'social.example'
-    nockSetup(remote)
+    nockSetup(remote, logger)
     for (let i = 0; i < maxItems; i++) {
       const id = nockFormat({ username: remoteUser, type: 'note', num: i })
       addToCollection(remoteUser, remoteCollection, id, remote)
