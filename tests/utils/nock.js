@@ -214,10 +214,27 @@ export const resetInbox = () => {
   }
 }
 
+const requestHeaders = new Map()
+
+export function getRequestHeaders (uri) {
+  return requestHeaders.get(uri)
+}
+
+export const resetRequestHeaders = () => {
+  requestHeaders.clear()
+}
+
+const captureRequestHeaders = (domain, uri, req) => {
+  const url = new URL(uri, `https://${domain}`).toString()
+  const headers = req?.headers || {}
+  requestHeaders.set(url, headers)
+}
+
 export const nockSetup = (domain) =>
   nock(`https://${domain}`)
     .get(/^\/.well-known\/webfinger/)
-    .reply(async (uri, requestBody) => {
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
       const parsed = new URL(uri, `https://${domain}`)
       const resource = parsed.searchParams.get('resource')
       if (!resource) {
@@ -239,7 +256,8 @@ export const nockSetup = (domain) =>
         { 'Content-Type': 'application/jrd+json' }]
     })
     .get(/^\/user\/(\w+)$/)
-    .reply(async (uri, requestBody) => {
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
       const username = uri.match(/^\/user\/(\w+)$/)[1]
       const actor = await makeActor(username, domain)
       const actorText = await actor.prettyWrite(
@@ -249,7 +267,8 @@ export const nockSetup = (domain) =>
     })
     .persist()
     .post(/^\/user\/(\w+)\/inbox$/)
-    .reply(async (uri, requestBody) => {
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
       const username = uri.match(/^\/user\/(\w+)\/inbox$/)[1]
       if (username in postInbox) {
         postInbox[username] += 1
@@ -259,8 +278,14 @@ export const nockSetup = (domain) =>
       return [202, 'accepted']
     })
     .persist()
+    .get(/^\/user\/(\w+)\/inbox$/)
+    .reply(async function (uri, requestBody) {
+      return [403, 'forbidden']
+    })
+    .persist()
     .get(/^\/user\/(\w+)\/publickey$/)
-    .reply(async (uri, requestBody) => {
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
       const username = uri.match(/^\/user\/(\w+)\/publickey$/)[1]
       const publicKey = await as2.import({
         '@context': [
@@ -279,7 +304,8 @@ export const nockSetup = (domain) =>
     })
     .persist()
     .get(/^\/user\/(\w+)\/followers$/)
-    .reply(async (uri, requestBody) => {
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
       const username = uri.match(/^\/user\/(\w+)\/followers$/)[1]
       const items = ensureGraph(domain, username).get('followers')
       const followers = await as2.import({
@@ -302,7 +328,8 @@ export const nockSetup = (domain) =>
     })
     .persist()
     .get(/^\/user\/(\w+)\/following$/)
-    .reply(async (uri, requestBody) => {
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
       const username = uri.match(/^\/user\/(\w+)\/following$/)[1]
       const items = ensureGraph(domain, username).get('following')
       const following = await as2.import({
@@ -325,7 +352,8 @@ export const nockSetup = (domain) =>
     })
     .persist()
     .get(/^\/user\/(\w+)\/(\w+)\/(\d+)$/)
-    .reply(async (uri, requestBody) => {
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
       const match = uri.match(/^\/user\/(\w+)\/(\w+)\/(\d+)$/)
       const username = match[1]
       const type = uppercase(match[2])
@@ -336,7 +364,8 @@ export const nockSetup = (domain) =>
     })
     .persist()
     .get(/^\/user\/(\w+)\/collection\/(\d+)$/)
-    .reply(async (uri, requestBody) => {
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
       const match = uri.match(/^\/user\/(\w+)\/(\w+)\/(\d+)$/)
       const username = match[1]
       const type = uppercase(match[2])
@@ -347,7 +376,8 @@ export const nockSetup = (domain) =>
     })
     .persist()
     .get(/^\/user\/(\w+)\/(\w+)\/(\d+)\/(.*)$/)
-    .reply(async (uri, requestBody) => {
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
       const match = uri.match(/^\/user\/(\w+)\/(\w+)\/(\d+)\/(.*)$/)
       const username = match[1]
       const type = match[2]
