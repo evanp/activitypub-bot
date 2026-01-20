@@ -1,7 +1,6 @@
 import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
 import { Sequelize } from 'sequelize'
-import { KeyStorage } from '../lib/keystorage.js'
 import { nockSetup, nockSignature, nockKeyRotate, getPublicKey, getPrivateKey, nockFormat } from './utils/nock.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
@@ -22,7 +21,6 @@ describe('HTTPSignature', async () => {
     connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     await connection.authenticate()
     await runMigrations(connection)
-    const keyStorage = new KeyStorage(connection, logger)
     nockSetup('social.example')
     digester = new Digester(logger)
   })
