@@ -13,6 +13,10 @@ describe('KeyStorage', async () => {
   let firstPrivateKey = null
   let secondPublicKey = null
   let secondPrivateKey = null
+  let firstSystemPublicKey = null
+  let firstSystemPrivateKey = null
+  let secondSystemPublicKey = null
+  let secondSystemPrivateKey = null
   before(async () => {
     connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     await connection.authenticate()
@@ -86,5 +90,35 @@ describe('KeyStorage', async () => {
     assert.ok(privateKey)
     assert.ok(privateKey2)
     assert.notEqual(privateKey, privateKey2)
+  })
+  it('can get a system public key', async () => {
+    firstSystemPublicKey = await storage.getPublicKey(null)
+    assert.ok(firstSystemPublicKey)
+    assert.equal(typeof firstSystemPublicKey, 'string')
+    assert.match(firstSystemPublicKey, /^-----BEGIN PUBLIC KEY-----\n/)
+    assert.match(firstSystemPublicKey, /-----END PUBLIC KEY-----\n$/)
+  })
+  it('can get a system public key again', async () => {
+    secondSystemPublicKey = await storage.getPublicKey(null)
+    assert.ok(secondSystemPublicKey)
+    assert.equal(typeof secondSystemPublicKey, 'string')
+    assert.match(secondSystemPublicKey, /^-----BEGIN PUBLIC KEY-----\n/)
+    assert.match(secondSystemPublicKey, /-----END PUBLIC KEY-----\n$/)
+    assert.equal(firstSystemPublicKey, secondSystemPublicKey)
+  })
+  it('can get a system private key', async () => {
+    firstSystemPrivateKey = await storage.getPrivateKey(null)
+    assert.ok(firstSystemPrivateKey)
+    assert.equal(typeof firstSystemPrivateKey, 'string')
+    assert.match(firstSystemPrivateKey, /^-----BEGIN PRIVATE KEY-----\n/)
+    assert.match(firstSystemPrivateKey, /-----END PRIVATE KEY-----\n$/)
+  })
+  it('can get a system private key again', async () => {
+    secondSystemPrivateKey = await storage.getPrivateKey(null)
+    assert.ok(secondSystemPrivateKey)
+    assert.equal(typeof secondSystemPrivateKey, 'string')
+    assert.match(secondSystemPrivateKey, /^-----BEGIN PRIVATE KEY-----\n/)
+    assert.match(secondSystemPrivateKey, /-----END PRIVATE KEY-----\n$/)
+    assert.equal(firstSystemPrivateKey, secondSystemPrivateKey)
   })
 })
