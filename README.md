@@ -43,11 +43,25 @@ It's also an [npm](https://npmjs.org/) package, [@evanp/activitypub-bot](https:/
 
 The server works as an ActivityPub server; bots appear as ActivityPub "actors".
 
-### Environment variables
+You can run it using `npx activitypub-bot`.
 
-The package can be configured with the following environment variables.
+### Command-line arguments
 
-#### DATABASE_URL
+The program can be configured with command-line arguments.
+
+```sh
+Usage: activitypub-bot [options]
+
+Options:
+  --database-url <url>       Database connection URL
+  --origin <url>             Public origin URL for the server
+  --port <number>            Port to listen on
+  --bots-config-file <path>  Path to bots config module
+  --log-level <level>        Log level (e.g., info, debug)
+  -h, --help                 Show this help
+```
+
+#### --database-url
 
 A [sequelize](https://sequelize.org) database URI for storing the server data. The default is 'sqlite::memory', which will store data in memory and lose the data when the process shuts down; you probably don't want that. The server comes with Postgres, MySQL, and SQLite libraries; you might need to install libraries if you're using some other dialect.
 
@@ -55,27 +69,33 @@ The URI format varies by database backend; see [Postgres](https://www.postgresql
 
 The server creates and alters tables at runtime; whatever user you use to connect should have rights to do those things.
 
-#### ORIGIN
+If unspecified, the server uses the environment variable `DATABASE_URL`.
+
+#### --origin
 
 The [origin](https://developer.mozilla.org/en-US/docs/Web/API/URL/origin) (protocol + hostname) for the server. This will only be used for formatting IDs, not for running the server. Use this if you're running the server
 behind a load balancer or inside a Kubernetes cluster.
 
-The default is 'https://activitypubbot.test', which doesn't work and probably isn't what you want.
+Falls back to the `ORIGIN` environment variable. The default is 'https://activitypubbot.test', which doesn't work and probably isn't what you want.
 
-#### PORT
+#### --port
 
-The [port](https://en.wikipedia.org/wiki/Port_(computer_networking)) number to listen on. This is only used for connection; URLs are created using [ORIGIN](#origin). Must be an integer number between 1 and 65535; the default is 9000.
+The [port](https://en.wikipedia.org/wiki/Port_(computer_networking)) number to listen on. This is only used for connection; URLs are created using [--origin](#--origin). Must be an integer number between 1 and 65535; the default is 9000.
 
-#### LOG_LEVEL
+Falls back to the `PORT` environment variable.
+
+#### --log-level
 
 The minimum [pino](https://getpino.io) [log level](https://getpino.io/#/docs/api?id=logger-level) to output. This can be `trace`, `debug`, `info`, `warn`, `error`, `fatal`, or `silent`. Whatever the log level is, messages with
 lower log levels won't appear in the logs. For example, if the log level is `info`, debug and trace log messages will be silently dropped. `silent` turns off logging altogether.
 
-The default is `info` (or `silent` when running unit tests).
+Falls back to `LOG_LEVEL` environment variable. The default is `info` (or `silent` when running unit tests).
 
-#### BOTS_CONFIG_FILE
+#### --bots-config-file
 
-The path to the [config file](#config_file) for this server, which defines the usernames and code for the bots for this server. The default is to use the shipped default bot config file, which defines an [OKBot](#okbot) named `ok` and a [DoNothingBot](#donothingbot) named `null`.
+The path to the [config file](#config-file) for this server, which defines the usernames and code for the bots for this server.
+
+Falls back to `BOTS_CONFIG_FILE` environment variable. The default is to use the shipped default bot config file, which defines an [OKBot](#okbot) named `ok` and a [DoNothingBot](#donothingbot) named `null`.
 
 ### Config file
 
