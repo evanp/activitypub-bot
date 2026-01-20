@@ -9,7 +9,13 @@ import Logger from 'pino'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 import { runMigrations } from '../lib/migrations/index.js'
-import { nockSetup, getRequestHeaders, resetRequestHeaders } from './utils/nock.js'
+import {
+  nockSetup,
+  getRequestHeaders,
+  resetRequestHeaders,
+  addToCollection,
+  nockFormat
+} from './utils/nock.js'
 
 describe('ActivityPubClient', async () => {
   let connection = null
@@ -19,6 +25,9 @@ describe('ActivityPubClient', async () => {
   let signer = null
   let digester = null
   let logger = null
+  const remoteUser = 'remote1'
+  const remoteCollection = 1
+  const maxItems = 10
   before(async () => {
     logger = new Logger({
       level: 'silent'
@@ -32,6 +41,10 @@ describe('ActivityPubClient', async () => {
     formatter = new UrlFormatter('https://activitypubbot.example')
     const remote = 'social.example'
     nockSetup(remote)
+    for (let i = 0; i < maxItems; i++) {
+      const id = nockFormat({ username: remoteUser, type: 'note', num: i })
+      addToCollection(remoteUser, remoteCollection, id, remote)
+    }
   })
   after(async () => {
     await connection.close()
@@ -126,5 +139,18 @@ describe('ActivityPubClient', async () => {
       assert.ok(error)
       assert.equal(error.status, 403)
     }
+  })
+  it('can iterate over a collection', async () => {
+    const collectionUri = nockFormat({
+      username: remoteUser,
+      type: 'Collection',
+      num: remoteCollection
+    })
+    let counter = 0
+    for await (const item of client.items(collectionUri)) {
+      assert.ok(item)
+      counter = counter + 1
+    }
+    assert.strictEqual(counter, maxItems)
   })
 })

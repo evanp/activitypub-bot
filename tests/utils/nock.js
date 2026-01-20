@@ -78,13 +78,16 @@ function ensureCollection (domain, username, collection) {
   if (!collections.has(domain)) {
     collections.set(domain, new Map())
   }
-  if (!collections.get(domain).has(username)) {
-    collections.get(domain).set(username, new Map())
+  const dc = collections.get(domain)
+  if (!dc.has(username)) {
+    dc.set(username, new Map())
   }
-  if (!collections.get(domain).get(username).has(collection)) {
-    collections.get(domain).get(username).set(collection, [])
+  const dcu = dc.get(username)
+  if (!dcu.has(collection)) {
+    dcu.set(collection, [])
   }
-  return collections.get(domain).get(username).get(collection)
+  const dcuc = dcu.get(collection)
+  return dcuc
 }
 
 export function addToCollection (username, collection, item, domain = defaultDomain) {
@@ -169,7 +172,8 @@ export async function makeObject (
   username,
   type,
   num,
-  domain = defaultDomain) {
+  domain = defaultDomain,
+  extra = {}) {
   const props = {
     '@context': [
       'https://www.w3.org/ns/activitystreams',
@@ -178,7 +182,8 @@ export async function makeObject (
     ],
     id: nockFormat({ username, type, num, domain }),
     type: uppercase(type),
-    to: 'as:Public'
+    to: 'as:Public',
+    ...extra
   }
   if (isActivityType(type)) {
     props.actor = nockFormat({ username, domain })
@@ -351,19 +356,21 @@ export const nockSetup = (domain) =>
       return [200, followingText, { 'Content-Type': 'application/activity+json' }]
     })
     .persist()
-    .get(/^\/user\/(\w+)\/(\w+)\/(\d+)$/)
+    .get(/^\/user\/(\w+)\/collection\/(\d+)$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
-      const match = uri.match(/^\/user\/(\w+)\/(\w+)\/(\d+)$/)
+      const match = uri.match(/^\/user\/(\w+)\/collection\/(\d+)$/)
       const username = match[1]
-      const type = uppercase(match[2])
-      const num = match[3]
-      const obj = await makeObject(username, type, num, domain)
+      const type = 'Collection'
+      const num = parseInt(match[2])
+      const items = ensureCollection(domain, username, num)
+      const summary = `${num} collection by ${username}`
+      const obj = await makeObject(username, type, num, domain, { items, summary })
       const objText = await obj.prettyWrite({ useOriginalContext: true })
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })
     .persist()
-    .get(/^\/user\/(\w+)\/collection\/(\d+)$/)
+    .get(/^\/user\/(\w+)\/(\w+)\/(\d+)$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
       const match = uri.match(/^\/user\/(\w+)\/(\w+)\/(\d+)$/)
