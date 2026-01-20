@@ -5,7 +5,14 @@ import request from 'supertest'
 
 import { makeApp } from '../lib/app.js'
 
-import { nockSetup, nockSignature, nockFormat, makeActor, addFollower } from './utils/nock.js'
+import {
+  nockSetup,
+  nockSignature,
+  nockFormat,
+  makeActor,
+  addFollower,
+  addFollowing
+} from './utils/nock.js'
 import { makeDigest } from './utils/digest.js'
 import bots from './fixtures/bots.js'
 
@@ -295,6 +302,70 @@ describe('routes.sharedinbox', async () => {
           username: followingBot,
           collection: 'following'
         })
+      })
+      body = await activity.write()
+      digest = makeDigest(body)
+      signature = await nockSignature({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date
+      })
+    })
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should appear in all inboxes', async () => {
+      for (const botName of botNames) {
+        assert.strictEqual(
+          true,
+          await actorStorage.isInCollection(
+            botName,
+            'inbox',
+            activity
+          )
+        )
+      }
+    })
+  })
+
+  describe('can handle an activity to remote following collection', async () => {
+    const username = 'actor6'
+    const botNames = ['test10', 'test11', 'test12']
+    const path = '/shared/inbox'
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    let response = null
+    let signature = null
+    let body = null
+    let digest = null
+    let activity = null
+    let actor = null
+    before(async () => {
+      actor = await makeActor(username, remoteHost)
+      for (const botName of botNames) {
+        const botId = formatter.format({ username: botName })
+        addFollowing(username, botId, remoteHost)
+        await actorStorage.addToCollection(botName, 'followers', actor)
+      }
+      activity = await as2.import({
+        type: 'Activity',
+        actor: actor.id,
+        id: nockFormat({ username, type: 'activity', num: 1 }),
+        to: nockFormat({ username, collection: 'following' })
       })
       body = await activity.write()
       digest = makeDigest(body)
