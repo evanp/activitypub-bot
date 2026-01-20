@@ -28,10 +28,12 @@ describe('ActivityPubClient', async () => {
   const remoteUser = 'remote1'
   const remoteCollection = 1
   const remoteOrderedCollection = 2
+  const remotePagedCollection = 3
+  const remotePagedOrderedCollection = 4
   const maxItems = 10
   before(async () => {
     logger = new Logger({
-      level: 'debug'
+      level: 'silent'
     })
     digester = new Digester(logger)
     signer = new HTTPSignature(logger)
@@ -49,6 +51,14 @@ describe('ActivityPubClient', async () => {
     for (let i = maxItems; i < 2 * maxItems; i++) {
       const id = nockFormat({ username: remoteUser, type: 'note', num: i })
       addToCollection(remoteUser, remoteOrderedCollection, id, remote)
+    }
+    for (let i = 2 * maxItems; i < 7 * maxItems; i++) {
+      const id = nockFormat({ username: remoteUser, type: 'note', num: i })
+      addToCollection(remoteUser, remotePagedCollection, id, remote)
+    }
+    for (let i = 7 * maxItems; i < 12 * maxItems; i++) {
+      const id = nockFormat({ username: remoteUser, type: 'note', num: i })
+      addToCollection(remoteUser, remotePagedOrderedCollection, id, remote)
     }
   })
   after(async () => {
@@ -170,5 +180,31 @@ describe('ActivityPubClient', async () => {
       counter = counter + 1
     }
     assert.strictEqual(counter, maxItems)
+  })
+  it('can iterate over a paged Collection', async () => {
+    const collectionUri = nockFormat({
+      username: remoteUser,
+      type: 'PagedCollection', // Fake type
+      num: remotePagedCollection
+    })
+    let counter = 0
+    for await (const item of client.items(collectionUri)) {
+      assert.ok(item)
+      counter = counter + 1
+    }
+    assert.strictEqual(counter, 5 * maxItems)
+  })
+  it('can iterate over a paged OrderedCollection', async () => {
+    const collectionUri = nockFormat({
+      username: remoteUser,
+      type: 'PagedOrderedCollection', // Fake type
+      num: remotePagedOrderedCollection
+    })
+    let counter = 0
+    for await (const item of client.items(collectionUri)) {
+      assert.ok(item)
+      counter = counter + 1
+    }
+    assert.strictEqual(counter, 5 * maxItems)
   })
 })

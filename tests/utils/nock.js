@@ -3,6 +3,8 @@ import nock from 'nock'
 import crypto from 'node:crypto'
 import { promisify } from 'node:util'
 
+const PAGE_SIZE = 20
+
 const generateKeyPair = promisify(crypto.generateKeyPair)
 
 const defaultDomain = 'social.example'
@@ -384,6 +386,76 @@ export const nockSetup = (domain) =>
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })
     .persist()
+    .get(/^\/user\/(\w+)\/pagedcollection\/(\d+)$/)
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
+      const match = uri.match(/^\/user\/(\w+)\/pagedcollection\/(\d+)$/)
+      const username = match[1]
+      const type = 'Collection'
+      const num = parseInt(match[2])
+      const items = ensureCollection(domain, username, num)
+      const totalItems = items.length
+      const first = (totalItems > 0)
+        ? nockFormat({ username, domain, type: 'PagedCollection', num, page: 0 })
+        : undefined
+      const obj = await makeObject(username, type, num, domain, { totalItems, first })
+      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      return [200, objText, { 'Content-Type': 'application/activity+json' }]
+    })
+    .persist()
+    .get(/^\/user\/(\w+)\/pagedcollection\/(\d+)\/page\/(\d+)$/)
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
+      const match = uri.match(/^\/user\/(\w+)\/pagedcollection\/(\d+)\/page\/(\d+)$/)
+      const username = match[1]
+      const type = 'CollectionPage'
+      const num = parseInt(match[2])
+      const page = parseInt(match[3])
+      const allItems = ensureCollection(domain, username, num)
+      const items = allItems.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+      const next = (allItems.length > (page + 1) * PAGE_SIZE)
+        ? nockFormat({ username, domain, type: 'PagedCollection', num, page: page + 1 })
+        : undefined
+      const obj = await makeObject(username, type, num, domain, { items, next })
+      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      return [200, objText, { 'Content-Type': 'application/activity+json' }]
+    })
+    .persist()
+    .get(/^\/user\/(\w+)\/pagedorderedcollection\/(\d+)$/)
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
+      const match = uri.match(/^\/user\/(\w+)\/pagedorderedcollection\/(\d+)$/)
+      const username = match[1]
+      const type = 'OrderedCollection'
+      const num = parseInt(match[2])
+      const items = ensureCollection(domain, username, num)
+      const totalItems = items.length
+      const first = (totalItems > 0)
+        ? nockFormat({ username, domain, type: 'PagedOrderedCollection', num, page: 0 })
+        : undefined
+      const obj = await makeObject(username, type, num, domain, { totalItems, first })
+      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      return [200, objText, { 'Content-Type': 'application/activity+json' }]
+    })
+    .persist()
+    .get(/^\/user\/(\w+)\/pagedorderedcollection\/(\d+)\/page\/(\d+)$/)
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
+      const match = uri.match(/^\/user\/(\w+)\/pagedorderedcollection\/(\d+)\/page\/(\d+)$/)
+      const username = match[1]
+      const type = 'OrderedCollectionPage'
+      const num = parseInt(match[2])
+      const page = parseInt(match[3])
+      const allItems = ensureCollection(domain, username, num)
+      const orderedItems = allItems.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+      const next = (allItems.length > (page + 1) * PAGE_SIZE)
+        ? nockFormat({ username, domain, type: 'PagedOrderedCollection', num, page: page + 1 })
+        : undefined
+      const obj = await makeObject(username, type, num, domain, { orderedItems, next })
+      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      return [200, objText, { 'Content-Type': 'application/activity+json' }]
+    })
+    .persist()
     .get(/^\/user\/(\w+)\/(\w+)\/(\d+)$/)
     .reply(async function (uri, requestBody) {
       captureRequestHeaders(domain, uri, this?.req)
@@ -409,7 +481,7 @@ export const nockSetup = (domain) =>
       return [200, actText, { 'Content-Type': 'application/activity+json' }]
     })
 
-export function nockFormat ({ username, type, num, obj, key, collection, domain = defaultDomain }) {
+export function nockFormat ({ username, type, num, obj, key, collection, page, domain = defaultDomain }) {
   let url = `https://${domain}/user/${username}`
   if (key) {
     url = `${url}/publickey`
@@ -424,6 +496,8 @@ export function nockFormat ({ username, type, num, obj, key, collection, domain 
         } else {
           url = `${url}/${obj}`
         }
+      } else if (typeof page === 'number') {
+        url = `${url}/page/${page}`
       }
     }
   }
