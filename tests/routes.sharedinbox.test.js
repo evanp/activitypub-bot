@@ -11,7 +11,8 @@ import {
   nockFormat,
   makeActor,
   addFollower,
-  addFollowing
+  addFollowing,
+  addToCollection
 } from './utils/nock.js'
 import { makeDigest } from './utils/digest.js'
 import bots from './fixtures/bots.js'
@@ -366,6 +367,70 @@ describe('routes.sharedinbox', async () => {
         actor: actor.id,
         id: nockFormat({ username, type: 'activity', num: 1 }),
         to: nockFormat({ username, collection: 'following' })
+      })
+      body = await activity.write()
+      digest = makeDigest(body)
+      signature = await nockSignature({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date
+      })
+    })
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should appear in all inboxes', async () => {
+      for (const botName of botNames) {
+        assert.strictEqual(
+          true,
+          await actorStorage.isInCollection(
+            botName,
+            'inbox',
+            activity
+          )
+        )
+      }
+    })
+  })
+
+  describe('can handle an activity to remote actor collection', async () => {
+    const username = 'actor7'
+    const botNames = ['test13', 'test14', 'test15']
+    const path = '/shared/inbox'
+    const url = `${origin}${path}`
+    const collection = 1
+    const date = new Date().toUTCString()
+    let response = null
+    let signature = null
+    let body = null
+    let digest = null
+    let activity = null
+    let actor = null
+    before(async () => {
+      actor = await makeActor(username, remoteHost)
+      for (const botName of botNames) {
+        const botId = formatter.format({ username: botName })
+        addToCollection(username, collection, botId, remoteHost)
+      }
+      activity = await as2.import({
+        type: 'Activity',
+        actor: actor.id,
+        id: nockFormat({ username, type: 'activity', num: 1 }),
+        to: nockFormat({ username, type: 'collection', num: collection })
       })
       body = await activity.write()
       digest = makeDigest(body)
