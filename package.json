@@ -3,13 +3,13 @@
   "version": "0.10.0",
   "description": "server-side ActivityPub bot framework",
   "type": "module",
-  "main": "bot-server.js",
+  "main": "activitypub-bot.js",
   "bin": {
-    "bot-server": "./bot-server.js"
+    "activitypub-bot": "./activitypub-bot.js"
   },
   "scripts": {
     "test": "NODE_ENV=test node --test",
-    "start": "node index.js"
+    "start": "npx activitypub-bot"
   },
   "repository": {
     "type": "git",
