@@ -5,11 +5,16 @@ import { promisify } from 'node:util'
 
 const generateKeyPair = promisify(crypto.generateKeyPair)
 
+const defaultDomain = 'social.example'
+
 const domains = new Map()
-domains['social.example'] = new Map()
+domains[defaultDomain] = new Map()
 
 const graph = new Map()
-graph['social.example'] = new Map()
+graph[defaultDomain] = new Map()
+
+const collections = new Map()
+collections[defaultDomain] = new Map()
 
 const newKeyPair = async () => {
   return await generateKeyPair(
@@ -28,7 +33,7 @@ const newKeyPair = async () => {
   )
 }
 
-export const getPair = async (username, domain = 'social.example') => {
+export const getPair = async (username, domain = defaultDomain) => {
   if (!domains.has(domain)) {
     domains.set(domain, new Map())
   }
@@ -39,12 +44,12 @@ export const getPair = async (username, domain = 'social.example') => {
   return domains.get(domain).get(username)
 }
 
-export const getPublicKey = async (username, domain = 'social.example') => {
+export const getPublicKey = async (username, domain = defaultDomain) => {
   const pair = await getPair(username, domain)
   return pair.publicKey
 }
 
-export const getPrivateKey = async (username, domain = 'social.example') => {
+export const getPrivateKey = async (username, domain = defaultDomain) => {
   const pair = await getPair(username, domain)
   return pair.privateKey
 }
@@ -61,15 +66,32 @@ function ensureGraph (domain, username) {
   return graph.get(domain).get(username)
 }
 
-export function addFollower (username, id, domain = 'social.example') {
+export function addFollower (username, id, domain = defaultDomain) {
   ensureGraph(domain, username).get('followers').unshift(id)
 }
 
-export function addFollowing (username, id, domain = 'social.example') {
+export function addFollowing (username, id, domain = defaultDomain) {
   ensureGraph(domain, username).get('following').unshift(id)
 }
 
-export const nockSignature = async ({ method = 'GET', url, date, digest = null, username, domain = 'social.example' }) => {
+function ensureCollection (domain, username, collection) {
+  if (!collections.has(domain)) {
+    collections.set(domain, new Map())
+  }
+  if (!collections.get(domain).has(username)) {
+    collections.get(domain).set(username, new Map())
+  }
+  if (!collections.get(domain).get(username).has(collection)) {
+    collections.get(domain).get(username).set(collection, [])
+  }
+  return collections.get(domain).get(username).get(collection)
+}
+
+export function addToCollection (username, collection, item, domain = defaultDomain) {
+  ensureCollection(domain, username, collection).unshift(item)
+}
+
+export const nockSignature = async ({ method = 'GET', url, date, digest = null, username, domain = defaultDomain }) => {
   const privateKey = await getPrivateKey(username, domain)
   const keyId = nockFormat({ username, key: true, domain })
   const parsed = new URL(url)
@@ -89,7 +111,7 @@ export const nockSignature = async ({ method = 'GET', url, date, digest = null, 
   return `keyId="${keyId}",headers="(request-target) host date${(digest) ? ' digest' : ''}",signature="${signature.replace(/"/g, '\\"')}",algorithm="rsa-sha256"`
 }
 
-export const nockSignatureFragment = async ({ method = 'GET', url, date, digest = null, username, domain = 'social.example' }) => {
+export const nockSignatureFragment = async ({ method = 'GET', url, date, digest = null, username, domain = defaultDomain }) => {
   const keyId = nockFormat({ username, domain }) + '#main-key'
   const privateKey = await getPrivateKey(username, domain)
   const parsed = new URL(url)
@@ -109,10 +131,10 @@ export const nockSignatureFragment = async ({ method = 'GET', url, date, digest 
   return `keyId="${keyId}",headers="(request-target) host date${(digest) ? ' digest' : ''}",signature="${signature.replace(/"/g, '\\"')}",algorithm="rsa-sha256"`
 }
 
-export const nockKeyRotate = async (username, domain = 'social.example') =>
+export const nockKeyRotate = async (username, domain = defaultDomain) =>
   domains.get(domain).set(username, await newKeyPair(username))
 
-export const makeActor = async (username, domain = 'social.example') =>
+export const makeActor = async (username, domain = defaultDomain) =>
   await as2.import({
     '@context': [
       'https://www.w3.org/ns/activitystreams',
@@ -147,7 +169,7 @@ export async function makeObject (
   username,
   type,
   num,
-  domain = 'social.example') {
+  domain = defaultDomain) {
   const props = {
     '@context': [
       'https://www.w3.org/ns/activitystreams',
@@ -172,7 +194,7 @@ export async function makeObject (
   return as2.import(props)
 }
 
-export const makeTransitive = (username, type, num, obj, domain = 'social.example') =>
+export const makeTransitive = (username, type, num, obj, domain = defaultDomain) =>
   as2.import({
     id: nockFormat({ username, type, num, obj, domain }),
     type: uppercase(type),
@@ -313,6 +335,17 @@ export const nockSetup = (domain) =>
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })
     .persist()
+    .get(/^\/user\/(\w+)\/collection\/(\d+)$/)
+    .reply(async (uri, requestBody) => {
+      const match = uri.match(/^\/user\/(\w+)\/(\w+)\/(\d+)$/)
+      const username = match[1]
+      const type = uppercase(match[2])
+      const num = match[3]
+      const obj = await makeObject(username, type, num, domain)
+      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      return [200, objText, { 'Content-Type': 'application/activity+json' }]
+    })
+    .persist()
     .get(/^\/user\/(\w+)\/(\w+)\/(\d+)\/(.*)$/)
     .reply(async (uri, requestBody) => {
       const match = uri.match(/^\/user\/(\w+)\/(\w+)\/(\d+)\/(.*)$/)
@@ -325,7 +358,7 @@ export const nockSetup = (domain) =>
       return [200, actText, { 'Content-Type': 'application/activity+json' }]
     })
 
-export function nockFormat ({ username, type, num, obj, key, collection, domain = 'social.example' }) {
+export function nockFormat ({ username, type, num, obj, key, collection, domain = defaultDomain }) {
   let url = `https://${domain}/user/${username}`
   if (key) {
     url = `${url}/publickey`
