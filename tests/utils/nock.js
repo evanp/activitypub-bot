@@ -209,7 +209,7 @@ export const makeTransitive = (username, type, num, obj, domain = defaultDomain)
   })
 
 const uppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1)
-const lowercase = (str) => str.charAt(0).toLowerCase() + str.slice(1)
+const lowercase = (str) => str.toLowerCase()
 
 export const postInbox = {}
 
@@ -366,6 +366,20 @@ export const nockSetup = (domain) =>
       const items = ensureCollection(domain, username, num)
       const summary = `${num} collection by ${username}`
       const obj = await makeObject(username, type, num, domain, { items, summary })
+      const objText = await obj.prettyWrite({ useOriginalContext: true })
+      return [200, objText, { 'Content-Type': 'application/activity+json' }]
+    })
+    .persist()
+    .get(/^\/user\/(\w+)\/orderedcollection\/(\d+)$/)
+    .reply(async function (uri, requestBody) {
+      captureRequestHeaders(domain, uri, this?.req)
+      const match = uri.match(/^\/user\/(\w+)\/orderedcollection\/(\d+)$/)
+      const username = match[1]
+      const type = 'OrderedCollection'
+      const num = parseInt(match[2])
+      const orderedItems = ensureCollection(domain, username, num)
+      const summary = `${num} ordered collection by ${username}`
+      const obj = await makeObject(username, type, num, domain, { orderedItems, summary })
       const objText = await obj.prettyWrite({ useOriginalContext: true })
       return [200, objText, { 'Content-Type': 'application/activity+json' }]
     })

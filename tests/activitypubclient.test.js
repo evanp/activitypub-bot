@@ -27,10 +27,11 @@ describe('ActivityPubClient', async () => {
   let logger = null
   const remoteUser = 'remote1'
   const remoteCollection = 1
+  const remoteOrderedCollection = 2
   const maxItems = 10
   before(async () => {
     logger = new Logger({
-      level: 'silent'
+      level: 'debug'
     })
     digester = new Digester(logger)
     signer = new HTTPSignature(logger)
@@ -44,6 +45,10 @@ describe('ActivityPubClient', async () => {
     for (let i = 0; i < maxItems; i++) {
       const id = nockFormat({ username: remoteUser, type: 'note', num: i })
       addToCollection(remoteUser, remoteCollection, id, remote)
+    }
+    for (let i = maxItems; i < 2 * maxItems; i++) {
+      const id = nockFormat({ username: remoteUser, type: 'note', num: i })
+      addToCollection(remoteUser, remoteOrderedCollection, id, remote)
     }
   })
   after(async () => {
@@ -140,11 +145,24 @@ describe('ActivityPubClient', async () => {
       assert.equal(error.status, 403)
     }
   })
-  it('can iterate over a collection', async () => {
+  it('can iterate over a Collection', async () => {
     const collectionUri = nockFormat({
       username: remoteUser,
       type: 'Collection',
       num: remoteCollection
+    })
+    let counter = 0
+    for await (const item of client.items(collectionUri)) {
+      assert.ok(item)
+      counter = counter + 1
+    }
+    assert.strictEqual(counter, maxItems)
+  })
+  it('can iterate over an OrderedCollection', async () => {
+    const collectionUri = nockFormat({
+      username: remoteUser,
+      type: 'OrderedCollection',
+      num: remoteOrderedCollection
     })
     let counter = 0
     for await (const item of client.items(collectionUri)) {
