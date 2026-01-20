@@ -3,7 +3,6 @@ import { Authorizer } from '../lib/authorizer.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { Sequelize } from 'sequelize'
 import { UrlFormatter } from '../lib/urlformatter.js'
-import { ObjectStorage } from '../lib/objectstorage.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import as2 from '../lib/activitystreams.js'
@@ -19,7 +18,6 @@ describe('Authorizer', () => {
   let actorStorage = null
   let formatter = null
   let connection = null
-  let objectStorage = null
   let keyStorage = null
   let client = null
 
@@ -44,7 +42,6 @@ describe('Authorizer', () => {
     await connection.authenticate()
     await runMigrations(connection)
     actorStorage = new ActorStorage(connection, formatter)
-    objectStorage = new ObjectStorage(connection)
     keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
@@ -133,7 +130,6 @@ describe('Authorizer', () => {
     actorStorage = null
     connection = null
     authorizer = null
-    objectStorage = null
   })
 
   it('should be a class', async () => {
