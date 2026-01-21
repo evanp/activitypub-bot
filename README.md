@@ -268,6 +268,10 @@ Sends a `Like` activity for the passed-in object in [activitystrea.ms](#activity
 
 Sends an `Undo`/`Like` activity for the passed-in object in [activitystrea.ms](#activitystreams) form which was previously liked.
 
+#### async announceObject (obj)
+
+Sends an `Announce` activity for the passed-in object in [activitystrea.ms](#activitystreams) form to followers.
+
 #### async followActor (actor)
 
 Sends a `Follow` activity for the passed-in actor in [activitystrea.ms](#activitystreams) form.
