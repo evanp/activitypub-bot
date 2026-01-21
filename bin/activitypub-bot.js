@@ -3,7 +3,7 @@
 import { parseArgs } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
-import { makeApp } from './lib/app.js'
+import { makeApp } from '../lib/app.js'
 
 const { values } = parseArgs({
   options: {
@@ -39,7 +39,7 @@ const parsePort = (value) => {
 }
 
 const baseDir = dirname(fileURLToPath(import.meta.url))
-const DEFAULT_BOTS_CONFIG_FILE = resolve(baseDir, 'bots', 'index.js')
+const DEFAULT_BOTS_CONFIG_FILE = resolve(baseDir, '..', 'bots', 'index.js')
 
 const DATABASE_URL = normalize(values['database-url']) || process.env.DATABASE_URL || 'sqlite::memory:'
 const ORIGIN = normalize(values.origin) || process.env.ORIGIN || 'https://activitypubbot.test'
