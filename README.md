@@ -194,6 +194,10 @@ Called when one of the bot's objects is liked by another actor. The first argume
 
 Called when the server receives a public activity to its shared inbox. This can be used to skim through ActivityPub network content.
 
+#### async onAnnounce (object, activity)
+
+Called when one of the bot's objects is shared by another actor. The first argument is the object, and the second is the `Announce` activity itself. This method is called after the activity has been added to the `shares` collection.
+
 ### BotFactory
 
 The BotFactory interface lets you have a lot of bots that act in a similar way without declaring them explicitly in the bots config file.
