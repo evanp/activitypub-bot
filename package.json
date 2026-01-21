@@ -3,9 +3,9 @@
   "version": "0.11.0",
   "description": "server-side ActivityPub bot framework",
   "type": "module",
-  "main": "activitypub-bot.js",
+  "main": "lib/index.js",
   "bin": {
-    "activitypub-bot": "./activitypub-bot.js"
+    "activitypub-bot": "./bin/activitypub-bot.js"
   },
   "scripts": {
     "test": "NODE_ENV=test node --test",
