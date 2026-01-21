@@ -6,13 +6,12 @@ RUN apk add --no-cache libstdc++ sqlite sqlite-libs
 
 ARG PACKAGE_VERSION
 
-ENV DATABASE_URL \
-    ORIGIN \
-    PORT \
-    BOTS_CONFIG_FILE \
-    LOG_LEVEL
+ENV DATABASE_URL=
+ENV ORIGIN=
+ENV PORT=
+ENV BOTS_CONFIG_FILE=
+ENV LOG_LEVEL=
 
-RUN npm init -y \
-  && npm install --omit=dev @evanp/activitypub-bot@${PACKAGE_VERSION:-latest}
+RUN npm install -g @evanp/activitypub-bot@${PACKAGE_VERSION:-latest}
 
-CMD ["npx", "activitypub-bot"]
+CMD ["activitypub-bot"]
