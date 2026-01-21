@@ -5,6 +5,7 @@ export default class EventLoggingBot extends Bot {
   #mentions = new Map()
   #likes = new Map()
   #publics = new Map()
+  #shares = new Map()
 
   get fullname () {
     return 'Event-logging bot'
@@ -30,6 +31,10 @@ export default class EventLoggingBot extends Bot {
     this.#publics.set(activity.id, activity)
   }
 
+  async onAnnounce (object, activity) {
+    this.#shares.set(activity.id, activity)
+  }
+
   get follows () {
     return this.#follows
   }
@@ -44,5 +49,9 @@ export default class EventLoggingBot extends Bot {
 
   get publics () {
     return this.#publics
+  }
+
+  get shares () {
+    return this.#shares
   }
 }

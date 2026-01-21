@@ -1080,6 +1080,34 @@ describe('ActivityHandler', () => {
       await objectStorage.isInCollection(note.id, 'shares', activity2)
     )
   })
+  it('notifies the bot on an announce activity', async () => {
+    const actor = await makeActor('announcer9')
+    const note = await as2.import({
+      attributedTo: lbId,
+      id: formatter.format({
+        username: loggerBotName,
+        type: 'note',
+        nanoid: 'LNCVgovrjpA6oSKnGDax2'
+      }),
+      type: 'Note',
+      content: 'Hello, world!',
+      to: 'as:Public'
+    })
+    await objectStorage.create(note)
+    const activity = await as2.import({
+      type: 'Announce',
+      actor: actor.id,
+      id: nockFormat({
+        username: 'announcer9',
+        type: 'Announce',
+        nanoid: 'LmVvlEBHNf2X6nfgzMe6F'
+      }),
+      object: note.id,
+      to: [lbId, 'as:Public']
+    })
+    await handler.handleActivity(lb, activity)
+    assert.ok(lb.shares.has(activity.id))
+  })
   it('can handle a block activity', async () => {
     const actor = await makeActor('blocker1')
     await actorStorage.addToCollection(botName, 'followers', actor)
