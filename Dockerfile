@@ -11,6 +11,7 @@ ENV ORIGIN=
 ENV PORT=
 ENV BOTS_CONFIG_FILE=
 ENV LOG_LEVEL=
+ENV NODE_PATH=/usr/local/lib/node_modules
 
 RUN npm install -g @evanp/activitypub-bot@${PACKAGE_VERSION:-latest}
 
