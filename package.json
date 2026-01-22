@@ -5,7 +5,7 @@
   "type": "module",
   "main": "lib/index.js",
   "bin": {
-    "activitypub-bot": "./bin/activitypub-bot.js"
+    "activitypub-bot": "bin/activitypub-bot.js"
   },
   "scripts": {
     "test": "NODE_ENV=test node --test",
