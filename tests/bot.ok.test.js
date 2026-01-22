@@ -98,4 +98,89 @@ describe('OK bot', async () => {
       )
     })
   })
+
+  describe('responds to a mention in public inbox', async () => {
+    const username = 'actor3'
+    const path = '/shared/inbox'
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    let activity
+    let body
+    let digest
+    let signature
+    let response
+    let reply = null
+    let note = null
+    before(async () => {
+      activity = await as2.import({
+        type: 'Create',
+        actor: nockFormat({ username }),
+        id: nockFormat({ username, type: 'create', num: 1 }),
+        object: {
+          id: nockFormat({ username, type: 'note', num: 1 }),
+          type: 'Note',
+          source: 'Hello, @ok!',
+          content: `Hello, @<a href="${origin}/user/ok">ok</a>!`,
+          to: `${origin}/user/ok`,
+          cc: 'as:Public',
+          attributedTo: nockFormat({ username }),
+          tag: [
+            {
+              type: 'Mention',
+              href: `${origin}/user/ok`,
+              name: `@ok@${host}`
+            }
+          ]
+        },
+        to: `${origin}/user/ok`,
+        cc: 'as:Public'
+      })
+      body = await activity.write()
+      digest = makeDigest(body)
+      signature = await nockSignature({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date
+      })
+    })
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200, JSON.stringify(response.body))
+    })
+    it('should deliver the reply to the mentioned actor', async () => {
+      assert.strictEqual(postInbox[username], 1)
+    })
+    it('should have the reply in its outbox', async () => {
+      const { actorStorage, objectStorage } = app.locals
+      const outbox = await actorStorage.getCollection('ok', 'outbox')
+      assert.strictEqual(outbox.totalItems, 2)
+      const outboxPage = await actorStorage.getCollectionPage('ok', 'outbox', 1)
+      assert.strictEqual(outboxPage.items.length, 2)
+      const arry = Array.from(outboxPage.items)
+      reply = await objectStorage.read(arry[0].id)
+      assert.ok(reply)
+      const objects = Array.from(reply.object)
+      note = await objectStorage.read(objects[0].id)
+      assert.ok(note)
+    })
+    it('should have the inReplyTo property', async () => {
+      assert.strictEqual(
+        Array.from(note.inReplyTo)[0].id,
+        Array.from(activity.object)[0].id
+      )
+    })
+  })
 })
