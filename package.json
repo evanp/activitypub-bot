@@ -30,7 +30,7 @@
   "dependencies": {
     "@isaacs/ttlcache": "^2.1.4",
     "activitystrea.ms": "3.2",
-    "express": "^4.22.1",
+    "express": "^5.2.1",
     "http-errors": "^2.0.0",
     "humanhash": "^1.0.4",
     "lru-cache": "^11.1.0",
