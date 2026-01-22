@@ -14,5 +14,6 @@ ENV LOG_LEVEL=
 ENV NODE_PATH=/usr/local/lib/node_modules
 
 RUN npm install -g @evanp/activitypub-bot@${PACKAGE_VERSION:-latest}
+RUN ln -s /usr/local/lib/node_modules /app/node_modules
 
 CMD ["activitypub-bot"]
