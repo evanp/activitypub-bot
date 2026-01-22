@@ -9,6 +9,15 @@ import { nockSetup, nockSignature, nockFormat, postInbox } from './utils/nock.js
 import { makeDigest } from './utils/digest.js'
 import bots from './fixtures/bots.js'
 
+async function asyncSome(array, asyncPredicate) {
+  for (let i = 0; i < array.length; i++) {
+    if (await asyncPredicate(array[i], i, array)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 describe('OK bot', async () => {
   const host = 'activitypubbot.example'
   const origin = `https://${host}`
@@ -85,17 +94,12 @@ describe('OK bot', async () => {
       const outboxPage = await actorStorage.getCollectionPage('ok', 'outbox', 1)
       assert.strictEqual(outboxPage.items.length, 1)
       const arry = Array.from(outboxPage.items)
-      reply = await objectStorage.read(arry[0].id)
-      assert.ok(reply)
-      const objects = Array.from(reply.object)
-      note = await objectStorage.read(objects[0].id)
-      assert.ok(note)
-    })
-    it('should have the inReplyTo property', async () => {
-      assert.strictEqual(
-        Array.from(note.inReplyTo)[0].id,
-        Array.from(activity.object)[0].id
-      )
+      assert.ok(await asyncSome(arry, async item => {
+        const act = await objectStorage.read(item.id)
+        const objects = Array.from(act.object)
+        const note = await objectStorage.read(objects[0].id)
+        return Array.from(note.inReplyTo)[0].id === Array.from(activity.object)[0].id
+      }))
     })
   })
 
@@ -170,17 +174,12 @@ describe('OK bot', async () => {
       const outboxPage = await actorStorage.getCollectionPage('ok', 'outbox', 1)
       assert.strictEqual(outboxPage.items.length, 2)
       const arry = Array.from(outboxPage.items)
-      reply = await objectStorage.read(arry[0].id)
-      assert.ok(reply)
-      const objects = Array.from(reply.object)
-      note = await objectStorage.read(objects[0].id)
-      assert.ok(note)
-    })
-    it('should have the inReplyTo property', async () => {
-      assert.strictEqual(
-        Array.from(note.inReplyTo)[0].id,
-        Array.from(activity.object)[0].id
-      )
+      assert.ok(await asyncSome(arry, async item => {
+        const act = await objectStorage.read(item.id)
+        const objects = Array.from(act.object)
+        const note = await objectStorage.read(objects[0].id)
+        return Array.from(note.inReplyTo)[0].id === Array.from(activity.object)[0].id
+      }))
     })
   })
 })
