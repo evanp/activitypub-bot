@@ -20,6 +20,86 @@ describe('routes.inbox', async () => {
     app = await makeApp(databaseUrl, origin, bots, 'silent')
   })
 
+  describe('GET /user/{botid}/inbox', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get('/user/ok/inbox')
+    })
+    it('should return 403 Forbidden', async () => {
+      assert.strictEqual(response.status, 403)
+    })
+    it('should return Problem Details JSON', async () => {
+      assert.strictEqual(response.type, 'application/problem+json')
+    })
+    it('should return an object', async () => {
+      assert.strictEqual(typeof response.body, 'object')
+    })
+    it('should return an object with a type', async () => {
+      assert.strictEqual(typeof response.body.type, 'string')
+    })
+    it('should return an object with an type matching the request', async () => {
+      assert.strictEqual(response.body.type, 'about:blank')
+    })
+    it('should return an object with a title', async () => {
+      assert.strictEqual(typeof response.body.title, 'string')
+    })
+    it('should return an object with a title matching the request', async () => {
+      assert.strictEqual(response.body.title, 'Forbidden')
+    })
+    it('should return an object with a status', async () => {
+      assert.strictEqual(typeof response.body.status, 'number')
+    })
+    it('should return an object with a status matching the request', async () => {
+      assert.strictEqual(response.body.status, 403)
+    })
+    it('should return an object with a detail', async () => {
+      assert.strictEqual(typeof response.body.detail, 'string')
+    })
+    it('should return an object with a detail matching the request', async () => {
+      assert.strictEqual(response.body.detail, 'No access to inbox collection')
+    })
+  })
+
+  describe('GET /user/{botid}/inbox/1', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get('/user/ok/inbox/1')
+    })
+    it('should return 403 Forbidden', async () => {
+      assert.strictEqual(response.status, 403)
+    })
+    it('should return Problem Details JSON', async () => {
+      assert.strictEqual(response.type, 'application/problem+json')
+    })
+    it('should return an object', async () => {
+      assert.strictEqual(typeof response.body, 'object')
+    })
+    it('should return an object with a type', async () => {
+      assert.strictEqual(typeof response.body.type, 'string')
+    })
+    it('should return an object with an type matching the request', async () => {
+      assert.strictEqual(response.body.type, 'about:blank')
+    })
+    it('should return an object with a title', async () => {
+      assert.strictEqual(typeof response.body.title, 'string')
+    })
+    it('should return an object with a title matching the request', async () => {
+      assert.strictEqual(response.body.title, 'Forbidden')
+    })
+    it('should return an object with a status', async () => {
+      assert.strictEqual(typeof response.body.status, 'number')
+    })
+    it('should return an object with a status matching the request', async () => {
+      assert.strictEqual(response.body.status, 403)
+    })
+    it('should return an object with a detail', async () => {
+      assert.strictEqual(typeof response.body.detail, 'string')
+    })
+    it('should return an object with a detail matching the request', async () => {
+      assert.strictEqual(response.body.detail, 'No access to inbox collection')
+    })
+  })
+
   describe('can handle an incoming activity', async () => {
     const username = 'actor1'
     const botName = 'test0'
