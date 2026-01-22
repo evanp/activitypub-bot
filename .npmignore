@@ -1,0 +1,6 @@
+.github/
+.nvmrc
+Dockerfile
+docs/
+package-lock.json
+tests/
