@@ -13,7 +13,7 @@ import {
   addFollower,
   addFollowing,
   addToCollection
-} from './utils/nock.js'
+} from '@evanp/activitypub-nock'
 import { makeDigest } from './utils/digest.js'
 import bots from './fixtures/bots.js'
 

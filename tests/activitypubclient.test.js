@@ -15,7 +15,7 @@ import {
   resetRequestHeaders,
   addToCollection,
   nockFormat
-} from './utils/nock.js'
+} from '@evanp/activitypub-nock'
 
 describe('ActivityPubClient', async () => {
   let connection = null

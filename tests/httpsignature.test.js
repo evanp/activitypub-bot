@@ -1,7 +1,7 @@
 import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
 import { Sequelize } from 'sequelize'
-import { nockSetup, nockSignature, nockKeyRotate, getPublicKey, getPrivateKey, nockFormat } from './utils/nock.js'
+import { nockSetup, nockSignature, nockKeyRotate, getPublicKey, getPrivateKey, nockFormat } from '@evanp/activitypub-nock'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'

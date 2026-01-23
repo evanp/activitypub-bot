@@ -42,6 +42,7 @@
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
+    "@evanp/activitypub-nock": "^0.2.1",
     "nock": "^14.0.5",
     "standard": "^17.1.2",
     "supertest": "^7.1.4"

@@ -4,7 +4,7 @@ import { makeApp } from '../lib/app.js'
 import request from 'supertest'
 import bots from './fixtures/bots.js'
 import as2 from '../lib/activitystreams.js'
-import { nockSetup, nockFormat, nockSignature, makeActor } from './utils/nock.js'
+import { nockSetup, nockFormat, nockSignature, makeActor } from '@evanp/activitypub-nock'
 
 const uppercase = (string) => string.charAt(0).toUpperCase() + string.slice(1)
 

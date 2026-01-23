@@ -17,7 +17,7 @@ import {
   makeActor,
   makeObject,
   nockFormat
-} from './utils/nock.js'
+} from '@evanp/activitypub-nock'
 import Logger from 'pino'
 import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'

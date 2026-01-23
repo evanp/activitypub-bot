@@ -4,7 +4,7 @@ import request from 'supertest'
 
 import { makeApp } from '../lib/app.js'
 
-import { nockSetup } from './utils/nock.js'
+import { nockSetup } from '@evanp/activitypub-nock'
 import bots from './fixtures/bots.js'
 
 describe('DoNothing bot', async () => {

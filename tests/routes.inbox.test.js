@@ -5,7 +5,7 @@ import request from 'supertest'
 
 import { makeApp } from '../lib/app.js'
 
-import { nockSetup, nockSignature, nockFormat } from './utils/nock.js'
+import { nockSetup, nockSignature, nockFormat } from '@evanp/activitypub-nock'
 import { makeDigest } from './utils/digest.js'
 import bots from './fixtures/bots.js'
 
