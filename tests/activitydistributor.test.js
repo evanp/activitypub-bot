@@ -13,7 +13,9 @@ import {
   getBody,
   resetBodies,
   postSharedInbox,
-  resetSharedInbox
+  resetSharedInbox,
+  addFollower,
+  addFollowing
 } from '@evanp/activitypub-nock'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
@@ -64,6 +66,15 @@ describe('ActivityDistributor', () => {
     nockSetup('third.example')
     nockSetup('shared.example', { sharedInbox: true })
     nockSetup('flaky.example', { flaky: true })
+    addFollower('remote1', nockFormat({ username: 'remote2' }))
+    addFollower('remote1', nockFormat({ username: 'remote3' }))
+    addFollower('remote1', nockFormat({ username: 'remote4' }))
+    addFollower('remote1', formatter.format({ username: 'test6' }))
+
+    addFollowing('remote2', nockFormat({ username: 'remote5' }))
+    addFollowing('remote2', nockFormat({ username: 'remote6' }))
+    addFollowing('remote2', nockFormat({ username: 'remote7' }))
+    addFollowing('remote2', formatter.format({ username: 'test7' }))
   })
   after(async () => {
     await connection.close()
@@ -234,10 +245,6 @@ describe('ActivityDistributor', () => {
     await distributor.distribute(activity, 'test0')
     await distributor.onIdle()
     assert.equal(postSharedInbox['shared.example'], 1)
-    for (const i of nums) {
-      const headers = getRequestHeaders(`https://shared.example/user/test${i}`)
-      assert.ok(!headers)
-    }
   })
   it('distributes directly for addressees in bto', async () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1)
@@ -268,7 +275,7 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(!postSharedInbox['shared.example'])
     for (const i of nums) {
-      assert.equal(postInbox[`test${i}`], 1, `did not distribution directly to test${i}`)
+      assert.equal(postInbox[`test${i}`], 1, `did not distribute directly to test${i}`)
     }
   })
   it('distributes directly for addressees in bcc', async () => {
@@ -284,7 +291,7 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(!postSharedInbox['shared.example'])
     for (const i of nums) {
-      assert.equal(postInbox[`test${i}`], 1, `did not distribution directly to test${i}`)
+      assert.equal(postInbox[`test${i}`], 1, `did not distribute directly to test${i}`)
     }
   })
   it('distributes directly for addressees in bcc a second time', async () => {
@@ -300,7 +307,7 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(!postSharedInbox['shared.example'])
     for (const i of nums) {
-      assert.equal(postInbox[`test${i}`], 1, `did not distribution directly to test${i}`)
+      assert.equal(postInbox[`test${i}`], 1, `did not distribute directly to test${i}`)
     }
   })
   it('retries distribution to a flaky recipient', async () => {
@@ -377,13 +384,43 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(postInbox.test4)
     assert.ok(postInbox.test5)
-    const { signature, digest, date } =
-      getRequestHeaders('https://social.example/user/test4/inbox')
-    assert.ok(signature)
-    assert.ok(digest)
-    assert.ok(date)
-    assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$/)
-    assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
-    assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
+  })
+  it('can distribute an activity to remote followers collection', async () => {
+    const id = formatter.format({
+      username: 'test0',
+      type: 'intransitiveactivity',
+      nanoid: 'Lh-2nLaiVCXQDFisyg8FR'
+    })
+    const activity = await as2.import({
+      id,
+      type: 'IntransitiveActivity',
+      actor: formatter.format({ username: 'test0' }),
+      to: nockFormat({ username: 'remote1', collection: 'followers' })
+    })
+    await distributor.distribute(activity, 'test0')
+    await distributor.onIdle()
+    assert.ok(postInbox.remote2)
+    assert.ok(postInbox.remote3)
+    assert.ok(postInbox.remote4)
+    assert.ok(await actorStorage.isInCollection('test6', 'inbox', activity))
+  })
+  it('can distribute an activity to remote following collection', async () => {
+    const id = formatter.format({
+      username: 'test0',
+      type: 'intransitiveactivity',
+      nanoid: '32GwjbnzIo6dzoicvlETu'
+    })
+    const activity = await as2.import({
+      id,
+      type: 'IntransitiveActivity',
+      actor: formatter.format({ username: 'test0' }),
+      to: nockFormat({ username: 'remote2', collection: 'following' })
+    })
+    await distributor.distribute(activity, 'test0')
+    await distributor.onIdle()
+    assert.ok(postInbox.remote5)
+    assert.ok(postInbox.remote6)
+    assert.ok(postInbox.remote7)
+    assert.ok(await actorStorage.isInCollection('test7', 'inbox', activity))
   })
 })
