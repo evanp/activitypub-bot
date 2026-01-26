@@ -49,8 +49,16 @@ describe('ActivityDistributor', () => {
     const actor3 = await as2.import({
       id: nockFormat({ domain: 'other.example', username: 'test2' })
     })
+    const actor4 = await as2.import({
+      id: nockFormat({ domain: 'social.example', username: 'test4' })
+    })
+    const actor5 = await as2.import({
+      id: nockFormat({ domain: 'other.example', username: 'test5' })
+    })
     await actorStorage.addToCollection('test0', 'followers', actor2)
     await actorStorage.addToCollection('test0', 'followers', actor3)
+    await actorStorage.addToCollection('test0', 'following', actor4)
+    await actorStorage.addToCollection('test0', 'following', actor5)
     nockSetup('social.example')
     nockSetup('other.example')
     nockSetup('third.example')
@@ -231,7 +239,7 @@ describe('ActivityDistributor', () => {
       assert.ok(!headers)
     }
   })
-  it('delivers directly for addressees in bto', async () => {
+  it('distributes directly for addressees in bto', async () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1)
     const remotes = nums.map(n => `https://shared.example/user/test${n}`)
     const activity = await as2.import({
@@ -244,10 +252,10 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(!postSharedInbox['shared.example'])
     for (const i of nums) {
-      assert.equal(postInbox[`test${i}`], 1, `did not delivery directly to test${i}`)
+      assert.equal(postInbox[`test${i}`], 1, `did not distribute directly to test${i}`)
     }
   })
-  it('delivers directly for addressees in bto a second time', async () => {
+  it('distributes directly for addressees in bto a second time', async () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1)
     const remotes = nums.map(n => `https://shared.example/user/test${n}`)
     const activity = await as2.import({
@@ -260,10 +268,10 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(!postSharedInbox['shared.example'])
     for (const i of nums) {
-      assert.equal(postInbox[`test${i}`], 1, `did not delivery directly to test${i}`)
+      assert.equal(postInbox[`test${i}`], 1, `did not distribution directly to test${i}`)
     }
   })
-  it('delivers directly for addressees in bcc', async () => {
+  it('distributes directly for addressees in bcc', async () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1).map(n => n + 100)
     const remotes = nums.map(n => `https://shared.example/user/test${n}`)
     const activity = await as2.import({
@@ -276,10 +284,10 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(!postSharedInbox['shared.example'])
     for (const i of nums) {
-      assert.equal(postInbox[`test${i}`], 1, `did not delivery directly to test${i}`)
+      assert.equal(postInbox[`test${i}`], 1, `did not distribution directly to test${i}`)
     }
   })
-  it('delivers directly for addressees in bcc a second time', async () => {
+  it('distributes directly for addressees in bcc a second time', async () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1).map(n => n + 100)
     const remotes = nums.map(n => `https://shared.example/user/test${n}`)
     const activity = await as2.import({
@@ -292,10 +300,10 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(!postSharedInbox['shared.example'])
     for (const i of nums) {
-      assert.equal(postInbox[`test${i}`], 1, `did not delivery directly to test${i}`)
+      assert.equal(postInbox[`test${i}`], 1, `did not distribution directly to test${i}`)
     }
   })
-  it('retries delivery to a flaky recipient', async () => {
+  it('retries distribution to a flaky recipient', async () => {
     const activity = await as2.import({
       id: 'https://activitypubbot.example/user/test0/intransitiveactivity/15',
       type: 'IntransitiveActivity',
@@ -310,7 +318,7 @@ describe('ActivityDistributor', () => {
     await new Promise((resolve) => setTimeout(resolve, 2000))
     assert.equal(postInbox['flaky1'], 1)
   })
-  it('can deliver a single activity to a local account', async () => {
+  it('can distribute a single activity to a local account', async () => {
     const id = formatter.format({
       username: 'test0',
       type: 'intransitiveactivity',
@@ -330,7 +338,7 @@ describe('ActivityDistributor', () => {
       activity
     ))
   })
-  it('will not deliver an activity to the actor', async () => {
+  it('will not distribute an activity to the actor', async () => {
     const id = formatter.format({
       username: 'test0',
       type: 'intransitiveactivity',
@@ -352,5 +360,30 @@ describe('ActivityDistributor', () => {
       'inbox',
       activity
     ))
+  })
+  it('can distribute an activity to local following collection', async () => {
+    const id = formatter.format({
+      username: 'test0',
+      type: 'intransitiveactivity',
+      nanoid: '32GwjbnzIo6dzoicvlETu'
+    })
+    const activity = await as2.import({
+      id,
+      type: 'IntransitiveActivity',
+      actor: formatter.format({ username: 'test0' }),
+      to: formatter.format({ username: 'test0', collection: 'following' })
+    })
+    await distributor.distribute(activity, 'test0')
+    await distributor.onIdle()
+    assert.ok(postInbox.test4)
+    assert.ok(postInbox.test5)
+    const { signature, digest, date } =
+      getRequestHeaders('https://social.example/user/test4/inbox')
+    assert.ok(signature)
+    assert.ok(digest)
+    assert.ok(date)
+    assert.match(signature, /^keyId="https:\/\/activitypubbot\.example\/user\/test0\/publickey",headers="\(request-target\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
 })
