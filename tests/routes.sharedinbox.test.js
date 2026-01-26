@@ -152,7 +152,7 @@ describe('routes.sharedinbox', async () => {
     })
   })
 
-  describe('can handle an public activity', async () => {
+  describe('can handle a public activity', async () => {
     const username = 'actor3'
     const path = '/shared/inbox'
     const url = `${origin}${path}`
