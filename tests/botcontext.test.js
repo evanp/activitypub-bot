@@ -45,7 +45,7 @@ describe('BotContext', () => {
   const botName = 'test1'
   before(async () => {
     logger = Logger({
-      level: 'silent'
+      level: 'debug'
     })
     formatter = new UrlFormatter('https://activitypubbot.example')
     connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
@@ -154,7 +154,7 @@ describe('BotContext', () => {
     let followers = await actorStorage.getCollection(botName, 'followers')
     assert.strictEqual(followers.totalItems, 1)
     const content = 'Hello World'
-    const to = 'https://www.w3.org/ns/activitystreams#Public'
+    const to = followers.id
     note = await context.sendNote(content, { to })
     assert.ok(note)
     assert.strictEqual(note.type, 'https://www.w3.org/ns/activitystreams#Note')
@@ -163,8 +163,8 @@ describe('BotContext', () => {
     const actor = iter.next().value
     assert.strictEqual(actor.id, 'https://activitypubbot.example/user/test1')
     const iter2 = note.to[Symbol.iterator]()
-    const addressee = iter2.next().value
-    assert.strictEqual(addressee.id, to)
+    const noteTo = iter2.next().value
+    assert.strictEqual(noteTo.id, to)
     assert.strictEqual(typeof note.published, 'object')
     assert.strictEqual(typeof note.id, 'string')
     await context.onIdle()
@@ -459,7 +459,8 @@ describe('BotContext', () => {
   })
 
   it('can reply to self', async () => {
-    const original = await context.sendNote("s'alright?", { to: 'as:Public' })
+    const followers = await actorStorage.getCollection(botName, 'followers')
+    const original = await context.sendNote("s'alright?", { to: followers.id })
     const reply = await context.sendReply("@test1@activitypubbot.example s'alright.", original)
     assert.ok(reply)
     assert.strictEqual(reply.type, AS2_NS + 'Note')
@@ -467,7 +468,7 @@ describe('BotContext', () => {
     assert.strictEqual(actor.id, 'https://activitypubbot.example/user/test1')
     const recipients = [
       'https://activitypubbot.example/user/test1',
-      'https://www.w3.org/ns/activitystreams#Public'
+      followers.id
     ]
     for (const addressee in reply.to) {
       assert.ok(recipients.includes(addressee.id))
