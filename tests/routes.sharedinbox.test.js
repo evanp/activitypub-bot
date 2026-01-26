@@ -73,8 +73,8 @@ describe('routes.sharedinbox', async () => {
       assert.ok(response)
       await app.onIdle()
     })
-    it('should return a 200 status', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
     })
     it('should appear in the inbox', async () => {
       assert.strictEqual(
@@ -135,8 +135,8 @@ describe('routes.sharedinbox', async () => {
       assert.ok(response)
       await app.onIdle()
     })
-    it('should return a 200 status', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
     })
     it('should appear in all inboxes', async () => {
       for (const botName of botNames) {
@@ -193,8 +193,8 @@ describe('routes.sharedinbox', async () => {
       assert.ok(response)
       await app.onIdle()
     })
-    it('should return a 200 status', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
     })
     it('should appear in all inboxes', async () => {
       const lb = bots.logging
@@ -254,8 +254,8 @@ describe('routes.sharedinbox', async () => {
       assert.ok(response)
       await app.onIdle()
     })
-    it('should return a 200 status', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
     })
     it('should appear in all inboxes', async () => {
       for (const botName of botNames) {
@@ -326,8 +326,8 @@ describe('routes.sharedinbox', async () => {
       assert.ok(response)
       await app.onIdle()
     })
-    it('should return a 200 status', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
     })
     it('should appear in all inboxes', async () => {
       for (const botName of botNames) {
@@ -390,8 +390,8 @@ describe('routes.sharedinbox', async () => {
       assert.ok(response)
       await app.onIdle()
     })
-    it('should return a 200 status', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
     })
     it('should appear in all inboxes', async () => {
       for (const botName of botNames) {
@@ -454,8 +454,8 @@ describe('routes.sharedinbox', async () => {
       assert.ok(response)
       await app.onIdle()
     })
-    it('should return a 200 status', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
     })
     it('should appear in all inboxes', async () => {
       for (const botName of botNames) {

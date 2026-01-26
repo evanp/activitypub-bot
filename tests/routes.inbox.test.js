@@ -133,8 +133,8 @@ describe('routes.inbox', async () => {
       assert.ok(response)
       await app.onIdle()
     })
-    it('should return a 200 status', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
     })
     it('should appear in the inbox', async () => {
       const { actorStorage } = app.locals
@@ -183,8 +183,8 @@ describe('routes.inbox', async () => {
       assert.ok(response)
       await app.onIdle()
     })
-    it('should return a 200 status', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
     })
     it('should appear in the inbox', async () => {
       const { actorStorage } = app.locals

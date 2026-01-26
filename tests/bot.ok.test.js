@@ -79,8 +79,8 @@ describe('OK bot', async () => {
       assert.ok(response)
       await app.onIdle()
     })
-    it('should return a 200 status', async () => {
-      assert.strictEqual(response.status, 200, JSON.stringify(response.body))
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202, JSON.stringify(response.body))
     })
     it('should deliver the reply to the mentioned actor', async () => {
       assert.strictEqual(postInbox.actor2, 1)
@@ -161,8 +161,8 @@ describe('OK bot', async () => {
       assert.ok(response)
       await app.onIdle()
     })
-    it('should return a 200 status', async () => {
-      assert.strictEqual(response.status, 200, JSON.stringify(response.body))
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202, JSON.stringify(response.body))
     })
     it('should deliver the reply to the mentioned actor', async () => {
       assert.strictEqual(postInbox[username], 1)
