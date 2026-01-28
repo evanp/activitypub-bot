@@ -45,7 +45,7 @@ describe('BotContext', () => {
   const botName = 'test1'
   before(async () => {
     logger = Logger({
-      level: 'debug'
+      level: 'silent'
     })
     formatter = new UrlFormatter('https://activitypubbot.example')
     connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
