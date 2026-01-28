@@ -15,7 +15,7 @@ describe('ActorStorage', () => {
   let other = null
   let unfollowed = null
   before(async () => {
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
+    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: true })
     await connection.authenticate()
     await runMigrations(connection)
     formatter = new UrlFormatter('https://activitypubbot.example')
@@ -279,5 +279,81 @@ describe('ActorStorage', () => {
   it('gets zero usernames when an object is in no collection', async () => {
     const usernames = await storage.getUsernamesWith('following', unfollowed)
     assert.strictEqual(usernames.length, 0)
+  })
+
+  describe('last activity', async () => {
+    const username = 'test16'
+    let object, activity1, activity2
+
+    before(async () => {
+      object = await as2.import({
+        id: 'https://social.example/note/26158',
+        type: 'Note'
+      })
+      activity1 = await as2.import({
+        id: 'https://social.example/like/4605',
+        type: 'Like',
+        object: {
+          id: 'https://social.example/note/26158',
+          type: 'Note'
+        }
+      })
+      activity2 = await as2.import({
+        id: 'https://social.example/like/900',
+        type: 'Like',
+        object: {
+          id: 'https://social.example/note/26158',
+          type: 'Note'
+        }
+      })
+    })
+
+    it('returns null if no activity has been set', async () => {
+      const result = await storage.getLastActivity(
+        username,
+        'Like',
+        object
+      )
+      assert.ok(!result)
+    })
+
+    it('can set the last activity for an object', async () => {
+      await storage.setLastActivity(username, activity1)
+      assert.ok(true)
+    })
+
+    it('can get the last activity for an object', async () => {
+      const result = await storage.getLastActivity(
+        username,
+        'Like',
+        object
+      )
+      assert.strictEqual(result, activity1.id)
+    })
+
+    it('can overwrite the last activity for an object', async () => {
+      await storage.setLastActivity(username, activity2)
+      assert.ok(true)
+      const result = await storage.getLastActivity(
+        username,
+        'Like',
+        object
+      )
+      assert.strictEqual(result, activity2.id)
+    })
+
+    it('can clear the last activity for an object', async () => {
+      await storage.clearLastActivity(username, 'Like', object)
+      assert.ok(true)
+    })
+
+    it('returns null if the last activity has been cleared', async () => {
+      const result = await storage.getLastActivity(
+        username,
+        'Like',
+        object
+      )
+      assert.ok(!result)
+    })
   })
 })
