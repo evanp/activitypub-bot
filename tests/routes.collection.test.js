@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test'
+import { describe, it, before } from 'node:test'
 import assert from 'node:assert'
 import { makeApp } from '../lib/app.js'
 import request from 'supertest'
@@ -305,6 +305,44 @@ describe('actor collection routes', async () => {
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
+    })
+  })
+
+  describe('GET /user/{botid}/outbox/1 with one item', async () => {
+    let response = null
+    const username = 'test4'
+    const actorStorage = app.locals.actorStorage
+    const objectStorage = app.locals.objectStorage
+    const formatter = app.locals.formatter
+
+    before(async () => {
+      const activity = await as2.import({
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        to: 'as:Public',
+        actor: formatter.format({ username }),
+        type: 'IntransitiveActivity',
+        id: formatter.format({
+          username,
+          type: 'intransitiveactivity',
+          nanoid: nanoid()
+        }),
+        summary: 'An intransitive activity by the test69 bot',
+        published: (new Date()).toISOString()
+      })
+      await objectStorage.create(activity)
+      await actorStorage.addToCollection(username, 'outbox', activity)
+    })
+
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${username}/outbox/1`)
+    })
+
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+
+    it('should have one item', async () => {
+      assert.ok(!Array.isArray(response.body.items) || response.body.items.length === 1)
     })
   })
 })
