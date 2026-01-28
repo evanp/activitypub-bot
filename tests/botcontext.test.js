@@ -738,6 +738,7 @@ describe('BotContext', () => {
 
       assert.strictEqual(undo.type, `${AS2_NS}Undo`)
       assert.strictEqual(undo.object?.first?.id, activity.id)
+      assert.strictEqual(undo.object?.first?.object?.first?.id, obj.id)
       assert.ok(undo.to)
       assert.ok(undo.cc)
 
