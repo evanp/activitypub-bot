@@ -735,10 +735,12 @@ describe('BotContext', () => {
 
       assert.strictEqual(undo.type, `${AS2_NS}Undo`)
       assert.strictEqual(undo.object?.first?.id, activity.id)
+      assert.ok(undo.to)
+      assert.ok(undo.cc)
 
       await context.onIdle()
 
-      assert.strictEqual(postInbox[username], 1)
+      assert.strictEqual(postInbox[username], 2)
 
       let foundInOutbox = false
       for await (const item of actorStorage.items(botName, 'outbox')) {
@@ -747,6 +749,7 @@ describe('BotContext', () => {
           break
         }
       }
+
       assert.ok(foundInOutbox)
 
       let foundInInbox = false
