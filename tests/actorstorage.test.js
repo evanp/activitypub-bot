@@ -15,7 +15,7 @@ describe('ActorStorage', () => {
   let other = null
   let unfollowed = null
   before(async () => {
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: true })
+    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     await connection.authenticate()
     await runMigrations(connection)
     formatter = new UrlFormatter('https://activitypubbot.example')
