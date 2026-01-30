@@ -297,6 +297,11 @@ Sends a `Block` activity for the passed-in actor in [activitystrea.ms](#activity
 
 Sends an `Undo`/`Block` activity for the passed-in actor in [activitystrea.ms](#activitystreams) form.
 
+#### async doActivity (data, distribute = true)
+
+Sends an arbitrary activity object out into the network. This requires some
+care! `id`, `actor`, and timestamps will be added automatically. `distribute` flag is for sensitive activities that shouldn't be distributed to anyone.
+
 #### async toActorId (webfinger)
 
 Gets the `id` of the [ActivityPub Actor](https://www.w3.org/TR/activitypub/#actors) with the given [WebFinger](https://en.wikipedia.org/wiki/WebFinger) identity.

@@ -765,4 +765,39 @@ describe('BotContext', () => {
       }
       assert.ok(foundInInbox)
   })
+
+  it('can do an arbitrary activity', async () => {
+
+    const username = 'actor10'
+    const actorId = nockFormat({ username })
+
+    const activity = await context.doActivity({
+      to: actorId,
+      type: 'IntransitiveActivity'
+    })
+
+    assert.strictEqual(activity.type, `${AS2_NS}IntransitiveActivity`)
+
+    await context.onIdle()
+
+    assert.strictEqual(postInbox[username], 1)
+
+    let foundInOutbox = false
+    for await (const item of actorStorage.items(botName, 'outbox')) {
+      if (item.id === activity.id) {
+        foundInOutbox = true
+        break
+      }
+    }
+    assert.ok(foundInOutbox)
+
+    let foundInInbox = false
+    for await (const item of actorStorage.items(botName, 'inbox')) {
+      if (item.id === activity.id) {
+        foundInInbox = true
+        break
+      }
+    }
+    assert.ok(foundInInbox)
+  })
 })
