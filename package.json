@@ -10,7 +10,7 @@
   "scripts": {
     "test": "NODE_ENV=test node --test",
     "start": "npx activitypub-bot",
-    "lint": "standard"
+    "lint": "eslint ."
   },
   "repository": {
     "type": "git",
@@ -44,8 +44,12 @@
   },
   "devDependencies": {
     "@evanp/activitypub-nock": "^0.4.4",
+    "eslint": "^8.57.1",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.1.1",
     "nock": "^14.0.5",
-    "standard": "^17.1.2",
     "supertest": "^7.1.4"
   },
   "optionalDependencies": {
