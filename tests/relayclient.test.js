@@ -47,7 +47,7 @@ describe('BotContext', () => {
   let transformer = null
   let logger = null
   let RelayClientBot = null
-  let relayName = 'relay0'
+  const relayName = 'relay0'
   let relay = null
   let bot = null
 

@@ -723,51 +723,50 @@ describe('BotContext', () => {
   })
 
   it('can unannounce an object', async () => {
-      const username = 'test10'
-      const type = 'Note'
-      const num = 13633
+    const username = 'test10'
+    const type = 'Note'
+    const num = 13633
 
-      const id = nockFormat({ username, type, num })
+    const id = nockFormat({ username, type, num })
 
-      const obj = await context.getObject(id)
-      const activity = await context.announceObject(obj)
+    const obj = await context.getObject(id)
+    const activity = await context.announceObject(obj)
 
-      assert.ok(activity)
+    assert.ok(activity)
 
-      const undo = await context.unannounceObject(obj)
+    const undo = await context.unannounceObject(obj)
 
-      assert.strictEqual(undo.type, `${AS2_NS}Undo`)
-      assert.strictEqual(undo.object?.first?.id, activity.id)
-      assert.strictEqual(undo.object?.first?.object?.first?.id, obj.id)
-      assert.ok(undo.to)
-      assert.ok(undo.cc)
+    assert.strictEqual(undo.type, `${AS2_NS}Undo`)
+    assert.strictEqual(undo.object?.first?.id, activity.id)
+    assert.strictEqual(undo.object?.first?.object?.first?.id, obj.id)
+    assert.ok(undo.to)
+    assert.ok(undo.cc)
 
-      await context.onIdle()
+    await context.onIdle()
 
-      assert.strictEqual(postInbox[username], 2)
+    assert.strictEqual(postInbox[username], 2)
 
-      let foundInOutbox = false
-      for await (const item of actorStorage.items(botName, 'outbox')) {
-        if (item.id === undo.id) {
-          foundInOutbox = true
-          break
-        }
+    let foundInOutbox = false
+    for await (const item of actorStorage.items(botName, 'outbox')) {
+      if (item.id === undo.id) {
+        foundInOutbox = true
+        break
       }
+    }
 
-      assert.ok(foundInOutbox)
+    assert.ok(foundInOutbox)
 
-      let foundInInbox = false
-      for await (const item of actorStorage.items(botName, 'inbox')) {
-        if (item.id === undo.id) {
-          foundInInbox = true
-          break
-        }
+    let foundInInbox = false
+    for await (const item of actorStorage.items(botName, 'inbox')) {
+      if (item.id === undo.id) {
+        foundInInbox = true
+        break
       }
-      assert.ok(foundInInbox)
+    }
+    assert.ok(foundInInbox)
   })
 
   it('can do an arbitrary activity', async () => {
-
     const username = 'actor10'
     const actorId = nockFormat({ username })
 

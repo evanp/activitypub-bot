@@ -9,13 +9,13 @@ import { nockSetup, nockSignature, nockFormat, postInbox } from '@evanp/activity
 import { makeDigest } from './utils/digest.js'
 import bots from './fixtures/bots.js'
 
-async function asyncSome(array, asyncPredicate) {
+async function asyncSome (array, asyncPredicate) {
   for (let i = 0; i < array.length; i++) {
     if (await asyncPredicate(array[i], i, array)) {
-      return true;
+      return true
     }
   }
-  return false;
+  return false
 }
 
 describe('OK bot', async () => {
@@ -85,8 +85,8 @@ describe('OK bot', async () => {
     it('should deliver the reply to the mentioned actor', async () => {
       assert.strictEqual(postInbox.actor2, 1)
     })
-    let reply = null
-    let note = null
+    const reply = null
+    const note = null
     it('should have the reply in its outbox', async () => {
       const { actorStorage, objectStorage } = app.locals
       const outbox = await actorStorage.getCollection('ok', 'outbox')
@@ -113,8 +113,8 @@ describe('OK bot', async () => {
     let digest
     let signature
     let response
-    let reply = null
-    let note = null
+    const reply = null
+    const note = null
     before(async () => {
       activity = await as2.import({
         type: 'Create',

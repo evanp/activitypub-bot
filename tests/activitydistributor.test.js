@@ -323,7 +323,7 @@ describe('ActivityDistributor', () => {
       assert.fail(`Error in distribution: ${error.message}`)
     }
     await new Promise((resolve) => setTimeout(resolve, 2000))
-    assert.equal(postInbox['flaky1'], 1)
+    assert.equal(postInbox.flaky1, 1)
   })
   it('can distribute a single activity to a local account', async () => {
     const id = formatter.format({
