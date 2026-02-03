@@ -9,7 +9,8 @@
   },
   "scripts": {
     "test": "NODE_ENV=test node --test",
-    "start": "npx activitypub-bot"
+    "start": "npx activitypub-bot",
+    "lint": "standard"
   },
   "repository": {
     "type": "git",
