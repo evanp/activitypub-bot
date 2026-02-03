@@ -14,12 +14,9 @@ import {
   nockSetup,
   postInbox,
   resetInbox,
-  makeActor,
-  makeObject,
   nockFormat
 } from '@evanp/activitypub-nock'
 import Logger from 'pino'
-import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 import { runMigrations } from '../lib/migrations/index.js'
