@@ -56,7 +56,7 @@ describe('ActivityDeliverer', async () => {
   })
 
   it('can import the library', async () => {
-    ActivityDeliverer = (await import('../lib/activitydeliverer.js')).default
+    ActivityDeliverer = (await import('../lib/activitydeliverer.js')).ActivityDeliverer
     assert.ok(ActivityDeliverer)
     assert.equal(typeof ActivityDeliverer, 'function')
   })
