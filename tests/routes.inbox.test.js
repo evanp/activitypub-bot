@@ -213,4 +213,54 @@ describe('routes.inbox', async () => {
       assert.strictEqual(response.status, 400)
     })
   })
+
+  describe('rejects a non-activity', async () => {
+    const username = 'actor3'
+    const botName = 'test2'
+    const path = `/user/${botName}/inbox`
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    const note = await as2.import({
+      type: 'Note',
+      attributedTo: nockFormat({ username }),
+      to: 'as:Public',
+      id: nockFormat({ username, type: 'Note', num: 1 })
+    })
+    const body = await note.write()
+    const digest = makeDigest(body)
+    const signature = await nockSignature({
+      method: 'POST',
+      username,
+      url,
+      digest,
+      date
+    })
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 400 status', async () => {
+      assert.strictEqual(response.status, 400)
+    })
+    it('should not appear in the inbox', async () => {
+      const { actorStorage } = app.locals
+      assert.strictEqual(
+        false,
+        await actorStorage.isInCollection(
+          botName,
+          'inbox',
+          note
+        )
+      )
+    })
+  })
 })
