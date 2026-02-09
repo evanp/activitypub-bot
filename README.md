@@ -198,6 +198,18 @@ Called when the server receives a public activity to its shared inbox. This can 
 
 Called when one of the bot's objects is shared by another actor. The first argument is the object, and the second is the `Announce` activity itself. This method is called after the activity has been added to the `shares` collection.
 
+#### async actorOK (actor, activity)
+
+Lets the bot override the default check for matching the actor who sent an activity with the
+actor who did the activity. Usually, these need to be the same, but for some sub-protocols, like
+relays, it can be different. Returns a boolean saying whether the actor is OK.
+
+#### async handleActivity (activity)
+
+Runs *before* default handling for an activity. This is a chance to do non-standard handling
+for activities. Boolean return; truthy return means that the bot has already handled the
+activity and standard handling should be skipped. The activity will still be delivered to inboxes. Use with caution!
+
 ### BotFactory
 
 The BotFactory interface lets you have a lot of bots that act in a similar way without declaring them explicitly in the bots config file.
