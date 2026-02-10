@@ -196,4 +196,26 @@ describe('HTTPSignature', async () => {
       assert.equal(err.message, 'Missing header: content-type')
     }
   })
+
+  it('can validate an hs2019 signature', async () => {
+    const username = 'test'
+    const date = new Date().toUTCString()
+    const algorithm = 'hs2019'
+    const signature = await nockSignature({
+      url: `${origin}/user/ok/outbox`,
+      date,
+      username,
+      algorithm
+    })
+    const headers = {
+      date,
+      signature,
+      host: URL.parse(origin).host
+    }
+    const publicKeyPem = await getPublicKey(username)
+    const method = 'GET'
+    const path = '/user/ok/outbox'
+    const result = await httpSignature.validate(publicKeyPem, signature, method, path, headers)
+    assert.ok(result)
+  })
 })
