@@ -1,18 +1,40 @@
-import { describe, it } from 'node:test'
+import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { makeApp } from '../lib/app.js'
 import request from 'supertest'
-import bots from './fixtures/bots.js'
+import OKBot from '../lib/bots/ok.js'
 import { getTestDatabaseUrl } from './utils/db.js'
 
 describe('webfinger routes', async () => {
+  const LOCAL_HOST = 'routes-webfinger.local.test'
+  const WRONG_HOST = 'routes-webfinger.wrong.test'
+  const BOT_USERNAME = 'routeswebfingertestbot'
+  const DNE_USERNAME = 'routeswebfingertestdne'
   const databaseUrl = getTestDatabaseUrl()
-  const origin = 'https://activitypubbot.test'
-  const app = await makeApp(databaseUrl, origin, bots, 'silent')
+  const origin = `https://${LOCAL_HOST}`
+  const testBots = {
+    [BOT_USERNAME]: new OKBot(BOT_USERNAME)
+  }
+  let app = null
+
+  before(async () => {
+    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+  })
+
+  after(async () => {
+    if (!app) {
+      return
+    }
+    await app.cleanup()
+    app = null
+  })
+
   describe('GET /.well-known/webfinger', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/.well-known/webfinger?resource=acct%3Aok%40activitypubbot.test')
+      response = await request(app).get(
+        `/.well-known/webfinger?resource=${encodeURIComponent(`acct:${BOT_USERNAME}@${LOCAL_HOST}`)}`
+      )
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -24,7 +46,7 @@ describe('webfinger routes', async () => {
       assert.strictEqual(typeof response.body.subject, 'string')
     })
     it('should return an object with an subject matching the request', async () => {
-      assert.strictEqual(response.body.subject, 'acct:ok@activitypubbot.test')
+      assert.strictEqual(response.body.subject, `acct:${BOT_USERNAME}@${LOCAL_HOST}`)
     })
     it('should return an object with a links array', async () => {
       assert.strictEqual(Array.isArray(response.body.links), true)
@@ -36,13 +58,15 @@ describe('webfinger routes', async () => {
       assert.strictEqual(typeof response.body.links[0].type, 'string')
       assert.strictEqual(response.body.links[0].type, 'application/activity+json')
       assert.strictEqual(typeof response.body.links[0].href, 'string')
-      assert.strictEqual(response.body.links[0].href, 'https://activitypubbot.test/user/ok')
+      assert.strictEqual(response.body.links[0].href, `${origin}/user/${BOT_USERNAME}`)
     })
   })
   describe('Webfinger discovery for non-existent user', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/.well-known/webfinger?resource=acct%3Adne%40activitypubbot.test')
+      response = await request(app).get(
+        `/.well-known/webfinger?resource=${encodeURIComponent(`acct:${DNE_USERNAME}@${LOCAL_HOST}`)}`
+      )
     })
     it('should return 404 Not Found', async () => {
       assert.strictEqual(response.status, 404)
@@ -51,7 +75,9 @@ describe('webfinger routes', async () => {
   describe('Webfinger discovery for wrong domain', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/.well-known/webfinger?resource=acct%3Adne%wrongdomain.test')
+      response = await request(app).get(
+        `/.well-known/webfinger?resource=${encodeURIComponent(`acct:${DNE_USERNAME}@${WRONG_HOST}`)}`
+      )
     })
     it('should return 400 Bad Request', async () => {
       assert.strictEqual(response.status, 400)
@@ -60,7 +86,9 @@ describe('webfinger routes', async () => {
   describe('Webfinger discovery for HTTPS', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/.well-known/webfinger?resource=' + encodeURIComponent('https://activitypubbot.test/user/ok'))
+      response = await request(app).get(
+        `/.well-known/webfinger?resource=${encodeURIComponent(`${origin}/user/${BOT_USERNAME}`)}`
+      )
     })
     it('should return 400 Bad Request', async () => {
       assert.strictEqual(response.status, 400)
