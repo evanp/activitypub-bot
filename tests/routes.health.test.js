@@ -1,14 +1,28 @@
-import { describe, it } from 'node:test'
+import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { makeApp } from '../lib/app.js'
 import request from 'supertest'
-import bots from './fixtures/bots.js'
 import { getTestDatabaseUrl } from './utils/db.js'
 
 describe('health check routes', async () => {
+  const LOCAL_HOST = 'routes-health.local.test'
   const databaseUrl = getTestDatabaseUrl()
-  const origin = 'https://activitypubbot.test'
-  const app = await makeApp(databaseUrl, origin, bots, 'silent')
+  const origin = `https://${LOCAL_HOST}`
+  const testBots = {}
+  let app = null
+
+  before(async () => {
+    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+  })
+
+  after(async () => {
+    if (!app) {
+      return
+    }
+    await app.cleanup()
+    app = null
+  })
+
   describe('GET /livez', async () => {
     let response = null
     it('should work without an error', async () => {
