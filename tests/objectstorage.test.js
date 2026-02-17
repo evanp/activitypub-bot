@@ -4,23 +4,45 @@ import assert from 'node:assert'
 import { ObjectStorage, NoSuchObjectError } from '../lib/objectstorage.js'
 import { createMigratedTestConnection } from './utils/db.js'
 
+const TEST_NOTE_BASE = 'https://objectstorage.test/users/objectstoragetest/note'
+const DOC1_ID = `${TEST_NOTE_BASE}/1`
+const DOC2_ID = `${TEST_NOTE_BASE}/2`
+const DOC3_ID = `${TEST_NOTE_BASE}/3`
+
 describe('ObjectStorage', async () => {
   let doc = null
   let doc2 = null
   let doc3 = null
   let connection = null
   let storage = null
+
+  async function cleanup () {
+    const pattern = `${TEST_NOTE_BASE}/%`
+    await connection.query(
+      'DELETE FROM pages WHERE id LIKE ? OR item LIKE ?',
+      { replacements: [pattern, pattern] }
+    )
+    await connection.query(
+      'DELETE FROM collections WHERE id LIKE ?',
+      { replacements: [pattern] }
+    )
+    await connection.query(
+      'DELETE FROM objects WHERE id LIKE ?',
+      { replacements: [pattern] }
+    )
+  }
+
   before(async () => {
     doc = await as2.import({
       '@context': 'https://www.w3.org/ns/activitystreams',
-      id: 'https://social.example/users/test/note/1',
+      id: DOC1_ID,
       type: 'Note',
       name: 'test',
       content: 'test'
     })
     doc2 = await as2.import({
       '@context': 'https://www.w3.org/ns/activitystreams',
-      id: 'https://social.example/users/test/note/2',
+      id: DOC2_ID,
       type: 'Note',
       name: 'test',
       content: 'test',
@@ -28,15 +50,19 @@ describe('ObjectStorage', async () => {
     })
     doc3 = await as2.import({
       '@context': 'https://www.w3.org/ns/activitystreams',
-      id: 'https://social.example/users/test/note/3',
+      id: DOC3_ID,
       type: 'Note',
       name: 'test',
       content: 'test'
     })
     connection = await createMigratedTestConnection()
+    await cleanup()
   })
   after(async () => {
+    await cleanup()
     await connection.close()
+    connection = null
+    storage = null
   })
   it('can initialize', async () => {
     storage = new ObjectStorage(connection)
@@ -50,7 +76,7 @@ describe('ObjectStorage', async () => {
   it('can update a created object', async () => {
     const doc2 = await as2.import({
       '@context': 'https://www.w3.org/ns/activitystreams',
-      id: 'https://social.example/users/test/note/1',
+      id: DOC1_ID,
       type: 'Note',
       name: 'test2',
       content: 'test2'
@@ -106,7 +132,7 @@ describe('ObjectStorage', async () => {
     for (let i = 3; i < 103; i++) {
       const reply = await as2.import({
         '@context': 'https://www.w3.org/ns/activitystreams',
-        id: `https://social.example/users/test/note/${i}`,
+        id: `${TEST_NOTE_BASE}/${i}`,
         type: 'Note',
         name: 'test',
         content: 'test',
