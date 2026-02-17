@@ -1,19 +1,46 @@
-import { describe, it } from 'node:test'
+import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { makeApp } from '../lib/app.js'
 import request from 'supertest'
-import bots from './fixtures/bots.js'
-import { getTestDatabaseUrl } from './utils/db.js'
+import OKBot from '../lib/bots/ok.js'
+import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('actor routes', async () => {
+  const LOCAL_HOST = 'routes-actor.local.test'
   const databaseUrl = getTestDatabaseUrl()
-  const origin = 'https://activitypubbot.test'
-  const app = await makeApp(databaseUrl, origin, bots, 'silent')
+  const origin = `https://${LOCAL_HOST}`
+  const BOT_USERNAME = 'routesactortestok'
+  const DNE_USERNAME = 'routesactortestdne'
+  const TEST_USERNAMES = [BOT_USERNAME]
+  const testBots = {
+    [BOT_USERNAME]: new OKBot(BOT_USERNAME)
+  }
+  let app = null
+
+  before(async () => {
+    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+    await cleanupTestData(app.locals.connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST
+    })
+  })
+
+  after(async () => {
+    if (!app) {
+      return
+    }
+    await cleanupTestData(app.locals.connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST
+    })
+    await app.cleanup()
+    app = null
+  })
 
   describe('GET /user/{botid}', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/user/ok')
+      response = await request(app).get(`/user/${BOT_USERNAME}`)
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -28,7 +55,7 @@ describe('actor routes', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
     })
     it('should return an object with an id matching the request', async () => {
-      assert.strictEqual(response.body.id, origin + '/user/ok')
+      assert.strictEqual(response.body.id, `${origin}/user/${BOT_USERNAME}`)
     })
     it('should return an object with a type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
@@ -40,7 +67,7 @@ describe('actor routes', async () => {
       assert.strictEqual(typeof response.body.preferredUsername, 'string')
     })
     it('should return an object with a preferredUsername matching the request', async () => {
-      assert.strictEqual(response.body.preferredUsername, 'ok')
+      assert.strictEqual(response.body.preferredUsername, BOT_USERNAME)
     })
     it('should return an object with an inbox', async () => {
       assert.strictEqual(typeof response.body.inbox, 'string')
@@ -80,10 +107,10 @@ describe('actor routes', async () => {
       assert.ok(response.body.publicKey)
     })
     it('should return an object with a publicKey matching the request', async () => {
-      assert.strictEqual(response.body.publicKey.id, origin + '/user/ok/publickey')
+      assert.strictEqual(response.body.publicKey.id, `${origin}/user/${BOT_USERNAME}/publickey`)
     })
     it('should return an object with a publicKey with an owner matching the request', async () => {
-      assert.strictEqual(response.body.publicKey.owner, origin + '/user/ok')
+      assert.strictEqual(response.body.publicKey.owner, `${origin}/user/${BOT_USERNAME}`)
     })
     it('should return an object with a publicKey with a type', async () => {
       assert.strictEqual(response.body.publicKey.type, 'CryptographicKey')
@@ -109,7 +136,7 @@ describe('actor routes', async () => {
   describe('GET non-existent user', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/user/dne')
+      response = await request(app).get(`/user/${DNE_USERNAME}`)
     })
     it('should return 404 Not Found', async () => {
       assert.strictEqual(response.status, 404)
@@ -142,14 +169,14 @@ describe('actor routes', async () => {
       assert.strictEqual(typeof response.body.detail, 'string')
     })
     it('should return an object with a detail matching the request', async () => {
-      assert.strictEqual(response.body.detail, 'User dne not found')
+      assert.strictEqual(response.body.detail, `User ${DNE_USERNAME} not found`)
     })
   })
 
   describe('GET /user/{dne}/publickey', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/user/dne')
+      response = await request(app).get(`/user/${DNE_USERNAME}`)
     })
     it('should return 404 Not Found', async () => {
       assert.strictEqual(response.status, 404)
@@ -162,14 +189,14 @@ describe('actor routes', async () => {
       assert.strictEqual(response.body.type, 'about:blank')
       assert.strictEqual(response.body.title, 'Not Found')
       assert.strictEqual(response.body.status, 404)
-      assert.strictEqual(response.body.detail, 'User dne not found')
+      assert.strictEqual(response.body.detail, `User ${DNE_USERNAME} not found`)
     })
   })
 
   describe('GET /user/{botid}/publickey', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/user/ok/publickey')
+      response = await request(app).get(`/user/${BOT_USERNAME}/publickey`)
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -184,13 +211,13 @@ describe('actor routes', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
     })
     it('should return an object with the requested public key id', async () => {
-      assert.strictEqual(response.body.id, origin + '/user/ok/publickey')
+      assert.strictEqual(response.body.id, `${origin}/user/${BOT_USERNAME}/publickey`)
     })
     it('should return an object with an owner', async () => {
       assert.strictEqual(typeof response.body.owner, 'string')
     })
     it('should return an object with the bot as owner', async () => {
-      assert.strictEqual(response.body.owner, origin + '/user/ok')
+      assert.strictEqual(response.body.owner, `${origin}/user/${BOT_USERNAME}`)
     })
     it('should return an object with a publicKeyPem', async () => {
       assert.strictEqual(typeof response.body.publicKeyPem, 'string')
