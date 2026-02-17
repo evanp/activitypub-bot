@@ -1,31 +1,67 @@
-import { describe, it, before } from 'node:test'
+import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import request from 'supertest'
 import as2 from '../lib/activitystreams.js'
-import { getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 import { makeApp } from '../lib/app.js'
 
 import { nockSetup, nockSignature, nockFormat } from '@evanp/activitypub-nock'
 import { makeDigest } from './utils/digest.js'
 
-import bots from './fixtures/bots.js'
+import ProvinceBotFactory from './fixtures/provincebotfactory.js'
 
 describe('ProvinceBotFactory', async () => {
-  const host = 'local.botfactory-provincebotfactory.test'
-  const origin = `https://${host}`
+  const LOCAL_HOST = 'local.botfactory-provincebotfactory.test'
+  const REMOTE_HOST = 'social.botfactory-provincebotfactory.test'
+  const PROVINCE_USERNAME = 'qc'
+  const REMOTE_ACTIVITY_USERNAME = 'botfactoryprovinceactor1'
+  const TEST_USERNAMES = [PROVINCE_USERNAME]
+  const host = LOCAL_HOST
+  const origin = `https://${LOCAL_HOST}`
   const databaseUrl = getTestDatabaseUrl()
+  const testBots = {
+    '*': new ProvinceBotFactory()
+  }
   let app = null
 
+  function nockFormatDefault (params) {
+    return nockFormat({ ...params, domain: params.domain ?? REMOTE_HOST })
+  }
+
+  function nockSignatureDefault (params) {
+    return nockSignature({ ...params, domain: params.domain ?? REMOTE_HOST })
+  }
+
   before(async () => {
-    nockSetup('social.botfactory-provincebotfactory.test')
-    app = await makeApp(databaseUrl, origin, bots, 'silent')
+    nockSetup(REMOTE_HOST)
+    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+    await cleanupTestData(app.locals.connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
+  })
+
+  after(async () => {
+    if (!app) {
+      return
+    }
+    await cleanupTestData(app.locals.connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
+    await app.cleanup()
+    app = null
   })
 
   describe('Webfinger discovery for province', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/.well-known/webfinger?resource=acct%3Aqc%40local.botfactory-provincebotfactory.test')
+      response = await request(app).get(
+        `/.well-known/webfinger?resource=${encodeURIComponent(`acct:${PROVINCE_USERNAME}@${LOCAL_HOST}`)}`
+      )
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -37,7 +73,7 @@ describe('ProvinceBotFactory', async () => {
       assert.strictEqual(typeof response.body.subject, 'string')
     })
     it('should return an object with an subject matching the request', async () => {
-      assert.strictEqual(response.body.subject, 'acct:qc@local.botfactory-provincebotfactory.test')
+      assert.strictEqual(response.body.subject, `acct:${PROVINCE_USERNAME}@${LOCAL_HOST}`)
     })
     it('should return an object with a links array', async () => {
       assert.strictEqual(Array.isArray(response.body.links), true)
@@ -49,14 +85,14 @@ describe('ProvinceBotFactory', async () => {
       assert.strictEqual(typeof response.body.links[0].type, 'string')
       assert.strictEqual(response.body.links[0].type, 'application/activity+json')
       assert.strictEqual(typeof response.body.links[0].href, 'string')
-      assert.strictEqual(response.body.links[0].href, 'https://local.botfactory-provincebotfactory.test/user/qc')
+      assert.strictEqual(response.body.links[0].href, `${origin}/user/${PROVINCE_USERNAME}`)
     })
   })
 
   describe('Actor for province', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/user/qc')
+      response = await request(app).get(`/user/${PROVINCE_USERNAME}`)
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -71,7 +107,7 @@ describe('ProvinceBotFactory', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
     })
     it('should return an object with an id matching the request', async () => {
-      assert.strictEqual(response.body.id, origin + '/user/qc')
+      assert.strictEqual(response.body.id, `${origin}/user/${PROVINCE_USERNAME}`)
     })
     it('should return an object with a type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
@@ -83,7 +119,7 @@ describe('ProvinceBotFactory', async () => {
       assert.strictEqual(typeof response.body.preferredUsername, 'string')
     })
     it('should return an object with a preferredUsername matching the request', async () => {
-      assert.strictEqual(response.body.preferredUsername, 'qc')
+      assert.strictEqual(response.body.preferredUsername, PROVINCE_USERNAME)
     })
     it('should return an object with an inbox', async () => {
       assert.strictEqual(typeof response.body.inbox, 'string')
@@ -123,10 +159,10 @@ describe('ProvinceBotFactory', async () => {
       assert.ok(response.body.publicKey)
     })
     it('should return an object with a publicKey matching the request', async () => {
-      assert.strictEqual(response.body.publicKey.id, origin + '/user/qc/publickey')
+      assert.strictEqual(response.body.publicKey.id, `${origin}/user/${PROVINCE_USERNAME}/publickey`)
     })
     it('should return an object with a publicKey with an owner matching the request', async () => {
-      assert.strictEqual(response.body.publicKey.owner, origin + '/user/qc')
+      assert.strictEqual(response.body.publicKey.owner, `${origin}/user/${PROVINCE_USERNAME}`)
     })
     it('should return an object with a publicKey with a type', async () => {
       assert.strictEqual(response.body.publicKey.type, 'CryptographicKey')
@@ -146,7 +182,7 @@ describe('ProvinceBotFactory', async () => {
   describe('Public key for province', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/user/qc/publickey')
+      response = await request(app).get(`/user/${PROVINCE_USERNAME}/publickey`)
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -161,13 +197,13 @@ describe('ProvinceBotFactory', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
     })
     it('should return an object with the requested public key id', async () => {
-      assert.strictEqual(response.body.id, origin + '/user/qc/publickey')
+      assert.strictEqual(response.body.id, `${origin}/user/${PROVINCE_USERNAME}/publickey`)
     })
     it('should return an object with an owner', async () => {
       assert.strictEqual(typeof response.body.owner, 'string')
     })
     it('should return an object with the bot as owner', async () => {
-      assert.strictEqual(response.body.owner, origin + '/user/qc')
+      assert.strictEqual(response.body.owner, `${origin}/user/${PROVINCE_USERNAME}`)
     })
     it('should return an object with a publicKeyPem', async () => {
       assert.strictEqual(typeof response.body.publicKeyPem, 'string')
@@ -195,7 +231,7 @@ describe('ProvinceBotFactory', async () => {
       describe(`GET /user/{botid}/${coll}`, async () => {
         let response = null
         it('should work without an error', async () => {
-          response = await request(app).get(`/user/qc/${coll}`)
+          response = await request(app).get(`/user/${PROVINCE_USERNAME}/${coll}`)
         })
         it('should return 200 OK', async () => {
           assert.strictEqual(response.status, 200)
@@ -210,7 +246,7 @@ describe('ProvinceBotFactory', async () => {
           assert.strictEqual(typeof response.body.id, 'string')
         })
         it('should return an object with an id matching the request', async () => {
-          assert.strictEqual(response.body.id, origin + `/user/qc/${coll}`)
+          assert.strictEqual(response.body.id, `${origin}/user/${PROVINCE_USERNAME}/${coll}`)
         })
         it('should return an object with a type', async () => {
           assert.strictEqual(typeof response.body.type, 'string')
@@ -225,7 +261,7 @@ describe('ProvinceBotFactory', async () => {
           assert.strictEqual(typeof response.body.attributedTo, 'string')
         })
         it('should return an object with attributedTo matching the bot', async () => {
-          assert.strictEqual(response.body.attributedTo, origin + '/user/qc')
+          assert.strictEqual(response.body.attributedTo, `${origin}/user/${PROVINCE_USERNAME}`)
         })
         it('should return an object with a to', async () => {
           assert.strictEqual(typeof response.body.to, 'string')
@@ -245,13 +281,13 @@ describe('ProvinceBotFactory', async () => {
         })
         it(`should return an object with a ${coll}Of to the actor`, async () => {
           assert.strictEqual(typeof response.body[coll + 'Of'], 'string')
-          assert.strictEqual(response.body[coll + 'Of'], origin + '/user/qc')
+          assert.strictEqual(response.body[coll + 'Of'], `${origin}/user/${PROVINCE_USERNAME}`)
         })
       })
       describe(`GET /user/{botid}/${coll}/1`, async () => {
         let response = null
         it('should work without an error', async () => {
-          response = await request(app).get(`/user/qc/${coll}/1`)
+          response = await request(app).get(`/user/${PROVINCE_USERNAME}/${coll}/1`)
         })
         it('should return 200 OK', async () => {
           assert.strictEqual(response.status, 200)
@@ -266,7 +302,7 @@ describe('ProvinceBotFactory', async () => {
           assert.strictEqual(typeof response.body.id, 'string')
         })
         it('should return an object with an id matching the request', async () => {
-          assert.strictEqual(response.body.id, origin + `/user/qc/${coll}/1`)
+          assert.strictEqual(response.body.id, `${origin}/user/${PROVINCE_USERNAME}/${coll}/1`)
         })
         it('should return an object with a type', async () => {
           assert.strictEqual(typeof response.body.type, 'string')
@@ -278,7 +314,7 @@ describe('ProvinceBotFactory', async () => {
           assert.strictEqual(typeof response.body.attributedTo, 'string')
         })
         it('should return an object with attributedTo matching the bot', async () => {
-          assert.strictEqual(response.body.attributedTo, origin + '/user/qc')
+          assert.strictEqual(response.body.attributedTo, `${origin}/user/${PROVINCE_USERNAME}`)
         })
         it('should return an object with a to', async () => {
           assert.strictEqual(typeof response.body.to, 'string')
@@ -294,7 +330,7 @@ describe('ProvinceBotFactory', async () => {
           assert.strictEqual(typeof response.body.partOf, 'string')
         })
         it('should return an object with a partOf matching the collection', async () => {
-          assert.strictEqual(response.body.partOf, origin + `/user/qc/${coll}`)
+          assert.strictEqual(response.body.partOf, `${origin}/user/${PROVINCE_USERNAME}/${coll}`)
         })
       })
     })
@@ -303,7 +339,7 @@ describe('ProvinceBotFactory', async () => {
   describe('Province inbox collection', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/user/qc/inbox')
+      response = await request(app).get(`/user/${PROVINCE_USERNAME}/inbox`)
     })
     it('should return 403 Forbidden', async () => {
       assert.strictEqual(response.status, 403)
@@ -343,7 +379,7 @@ describe('ProvinceBotFactory', async () => {
   describe('Province inbox page', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/user/qc/inbox/1')
+      response = await request(app).get(`/user/${PROVINCE_USERNAME}/inbox/1`)
     })
     it('should return 403 Forbidden', async () => {
       assert.strictEqual(response.status, 403)
@@ -381,19 +417,19 @@ describe('ProvinceBotFactory', async () => {
   })
 
   describe('Province inbox incoming activity', async () => {
-    const username = 'actor1'
-    const botName = 'qc'
+    const username = REMOTE_ACTIVITY_USERNAME
+    const botName = PROVINCE_USERNAME
     const path = `/user/${botName}/inbox`
     const url = `${origin}${path}`
     const date = new Date().toUTCString()
     const activity = await as2.import({
       type: 'Activity',
-      actor: nockFormat({ username }),
-      id: nockFormat({ username, type: 'activity', num: 1 })
+      actor: nockFormatDefault({ username }),
+      id: nockFormatDefault({ username, type: 'activity', num: 1 })
     })
     const body = await activity.write()
     const digest = makeDigest(body)
-    const signature = await nockSignature({
+    const signature = await nockSignatureDefault({
       method: 'POST',
       username,
       url,
