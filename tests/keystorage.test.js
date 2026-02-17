@@ -1,9 +1,8 @@
 import { describe, before, after, it } from 'node:test'
 import { KeyStorage } from '../lib/keystorage.js'
 import assert from 'node:assert'
-import { Sequelize } from 'sequelize'
 import Logger from 'pino'
-import { runMigrations } from '../lib/migrations/index.js'
+import { createMigratedTestConnection } from './utils/db.js'
 
 describe('KeyStorage', async () => {
   let connection = null
@@ -18,9 +17,7 @@ describe('KeyStorage', async () => {
   let secondSystemPublicKey = null
   let secondSystemPrivateKey = null
   before(async () => {
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
     logger = new Logger({
       level: 'silent'
     })

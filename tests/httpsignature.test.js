@@ -1,11 +1,10 @@
 import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
-import { Sequelize } from 'sequelize'
 import { nockSetup, nockSignature, nockKeyRotate, getPublicKey, getPrivateKey, nockFormat } from '@evanp/activitypub-nock'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
-import { runMigrations } from '../lib/migrations/index.js'
+import { createMigratedTestConnection } from './utils/db.js'
 
 describe('HTTPSignature', async () => {
   const domain = 'activitypubbot.example'
@@ -18,9 +17,7 @@ describe('HTTPSignature', async () => {
     logger = Logger({
       level: 'silent'
     })
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
     nockSetup('social.example')
     digester = new Digester(logger)
   })

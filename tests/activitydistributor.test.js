@@ -1,8 +1,8 @@
 import { describe, it, before, after, beforeEach } from 'node:test'
 import { ActorStorage } from '../lib/actorstorage.js'
-import { Sequelize } from 'sequelize'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
+import { createMigratedTestConnection } from './utils/db.js'
 import {
   nockSetup,
   nockFormat,
@@ -24,7 +24,6 @@ import { ActivityDistributor } from '../lib/activitydistributor.js'
 import Logger from 'pino'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
-import { runMigrations } from '../lib/migrations/index.js'
 
 describe('ActivityDistributor', () => {
   let connection = null
@@ -37,9 +36,7 @@ describe('ActivityDistributor', () => {
   before(async () => {
     logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter('https://activitypubbot.example')
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
     actorStorage = new ActorStorage(connection, formatter)
     keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)

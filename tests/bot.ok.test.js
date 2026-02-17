@@ -2,6 +2,7 @@ import { describe, it, before } from 'node:test'
 import assert from 'node:assert'
 import as2 from '../lib/activitystreams.js'
 import request from 'supertest'
+import { getTestDatabaseUrl } from './utils/db.js'
 
 import { makeApp } from '../lib/app.js'
 
@@ -21,7 +22,7 @@ async function asyncSome (array, asyncPredicate) {
 describe('OK bot', async () => {
   const host = 'activitypubbot.example'
   const origin = `https://${host}`
-  const databaseUrl = 'sqlite::memory:'
+  const databaseUrl = getTestDatabaseUrl()
   let app = null
 
   before(async () => {

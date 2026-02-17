@@ -2,9 +2,10 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert'
 import { makeApp } from '../lib/app.js'
 import bots from './fixtures/bots.js'
+import { getTestDatabaseUrl } from './utils/db.js'
 
 describe('app', async () => {
-  const databaseUrl = 'sqlite::memory:'
+  const databaseUrl = getTestDatabaseUrl()
   const origin = 'https://activitypubbot.test'
   let app = null
   it('should be a function', async () => {

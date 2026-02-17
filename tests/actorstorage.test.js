@@ -1,10 +1,9 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { ActorStorage } from '../lib/actorstorage.js'
-import { Sequelize } from 'sequelize'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
-import { runMigrations } from '../lib/migrations/index.js'
+import { createMigratedTestConnection } from './utils/db.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 
@@ -15,9 +14,7 @@ describe('ActorStorage', () => {
   let other = null
   let unfollowed = null
   before(async () => {
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
     formatter = new UrlFormatter('https://activitypubbot.example')
     other = await as2.import({
       id: 'https://social.example/user/test2',

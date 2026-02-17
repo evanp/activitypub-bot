@@ -1,7 +1,6 @@
 import { describe, it, before, after, beforeEach } from 'node:test'
 import assert from 'node:assert'
 import { ActivityHandler } from '../lib/activityhandler.js'
-import { Sequelize } from 'sequelize'
 import { BotDataStorage } from '../lib/botdatastorage.js'
 import { ObjectStorage } from '../lib/objectstorage.js'
 import { KeyStorage } from '../lib/keystorage.js'
@@ -17,9 +16,9 @@ import bots from './fixtures/bots.js'
 import { nockSetup, postInbox, makeActor, nockFormat } from '@evanp/activitypub-nock'
 import { Digester } from '../lib/digester.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
-import { runMigrations } from '../lib/migrations/index.js'
 import { BotContext } from '../lib/botcontext.js'
 import { Transformer } from '../lib/microsyntax.js'
+import { createMigratedTestConnection } from './utils/db.js'
 
 describe('ActivityHandler', () => {
   const domain = 'activitypubbot.example'
@@ -46,9 +45,7 @@ describe('ActivityHandler', () => {
   before(async () => {
     logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter(origin)
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
     botDataStorage = new BotDataStorage(connection)
     objectStorage = new ObjectStorage(connection)
     keyStorage = new KeyStorage(connection, logger)

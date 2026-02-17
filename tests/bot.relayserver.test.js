@@ -1,5 +1,6 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+import { getTestDatabaseUrl } from './utils/db.js'
 
 import request from 'supertest'
 import { nockSetup, nockSignature, nockFormat, makeActor, resetInbox, postInbox } from '@evanp/activitypub-nock'
@@ -12,7 +13,7 @@ import bots from './fixtures/bots.js'
 describe('RelayServerBot', async () => {
   const host = 'activitypubbot.example'
   const origin = `https://${host}`
-  const databaseUrl = 'sqlite::memory:'
+  const databaseUrl = getTestDatabaseUrl()
   const remote = 'social.example'
   const relayServerBot = '_____relayserver_____'
   let app = null

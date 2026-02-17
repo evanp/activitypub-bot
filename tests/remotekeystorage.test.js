@@ -1,7 +1,6 @@
 import { describe, before, after, it } from 'node:test'
 import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
 import assert from 'node:assert'
-import { Sequelize } from 'sequelize'
 import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
@@ -9,7 +8,7 @@ import { nockSetup, nockFormat, getPublicKey, nockKeyRotate } from '@evanp/activ
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
-import { runMigrations } from '../lib/migrations/index.js'
+import { createMigratedTestConnection } from './utils/db.js'
 
 describe('RemoteKeyStorage', async () => {
   const host = 'activitypubbot.example'
@@ -23,9 +22,7 @@ describe('RemoteKeyStorage', async () => {
     logger = Logger({
       level: 'silent'
     })
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
     const keyStorage = new KeyStorage(connection, logger)
     const formatter = new UrlFormatter(origin)
     const digester = new Digester(logger)

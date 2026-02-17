@@ -1,16 +1,13 @@
 import { describe, before, after, it } from 'node:test'
 import { BotDataStorage, NoSuchValueError } from '../lib/botdatastorage.js'
 import assert from 'node:assert'
-import { Sequelize } from 'sequelize'
-import { runMigrations } from '../lib/migrations/index.js'
+import { createMigratedTestConnection } from './utils/db.js'
 
 describe('BotDataStorage', async () => {
   let connection = null
   let storage = null
   before(async () => {
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
   })
   after(async () => {
     await connection.close()

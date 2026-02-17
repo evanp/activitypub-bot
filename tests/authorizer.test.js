@@ -1,7 +1,6 @@
 import { describe, it, before, after } from 'node:test'
 import { Authorizer } from '../lib/authorizer.js'
 import { ActorStorage } from '../lib/actorstorage.js'
-import { Sequelize } from 'sequelize'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
@@ -11,7 +10,7 @@ import { nanoid } from 'nanoid'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
-import { runMigrations } from '../lib/migrations/index.js'
+import { createMigratedTestConnection } from './utils/db.js'
 
 describe('Authorizer', () => {
   let authorizer = null
@@ -38,9 +37,7 @@ describe('Authorizer', () => {
       level: 'silent'
     })
     formatter = new UrlFormatter('https://activitypubbot.example')
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
     actorStorage = new ActorStorage(connection, formatter)
     keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)

@@ -2,8 +2,7 @@ import { describe, it, before, after } from 'node:test'
 import as2 from '../lib/activitystreams.js'
 import assert from 'node:assert'
 import { ObjectStorage, NoSuchObjectError } from '../lib/objectstorage.js'
-import { Sequelize } from 'sequelize'
-import { runMigrations } from '../lib/migrations/index.js'
+import { createMigratedTestConnection } from './utils/db.js'
 
 describe('ObjectStorage', async () => {
   let doc = null
@@ -34,9 +33,7 @@ describe('ObjectStorage', async () => {
       name: 'test',
       content: 'test'
     })
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
   })
   after(async () => {
     await connection.close()

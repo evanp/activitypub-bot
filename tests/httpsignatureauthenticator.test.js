@@ -1,6 +1,5 @@
 import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
-import { Sequelize } from 'sequelize'
 import { KeyStorage } from '../lib/keystorage.js'
 import { nockSetup, nockSignature, nockKeyRotate, nockFormat } from '@evanp/activitypub-nock'
 import { HTTPSignature } from '../lib/httpsignature.js'
@@ -11,7 +10,7 @@ import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
-import { runMigrations } from '../lib/migrations/index.js'
+import { createMigratedTestConnection } from './utils/db.js'
 
 describe('HTTPSignatureAuthenticator', async () => {
   const domain = 'activitypubbot.example'
@@ -40,9 +39,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     logger = Logger({
       level: 'silent'
     })
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
     signer = new HTTPSignature(logger)
     digester = new Digester(logger)
     const formatter = new UrlFormatter(origin)

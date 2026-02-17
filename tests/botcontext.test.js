@@ -1,7 +1,6 @@
 import { describe, it, before, after, beforeEach } from 'node:test'
 import assert from 'node:assert'
 import { BotContext } from '../lib/botcontext.js'
-import { Sequelize } from 'sequelize'
 import { BotDataStorage } from '../lib/botdatastorage.js'
 import { ObjectStorage } from '../lib/objectstorage.js'
 import { KeyStorage } from '../lib/keystorage.js'
@@ -10,6 +9,7 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { Transformer } from '../lib/microsyntax.js'
+import { createMigratedTestConnection } from './utils/db.js'
 import {
   nockSetup,
   postInbox,
@@ -22,7 +22,6 @@ import Logger from 'pino'
 import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
-import { runMigrations } from '../lib/migrations/index.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 
@@ -48,9 +47,7 @@ describe('BotContext', () => {
       level: 'silent'
     })
     formatter = new UrlFormatter('https://activitypubbot.example')
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
     botDataStorage = new BotDataStorage(connection)
     objectStorage = new ObjectStorage(connection)
     keyStorage = new KeyStorage(connection, logger)

@@ -1,6 +1,5 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
-import { Sequelize } from 'sequelize'
 import { Transformer } from '../lib/microsyntax.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { KeyStorage } from '../lib/keystorage.js'
@@ -9,7 +8,7 @@ import { nockSetup } from '@evanp/activitypub-nock'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
-import { runMigrations } from '../lib/migrations/index.js'
+import { createMigratedTestConnection } from './utils/db.js'
 
 const AS2 = 'https://www.w3.org/ns/activitystreams#'
 
@@ -23,9 +22,7 @@ describe('microsyntax', async () => {
     level: 'silent'
   })
   const digester = new Digester(logger)
-  const connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-  await connection.authenticate()
-  await runMigrations(connection)
+  const connection = await createMigratedTestConnection()
   const keyStorage = new KeyStorage(connection, logger)
   const formatter = new UrlFormatter(origin)
   const signer = new HTTPSignature(logger)

@@ -1,6 +1,7 @@
 import { describe, it, before } from 'node:test'
 import assert from 'node:assert'
 import request from 'supertest'
+import { getTestDatabaseUrl } from './utils/db.js'
 
 import { makeApp } from '../lib/app.js'
 
@@ -10,7 +11,7 @@ import bots from './fixtures/bots.js'
 describe('DoNothing bot', async () => {
   const host = 'activitypubbot.example'
   const origin = `https://${host}`
-  const databaseUrl = 'sqlite::memory:'
+  const databaseUrl = getTestDatabaseUrl()
   let app = null
 
   before(async () => {

@@ -1,15 +1,14 @@
 import { describe, it, before } from 'node:test'
 import assert from 'node:assert'
+import { createMigratedTestConnection } from './utils/db.js'
 
 import Logger from 'pino'
-import { Sequelize } from 'sequelize'
 
 import { ActivityHandler } from '../lib/activityhandler.js'
 import { ObjectStorage } from '../lib/objectstorage.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
-import { runMigrations } from '../lib/migrations/index.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
@@ -31,9 +30,7 @@ describe('ActivityDeliverer', async () => {
   before(async () => {
     logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter(origin)
-    const connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    const connection = await createMigratedTestConnection()
     actorStorage = new ActorStorage(connection, formatter)
     const objectStorage = new ObjectStorage(connection)
     const keyStorage = new KeyStorage(connection, logger)

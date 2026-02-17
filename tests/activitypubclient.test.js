@@ -3,12 +3,11 @@ import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import assert from 'node:assert'
-import { Sequelize } from 'sequelize'
 import as2 from '../lib/activitystreams.js'
 import Logger from 'pino'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
-import { runMigrations } from '../lib/migrations/index.js'
+import { createMigratedTestConnection } from './utils/db.js'
 import {
   nockSetup,
   getRequestHeaders,
@@ -37,9 +36,7 @@ describe('ActivityPubClient', async () => {
     })
     digester = new Digester(logger)
     signer = new HTTPSignature(logger)
-    connection = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    await connection.authenticate()
-    await runMigrations(connection)
+    connection = await createMigratedTestConnection()
     keyStorage = new KeyStorage(connection, logger)
     formatter = new UrlFormatter('https://activitypubbot.example')
     const remote = 'social.example'

@@ -5,9 +5,10 @@ import request from 'supertest'
 import bots from './fixtures/bots.js'
 import as2 from '../lib/activitystreams.js'
 import { nanoid } from 'nanoid'
+import { getTestDatabaseUrl } from './utils/db.js'
 
 describe('actor collection routes', async () => {
-  const databaseUrl = 'sqlite::memory:'
+  const databaseUrl = getTestDatabaseUrl()
   const origin = 'https://activitypubbot.test'
   const app = await makeApp(databaseUrl, origin, bots, 'silent')
 
