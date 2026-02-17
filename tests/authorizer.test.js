@@ -13,9 +13,9 @@ import { Digester } from '../lib/digester.js'
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 describe('Authorizer', () => {
-  const LOCAL_HOST = 'authorizer.local.test'
+  const LOCAL_HOST = 'local.authorizer.test'
   const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
-  const REMOTE_HOST = 'authorizer-remote.test'
+  const REMOTE_HOST = 'remote.authorizer.test'
   const REMOTE_ORIGIN = `https://${REMOTE_HOST}`
   const LOCAL_USER_1 = 'authorizertest1'
   const LOCAL_USER_2 = 'authorizertest2'
@@ -288,7 +288,7 @@ describe('Authorizer', () => {
       type: 'Object'
     })
     const object2 = await as2.import({
-      id: 'https://other.example/object/2',
+      id: 'https://other.authorizer.test/object/2',
       type: 'Object'
     })
     assert.strictEqual(false, await authorizer.sameOrigin(object1, object2))

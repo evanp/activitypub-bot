@@ -37,13 +37,13 @@ describe('ActorStorage', () => {
   before(async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, { usernames: TEST_USERNAMES })
-    formatter = new UrlFormatter('https://activitypubbot.example')
+    formatter = new UrlFormatter('https://local.actorstorage.test')
     other = await as2.import({
-      id: 'https://social.example/user/test2',
+      id: 'https://social.actorstorage.test/user/test2',
       type: 'Person'
     })
     unfollowed = await as2.import({
-      id: 'https://social.example/user/test3',
+      id: 'https://social.actorstorage.test/user/test3',
       type: 'Person'
     })
   })
@@ -72,7 +72,7 @@ describe('ActorStorage', () => {
   })
 
   it('can get an actor by id', async () => {
-    const actor = await storage.getActorById(`https://activitypubbot.example/user/${LOCAL_USER}`)
+    const actor = await storage.getActorById(`https://local.actorstorage.test/user/${LOCAL_USER}`)
     assert.ok(actor)
     assert.ok(actor.id)
     assert.ok(actor.inbox)
@@ -85,7 +85,7 @@ describe('ActorStorage', () => {
   it('can get an empty collection', async () => {
     const collection = await storage.getCollection(LOCAL_USER, 'followers')
     assert.ok(collection)
-    assert.strictEqual(collection.id, `https://activitypubbot.example/user/${LOCAL_USER}/followers`)
+    assert.strictEqual(collection.id, `https://local.actorstorage.test/user/${LOCAL_USER}/followers`)
     assert.strictEqual(collection.type, 'https://www.w3.org/ns/activitystreams#OrderedCollection')
     assert.strictEqual(collection.totalItems, 0)
     assert.ok(collection.first)
@@ -96,12 +96,12 @@ describe('ActorStorage', () => {
     assert.ok(page)
     assert.strictEqual(
       page.id,
-      `https://activitypubbot.example/user/${LOCAL_USER}/followers/1`
+      `https://local.actorstorage.test/user/${LOCAL_USER}/followers/1`
     )
     assert.strictEqual(page.type, 'https://www.w3.org/ns/activitystreams#OrderedCollectionPage')
     assert.strictEqual(
       page.partOf.id,
-      `https://activitypubbot.example/user/${LOCAL_USER}/followers`
+      `https://local.actorstorage.test/user/${LOCAL_USER}/followers`
     )
     assert.ok(!page.next)
     assert.ok(!page.prev)
@@ -118,7 +118,7 @@ describe('ActorStorage', () => {
     assert.strictEqual(collection2.totalItems, 1)
     const page = await storage.getCollectionPage(FOLLOWERS_USER, 'followers', 1)
     assert.strictEqual(page.items.length, 1)
-    assert.strictEqual(Array.from(page.items)[0].id, 'https://social.example/user/test2')
+    assert.strictEqual(Array.from(page.items)[0].id, 'https://social.actorstorage.test/user/test2')
   })
   it('can remove from a collection', async () => {
     await storage.removeFromCollection(
@@ -134,7 +134,7 @@ describe('ActorStorage', () => {
   it('can add a lot of items a collection', async () => {
     for (let i = 0; i < 100; i++) {
       const other = await as2.import({
-        id: `https://social.example/user/foo/note/${i}`,
+        id: `https://social.actorstorage.test/user/foo/note/${i}`,
         type: 'Note',
         content: `Hello World ${i}`
       })
@@ -148,7 +148,7 @@ describe('ActorStorage', () => {
     assert.strictEqual(collection.totalItems, 100)
     const page = await storage.getCollectionPage(LIKED_USER_A, 'liked', 3)
     assert.strictEqual(page.items.length, 20)
-    assert.strictEqual(page.next.id, `https://activitypubbot.example/user/${LIKED_USER_A}/liked/2`)
+    assert.strictEqual(page.next.id, `https://local.actorstorage.test/user/${LIKED_USER_A}/liked/2`)
   })
   it('can iterate over a collection', async () => {
     const seen = new Set()
@@ -160,12 +160,12 @@ describe('ActorStorage', () => {
   })
   it('can add twice and remove once from a collection', async () => {
     const other = await as2.import({
-      id: 'https://social.example/user/foo/note/200',
+      id: 'https://social.actorstorage.test/user/foo/note/200',
       type: 'Note',
       content: 'Hello World 200'
     })
     const other2 = await as2.import({
-      id: 'https://social.example/user/foo/note/201',
+      id: 'https://social.actorstorage.test/user/foo/note/201',
       type: 'Note',
       content: 'Hello World 201'
     })
@@ -193,12 +193,12 @@ describe('ActorStorage', () => {
   })
   it('can check if something is in the collection', async () => {
     const other = await as2.import({
-      id: 'https://social.example/user/foo/note/300',
+      id: 'https://social.actorstorage.test/user/foo/note/300',
       type: 'Note',
       content: 'Hello World 300'
     })
     const other2 = await as2.import({
-      id: 'https://social.example/user/foo/note/301',
+      id: 'https://social.actorstorage.test/user/foo/note/301',
       type: 'Note',
       content: 'Hello World 301'
     })
@@ -225,17 +225,17 @@ describe('ActorStorage', () => {
 
   it('retains totalItems when we remove an absent object', async () => {
     const other = await as2.import({
-      id: 'https://social.example/user/foo/note/400',
+      id: 'https://social.actorstorage.test/user/foo/note/400',
       type: 'Note',
       content: 'Hello World 400'
     })
     const other2 = await as2.import({
-      id: 'https://social.example/user/foo/note/401',
+      id: 'https://social.actorstorage.test/user/foo/note/401',
       type: 'Note',
       content: 'Hello World 401'
     })
     const other3 = await as2.import({
-      id: 'https://social.example/user/foo/note/402',
+      id: 'https://social.actorstorage.test/user/foo/note/402',
       type: 'Note',
       content: 'Hello World 402'
     })
@@ -305,22 +305,22 @@ describe('ActorStorage', () => {
 
     before(async () => {
       object = await as2.import({
-        id: 'https://social.example/note/26158',
+        id: 'https://social.actorstorage.test/note/26158',
         type: 'Note'
       })
       activity1 = await as2.import({
-        id: 'https://social.example/like/4605',
+        id: 'https://social.actorstorage.test/like/4605',
         type: 'Like',
         object: {
-          id: 'https://social.example/note/26158',
+          id: 'https://social.actorstorage.test/note/26158',
           type: 'Note'
         }
       })
       activity2 = await as2.import({
-        id: 'https://social.example/like/900',
+        id: 'https://social.actorstorage.test/like/900',
         type: 'Like',
         object: {
-          id: 'https://social.example/note/26158',
+          id: 'https://social.actorstorage.test/note/26158',
           type: 'Note'
         }
       })

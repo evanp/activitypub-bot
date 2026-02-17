@@ -5,7 +5,7 @@ import DoNothingBot from '../lib/bots/donothing.js'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('app', async () => {
-  const LOCAL_HOST = 'app.local.test'
+  const LOCAL_HOST = 'local.app.test'
   const origin = `https://${LOCAL_HOST}`
   const BOT_USERNAME = 'apptestbot1'
   const TEST_USERNAMES = [BOT_USERNAME]

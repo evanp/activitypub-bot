@@ -12,20 +12,20 @@ import { makeDigest } from './utils/digest.js'
 import bots from './fixtures/bots.js'
 
 describe('ProvinceBotFactory', async () => {
-  const host = 'activitypubbot.example'
+  const host = 'local.botfactory-provincebotfactory.test'
   const origin = `https://${host}`
   const databaseUrl = getTestDatabaseUrl()
   let app = null
 
   before(async () => {
-    nockSetup('social.example')
+    nockSetup('social.botfactory-provincebotfactory.test')
     app = await makeApp(databaseUrl, origin, bots, 'silent')
   })
 
   describe('Webfinger discovery for province', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/.well-known/webfinger?resource=acct%3Aqc%40activitypubbot.example')
+      response = await request(app).get('/.well-known/webfinger?resource=acct%3Aqc%40local.botfactory-provincebotfactory.test')
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -37,7 +37,7 @@ describe('ProvinceBotFactory', async () => {
       assert.strictEqual(typeof response.body.subject, 'string')
     })
     it('should return an object with an subject matching the request', async () => {
-      assert.strictEqual(response.body.subject, 'acct:qc@activitypubbot.example')
+      assert.strictEqual(response.body.subject, 'acct:qc@local.botfactory-provincebotfactory.test')
     })
     it('should return an object with a links array', async () => {
       assert.strictEqual(Array.isArray(response.body.links), true)
@@ -49,7 +49,7 @@ describe('ProvinceBotFactory', async () => {
       assert.strictEqual(typeof response.body.links[0].type, 'string')
       assert.strictEqual(response.body.links[0].type, 'application/activity+json')
       assert.strictEqual(typeof response.body.links[0].href, 'string')
-      assert.strictEqual(response.body.links[0].href, 'https://activitypubbot.example/user/qc')
+      assert.strictEqual(response.body.links[0].href, 'https://local.botfactory-provincebotfactory.test/user/qc')
     })
   })
 

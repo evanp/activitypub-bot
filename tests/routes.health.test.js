@@ -5,7 +5,7 @@ import request from 'supertest'
 import { getTestDatabaseUrl } from './utils/db.js'
 
 describe('health check routes', async () => {
-  const LOCAL_HOST = 'routes-health.local.test'
+  const LOCAL_HOST = 'local.routes-health.test'
   const databaseUrl = getTestDatabaseUrl()
   const origin = `https://${LOCAL_HOST}`
   const testBots = {}

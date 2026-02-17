@@ -9,7 +9,7 @@ import { nanoid } from 'nanoid'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('actor collection routes', async () => {
-  const LOCAL_HOST = 'routes-collection.local.test'
+  const LOCAL_HOST = 'local.routes-collection.test'
   const databaseUrl = getTestDatabaseUrl()
   const origin = `https://${LOCAL_HOST}`
   const BOT_USERNAME = 'routescollectiontestok'

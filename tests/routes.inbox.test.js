@@ -9,8 +9,8 @@ import { makeDigest } from './utils/digest.js'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('routes.inbox', async () => {
-  const LOCAL_HOST = 'routes-inbox.local.test'
-  const REMOTE_HOST = 'routes-inbox.remote.test'
+  const LOCAL_HOST = 'local.routes-inbox.test'
+  const REMOTE_HOST = 'remote.routes-inbox.test'
   const BOT_USERNAME = 'routesinboxtestreadonly'
   const INBOX_BOT_1 = 'routesinboxtest1'
   const INBOX_BOT_2 = 'routesinboxtest2'

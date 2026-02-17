@@ -7,8 +7,8 @@ import { Digester } from '../lib/digester.js'
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 describe('HTTPSignature', async () => {
-  const domain = 'httpsignature.local.test'
-  const remoteDomain = 'httpsignature-social.test'
+  const domain = 'local.httpsignature.test'
+  const remoteDomain = 'social.httpsignature.test'
   const origin = `https://${domain}`
   const localUser = 'httpsignaturetestlocal'
   const signerUser = 'httpsignaturetestsigner'

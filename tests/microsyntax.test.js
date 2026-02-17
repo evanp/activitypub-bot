@@ -13,10 +13,10 @@ import { createMigratedTestConnection } from './utils/db.js'
 const AS2 = 'https://www.w3.org/ns/activitystreams#'
 
 describe('microsyntax', async () => {
-  const tagNamespace = 'https://tags.example/tag/'
-  const origin = 'https://activitypubbot.example'
+  const tagNamespace = 'https://tags.microsyntax.test/tag/'
+  const origin = 'https://local.microsyntax.test'
 
-  nockSetup('social.example')
+  nockSetup('social.microsyntax.test')
 
   const logger = Logger({
     level: 'silent'
@@ -54,13 +54,13 @@ describe('microsyntax', async () => {
       assert.ok(tag)
     })
     it('has correct html', () => {
-      assert.equal(html, '<p>Hello, World! <a href="https://tags.example/tag/greeting">#greeting</a></p>')
+      assert.equal(html, '<p>Hello, World! <a href="https://tags.microsyntax.test/tag/greeting">#greeting</a></p>')
     })
     it('has correct tag', () => {
       assert.equal(tag.length, 1)
       assert.equal(tag[0].type, AS2 + 'Hashtag')
       assert.equal(tag[0].name, '#greeting')
-      assert.equal(tag[0].href, 'https://tags.example/tag/greeting')
+      assert.equal(tag[0].href, 'https://tags.microsyntax.test/tag/greeting')
     })
   })
 
@@ -99,7 +99,7 @@ describe('microsyntax', async () => {
   })
 
   describe('transform full mention', async () => {
-    const text = 'Hello, @world@social.example !'
+    const text = 'Hello, @world@social.microsyntax.test !'
     const { html, tag } = await transformer.transform(text)
     it('has html output', () => {
       assert.ok(html)
@@ -108,13 +108,13 @@ describe('microsyntax', async () => {
       assert.ok(tag)
     })
     it('has correct html', () => {
-      assert.equal(html, '<p>Hello, <a href="https://social.example/profile/world">@world@social.example</a> !</p>')
+      assert.equal(html, '<p>Hello, <a href="https://social.microsyntax.test/profile/world">@world@social.microsyntax.test</a> !</p>')
     })
     it('has correct tag', () => {
       assert.equal(tag.length, 1)
       assert.equal(tag[0].type, 'Mention')
-      assert.equal(tag[0].name, '@world@social.example')
-      assert.equal(tag[0].href, 'https://social.example/profile/world')
+      assert.equal(tag[0].name, '@world@social.microsyntax.test')
+      assert.equal(tag[0].href, 'https://social.microsyntax.test/profile/world')
     })
   })
 })

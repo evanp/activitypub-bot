@@ -17,8 +17,8 @@ import {
 } from '@evanp/activitypub-nock'
 
 describe('ActivityPubClient', async () => {
-  const LOCAL_HOST = 'activitypubclient.local.test'
-  const REMOTE_HOST = 'activitypubclient-social.test'
+  const LOCAL_HOST = 'local.activitypubclient.test'
+  const REMOTE_HOST = 'social.activitypubclient.test'
   const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
   const LOCAL_SIGNING_USER = 'activitypubclienttestfoobot'
   const REMOTE_PROFILE_USER = 'activitypubclientevan'

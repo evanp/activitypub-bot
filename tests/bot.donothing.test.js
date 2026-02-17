@@ -7,8 +7,8 @@ import { nockSetup } from '@evanp/activitypub-nock'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('DoNothing bot', async () => {
-  const LOCAL_HOST = 'bot-donothing.local.test'
-  const REMOTE_HOST = 'bot-donothing.remote.test'
+  const LOCAL_HOST = 'local.bot-donothing.test'
+  const REMOTE_HOST = 'remote.bot-donothing.test'
   const BOT_USERNAME = 'botdonothingtest'
   const TEST_USERNAMES = [BOT_USERNAME]
   const testBots = {

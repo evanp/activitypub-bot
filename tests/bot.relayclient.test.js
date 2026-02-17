@@ -21,8 +21,8 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
-const LOCAL_HOST = 'bot-relayclient.local.test'
-const REMOTE_HOST = 'bot-relayclient.remote.test'
+const LOCAL_HOST = 'local.bot-relayclient.test'
+const REMOTE_HOST = 'remote.bot-relayclient.test'
 const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
 const BOT_USERNAME = 'botrelayclienttest1'
 const RELAY_USERNAME = 'botrelayclientrelay1'

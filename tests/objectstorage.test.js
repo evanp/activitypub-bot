@@ -4,7 +4,7 @@ import assert from 'node:assert'
 import { ObjectStorage, NoSuchObjectError } from '../lib/objectstorage.js'
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
-const LOCAL_HOST = 'objectstorage.test'
+const LOCAL_HOST = 'local.objectstorage.test'
 const TEST_NOTE_BASE = `https://${LOCAL_HOST}/users/objectstoragetest/note`
 const DOC1_ID = `${TEST_NOTE_BASE}/1`
 const DOC2_ID = `${TEST_NOTE_BASE}/2`

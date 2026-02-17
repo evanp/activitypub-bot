@@ -9,8 +9,8 @@ import { makeDigest } from './utils/digest.js'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('RelayServerBot', async () => {
-  const LOCAL_HOST = 'bot-relayserver.local.test'
-  const REMOTE_HOST = 'bot-relayserver.remote.test'
+  const LOCAL_HOST = 'local.bot-relayserver.test'
+  const REMOTE_HOST = 'remote.bot-relayserver.test'
   const RELAY_SERVER_BOT_USERNAME = 'botrelayservertest'
   const REMOTE_CLIENT_USERNAME = 'botrelayserverclient1'
   const TEST_USERNAMES = [RELAY_SERVER_BOT_USERNAME]

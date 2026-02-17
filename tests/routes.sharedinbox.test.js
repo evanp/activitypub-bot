@@ -18,8 +18,8 @@ import EventLoggingBot from './fixtures/eventloggingbot.js'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('routes.sharedinbox', async () => {
-  const LOCAL_HOST = 'routes-sharedinbox.local.test'
-  const REMOTE_HOST = 'routes-sharedinbox.remote.test'
+  const LOCAL_HOST = 'local.routes-sharedinbox.test'
+  const REMOTE_HOST = 'remote.routes-sharedinbox.test'
   const BOT_READONLY = 'routesharedinboxtestreadonly'
   const BOT_DIRECT = 'routesharedinboxtestdirect'
   const BOT_FOLLOWERS_ONLY_1 = 'routesharedinboxtestfol1'

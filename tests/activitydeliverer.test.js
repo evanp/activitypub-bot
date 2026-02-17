@@ -17,8 +17,8 @@ import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
 
 describe('ActivityDeliverer', async () => {
-  const localHost = 'activitydeliverer.local.test'
-  const remoteHost = 'activitydeliverer.remote.test'
+  const localHost = 'local.activitydeliverer.test'
+  const remoteHost = 'remote.activitydeliverer.test'
   const origin = `https://${localHost}`
   const testUsernames = ['activitydeliverertest1', 'activitydeliverertest2']
   let connection

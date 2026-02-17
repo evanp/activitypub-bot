@@ -10,8 +10,8 @@ import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 const uppercase = (string) => string.charAt(0).toUpperCase() + string.slice(1)
 
 describe('object collection routes', async () => {
-  const LOCAL_HOST = 'routes-object.local.test'
-  const REMOTE_HOST = 'routes-object.remote.test'
+  const LOCAL_HOST = 'local.routes-object.test'
+  const REMOTE_HOST = 'remote.routes-object.test'
   const BOT_USERNAME = 'routesobjecttestbot'
   const REMOTE_FOLLOWER_USERNAME = 'routesobjecttestfollower'
   const REMOTE_REPLIER_USERNAME = 'routesobjecttestreplier'

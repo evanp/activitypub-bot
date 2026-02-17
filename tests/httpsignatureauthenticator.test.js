@@ -13,8 +13,8 @@ import as2 from '../lib/activitystreams.js'
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 describe('HTTPSignatureAuthenticator', async () => {
-  const LOCAL_HOST = 'httpsignatureauth.local.test'
-  const REMOTE_HOST = 'httpsignatureauth-social.test'
+  const LOCAL_HOST = 'local.httpsignatureauthenticator.test'
+  const REMOTE_HOST = 'social.httpsignatureauthenticator.test'
   const origin = `https://${LOCAL_HOST}`
   const LOCAL_USER = 'httpsignatureauthtestlocal'
   const REMOTE_USER_1 = 'httpsignatureauthremote1'

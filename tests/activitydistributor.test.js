@@ -25,13 +25,13 @@ import Logger from 'pino'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 
-const LOCAL_HOST = 'activitydistributor.local.test'
+const LOCAL_HOST = 'local.activitydistributor.test'
 const ORIGIN = `https://${LOCAL_HOST}`
-const SOCIAL_HOST = 'activitydistributor-social.test'
-const OTHER_HOST = 'activitydistributor-other.test'
-const THIRD_HOST = 'activitydistributor-third.test'
-const SHARED_HOST = 'activitydistributor-shared.test'
-const FLAKY_HOST = 'activitydistributor-flaky.test'
+const SOCIAL_HOST = 'social.activitydistributor.test'
+const OTHER_HOST = 'other.activitydistributor.test'
+const THIRD_HOST = 'third.activitydistributor.test'
+const SHARED_HOST = 'shared.activitydistributor.test'
+const FLAKY_HOST = 'flaky.activitydistributor.test'
 const LOCAL_USER0 = 'activitydistributortest0'
 const LOCAL_USER1 = 'activitydistributortest1'
 const LOCAL_USER2 = 'activitydistributortest2'
@@ -144,17 +144,17 @@ describe('ActivityDistributor', () => {
   })
   it('can distribute an activity to a single recipient', async () => {
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/1',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/1',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
-      to: ['https://activitydistributor-social.test/user/activitydistributortest1']
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
+      to: ['https://social.activitydistributor.test/user/activitydistributortest1']
     })
     await distributor.distribute(activity, 'activitydistributortest0')
     await distributor.onIdle()
     assert.equal(postInbox.activitydistributortest1, 1)
     assert.ok(!postInbox.activitydistributortest2)
     const { signature, digest, date } =
-      getRequestHeaders('https://activitydistributor-social.test/user/activitydistributortest1/inbox')
+      getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
     assert.ok(digest)
     assert.ok(date)
@@ -164,15 +164,15 @@ describe('ActivityDistributor', () => {
   })
   it('can distribute an activity to all followers', async () => {
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/2',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/2',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
-      to: ['https://activitydistributor.local.test/user/activitydistributortest0/followers']
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
+      to: ['https://local.activitydistributor.test/user/activitydistributortest0/followers']
     })
     await distributor.distribute(activity, 'activitydistributortest0')
     await distributor.onIdle()
     const { signature, digest, date } =
-      getRequestHeaders('https://activitydistributor-social.test/user/activitydistributortest1/inbox')
+      getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
     assert.ok(digest)
     assert.ok(date)
@@ -182,9 +182,9 @@ describe('ActivityDistributor', () => {
   })
   it('can distribute an activity to the public', async () => {
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/3',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/3',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
       to: ['https://www.w3.org/ns/activitystreams#Public']
     })
     await distributor.distribute(activity, 'activitydistributortest0')
@@ -194,18 +194,18 @@ describe('ActivityDistributor', () => {
   })
   it('can distribute an activity to an addressed actor and followers', async () => {
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/4',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/4',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
-      to: ['https://activitydistributor-social.test/user/activitydistributortest1'],
-      cc: ['https://activitydistributor.local.test/user/activitydistributortest0/followers']
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
+      to: ['https://social.activitydistributor.test/user/activitydistributortest1'],
+      cc: ['https://local.activitydistributor.test/user/activitydistributortest0/followers']
     })
     await distributor.distribute(activity, 'activitydistributortest0')
     await distributor.onIdle()
     assert.ok(postInbox.activitydistributortest1)
     assert.ok(postInbox.activitydistributortest2)
     const { signature, digest, date } =
-      getRequestHeaders('https://activitydistributor-social.test/user/activitydistributortest1/inbox')
+      getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
     assert.ok(digest)
     assert.ok(date)
@@ -215,10 +215,10 @@ describe('ActivityDistributor', () => {
   })
   it('can distribute an activity to an addressed actor and the public', async () => {
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/5',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/5',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
-      to: ['https://activitydistributor-social.test/user/activitydistributortest1'],
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
+      to: ['https://social.activitydistributor.test/user/activitydistributortest1'],
       cc: ['https://www.w3.org/ns/activitystreams#Public']
     })
     await distributor.distribute(activity, 'activitydistributortest0')
@@ -226,7 +226,7 @@ describe('ActivityDistributor', () => {
     assert.ok(postInbox.activitydistributortest1)
     assert.ok(!postInbox.activitydistributortest2)
     const { signature, digest, date } =
-      getRequestHeaders('https://activitydistributor-social.test/user/activitydistributortest1/inbox')
+      getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
     assert.ok(digest)
     assert.ok(date)
@@ -236,11 +236,11 @@ describe('ActivityDistributor', () => {
   })
   it('only sends once to an addressed follower', async () => {
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/6',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/6',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
-      to: ['https://activitydistributor-other.test/user/activitydistributortest2'],
-      cc: ['https://activitydistributor.local.test/user/activitydistributortest0/followers']
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
+      to: ['https://other.activitydistributor.test/user/activitydistributortest2'],
+      cc: ['https://local.activitydistributor.test/user/activitydistributortest0/followers']
     })
     await distributor.distribute(activity, 'activitydistributortest0')
     await distributor.onIdle()
@@ -248,17 +248,17 @@ describe('ActivityDistributor', () => {
   })
   it('does not send bcc or bto over the wire', async () => {
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/8',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/8',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
-      bto: ['https://activitydistributor-other.test/user/activitydistributortest2'],
-      bcc: ['https://activitydistributor-third.test/user/activitydistributortest3']
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
+      bto: ['https://other.activitydistributor.test/user/activitydistributortest2'],
+      bcc: ['https://third.activitydistributor.test/user/activitydistributortest3']
     })
     await distributor.distribute(activity, 'activitydistributortest0')
     await distributor.onIdle()
     assert.equal(postInbox.activitydistributortest2, 1)
     assert.equal(postInbox.activitydistributortest3, 1)
-    const body = getBody('https://activitydistributor-other.test/user/activitydistributortest2/inbox')
+    const body = getBody('https://other.activitydistributor.test/user/activitydistributortest2/inbox')
     assert.ok(!body.match(/bcc/))
     assert.ok(!body.match(/bto/))
   })
@@ -266,9 +266,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1)
     const remotes = nums.map(n => `https://${SHARED_HOST}/user/${SHARED_USER_PREFIX}${n}`)
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/9',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/9',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
       to: remotes
     })
     await distributor.distribute(activity, 'activitydistributortest0')
@@ -282,9 +282,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1)
     const remotes = nums.map(n => `https://${SHARED_HOST}/user/${SHARED_USER_PREFIX}${n}`)
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/10',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/10',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
       to: remotes
     })
     assert.equal(postSharedInbox[SHARED_HOST], 0)
@@ -296,9 +296,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1)
     const remotes = nums.map(n => `https://${SHARED_HOST}/user/${SHARED_USER_PREFIX}${n}`)
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/11',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/11',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
       bto: remotes
     })
     await distributor.distribute(activity, 'activitydistributortest0')
@@ -312,9 +312,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1)
     const remotes = nums.map(n => `https://${SHARED_HOST}/user/${SHARED_USER_PREFIX}${n}`)
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/12',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/12',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
       bto: remotes
     })
     await distributor.distribute(activity, 'activitydistributortest0')
@@ -328,9 +328,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1).map(n => n + 100)
     const remotes = nums.map(n => `https://${SHARED_HOST}/user/${SHARED_USER_PREFIX}${n}`)
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/13',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/13',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
       bcc: remotes
     })
     await distributor.distribute(activity, 'activitydistributortest0')
@@ -344,9 +344,9 @@ describe('ActivityDistributor', () => {
     const nums = Array.from({ length: 10 }, (v, k) => k + 1).map(n => n + 100)
     const remotes = nums.map(n => `https://${SHARED_HOST}/user/${SHARED_USER_PREFIX}${n}`)
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/14',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/14',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
       bcc: remotes
     })
     await distributor.distribute(activity, 'activitydistributortest0')
@@ -358,10 +358,10 @@ describe('ActivityDistributor', () => {
   })
   it('retries distribution to a flaky recipient', async () => {
     const activity = await as2.import({
-      id: 'https://activitydistributor.local.test/user/activitydistributortest0/intransitiveactivity/15',
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/15',
       type: 'IntransitiveActivity',
-      actor: 'https://activitydistributor.local.test/user/activitydistributortest0',
-      to: ['https://activitydistributor-flaky.test/user/activitydistributorflaky1']
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
+      to: ['https://flaky.activitydistributor.test/user/activitydistributorflaky1']
     })
     try {
       await distributor.distribute(activity, 'activitydistributortest0')

@@ -6,7 +6,7 @@ import OKBot from '../lib/bots/ok.js'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('actor routes', async () => {
-  const LOCAL_HOST = 'routes-actor.local.test'
+  const LOCAL_HOST = 'local.routes-actor.test'
   const databaseUrl = getTestDatabaseUrl()
   const origin = `https://${LOCAL_HOST}`
   const BOT_USERNAME = 'routesactortestok'

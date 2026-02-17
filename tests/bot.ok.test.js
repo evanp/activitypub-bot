@@ -18,8 +18,8 @@ async function asyncSome (array, asyncPredicate) {
 }
 
 describe('OK bot', async () => {
-  const LOCAL_HOST = 'bot-ok.local.test'
-  const REMOTE_HOST = 'bot-ok.remote.test'
+  const LOCAL_HOST = 'local.bot-ok.test'
+  const REMOTE_HOST = 'remote.bot-ok.test'
   const BOT_USERNAME = 'botoktest'
   const REMOTE_ACTOR_DIRECT = 'botoktestactor1'
   const REMOTE_ACTOR_SHARED = 'botoktestactor2'

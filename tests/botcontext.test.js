@@ -24,8 +24,8 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
-const LOCAL_HOST = 'botcontext.local.test'
-const REMOTE_HOST = 'botcontext-social.test'
+const LOCAL_HOST = 'local.botcontext.test'
+const REMOTE_HOST = 'social.botcontext.test'
 const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
 const REMOTE_ORIGIN = `https://${REMOTE_HOST}`
 const BOT_USERNAME = 'botcontexttest1'

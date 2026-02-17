@@ -6,8 +6,8 @@ import OKBot from '../lib/bots/ok.js'
 import { getTestDatabaseUrl } from './utils/db.js'
 
 describe('webfinger routes', async () => {
-  const LOCAL_HOST = 'routes-webfinger.local.test'
-  const WRONG_HOST = 'routes-webfinger.wrong.test'
+  const LOCAL_HOST = 'local.routes-webfinger.test'
+  const WRONG_HOST = 'wrong.routes-webfinger.test'
   const BOT_USERNAME = 'routeswebfingertestbot'
   const DNE_USERNAME = 'routeswebfingertestdne'
   const databaseUrl = getTestDatabaseUrl()
