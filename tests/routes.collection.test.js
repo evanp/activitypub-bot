@@ -1,23 +1,55 @@
-import { describe, it, before } from 'node:test'
+import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { makeApp } from '../lib/app.js'
 import request from 'supertest'
-import bots from './fixtures/bots.js'
+import DoNothingBot from '../lib/bots/donothing.js'
+import OKBot from '../lib/bots/ok.js'
 import as2 from '../lib/activitystreams.js'
 import { nanoid } from 'nanoid'
-import { getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('actor collection routes', async () => {
+  const LOCAL_HOST = 'routes-collection.local.test'
   const databaseUrl = getTestDatabaseUrl()
-  const origin = 'https://activitypubbot.test'
-  const app = await makeApp(databaseUrl, origin, bots, 'silent')
+  const origin = `https://${LOCAL_HOST}`
+  const BOT_USERNAME = 'routescollectiontestok'
+  const DNE_USERNAME = 'routescollectiontestdne'
+  const OUTBOX_MANY_USERNAME = 'routescollectiontestmany'
+  const OUTBOX_ONE_USERNAME = 'routescollectiontestone'
+  const TEST_USERNAMES = [BOT_USERNAME, OUTBOX_MANY_USERNAME, OUTBOX_ONE_USERNAME]
+  const testBots = {
+    [BOT_USERNAME]: new OKBot(BOT_USERNAME),
+    [OUTBOX_MANY_USERNAME]: new DoNothingBot(OUTBOX_MANY_USERNAME),
+    [OUTBOX_ONE_USERNAME]: new DoNothingBot(OUTBOX_ONE_USERNAME)
+  }
+  let app = null
+
+  before(async () => {
+    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+    await cleanupTestData(app.locals.connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST
+    })
+  })
+
+  after(async () => {
+    if (!app) {
+      return
+    }
+    await cleanupTestData(app.locals.connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST
+    })
+    await app.cleanup()
+    app = null
+  })
 
   for (const coll of ['outbox', 'liked', 'followers', 'following']) {
     describe(`${coll} collection`, async () => {
       describe(`GET /user/{botid}/${coll}`, async () => {
         let response = null
         it('should work without an error', async () => {
-          response = await request(app).get(`/user/ok/${coll}`)
+          response = await request(app).get(`/user/${BOT_USERNAME}/${coll}`)
         })
         it('should return 200 OK', async () => {
           assert.strictEqual(response.status, 200)
@@ -32,7 +64,7 @@ describe('actor collection routes', async () => {
           assert.strictEqual(typeof response.body.id, 'string')
         })
         it('should return an object with an id matching the request', async () => {
-          assert.strictEqual(response.body.id, origin + `/user/ok/${coll}`)
+          assert.strictEqual(response.body.id, `${origin}/user/${BOT_USERNAME}/${coll}`)
         })
         it('should return an object with a type', async () => {
           assert.strictEqual(typeof response.body.type, 'string')
@@ -47,7 +79,7 @@ describe('actor collection routes', async () => {
           assert.strictEqual(typeof response.body.attributedTo, 'string')
         })
         it('should return an object with attributedTo matching the bot', async () => {
-          assert.strictEqual(response.body.attributedTo, origin + '/user/ok')
+          assert.strictEqual(response.body.attributedTo, `${origin}/user/${BOT_USERNAME}`)
         })
         it('should return an object with a to', async () => {
           assert.strictEqual(typeof response.body.to, 'string')
@@ -67,13 +99,14 @@ describe('actor collection routes', async () => {
         })
         it(`should return an object with a ${coll}Of to the actor`, async () => {
           assert.strictEqual(typeof response.body[coll + 'Of'], 'string')
-          assert.strictEqual(response.body[coll + 'Of'], origin + '/user/ok')
+          assert.strictEqual(response.body[coll + 'Of'], `${origin}/user/${BOT_USERNAME}`)
         })
       })
+
       describe('GET collection for non-existent user', async () => {
         let response = null
         it('should work without an error', async () => {
-          response = await request(app).get('/user/dne/' + coll)
+          response = await request(app).get(`/user/${DNE_USERNAME}/${coll}`)
         })
         it('should return 404 Not Found', async () => {
           assert.strictEqual(response.status, 404)
@@ -106,13 +139,14 @@ describe('actor collection routes', async () => {
           assert.strictEqual(typeof response.body.detail, 'string')
         })
         it('should return an object with a detail matching the request', async () => {
-          assert.strictEqual(response.body.detail, 'User dne not found')
+          assert.strictEqual(response.body.detail, `User ${DNE_USERNAME} not found`)
         })
       })
+
       describe(`GET /user/{botid}/${coll}/1`, async () => {
         let response = null
         it('should work without an error', async () => {
-          response = await request(app).get(`/user/ok/${coll}/1`)
+          response = await request(app).get(`/user/${BOT_USERNAME}/${coll}/1`)
         })
         it('should return 200 OK', async () => {
           assert.strictEqual(response.status, 200)
@@ -127,7 +161,7 @@ describe('actor collection routes', async () => {
           assert.strictEqual(typeof response.body.id, 'string')
         })
         it('should return an object with an id matching the request', async () => {
-          assert.strictEqual(response.body.id, origin + `/user/ok/${coll}/1`)
+          assert.strictEqual(response.body.id, `${origin}/user/${BOT_USERNAME}/${coll}/1`)
         })
         it('should return an object with a type', async () => {
           assert.strictEqual(typeof response.body.type, 'string')
@@ -139,7 +173,7 @@ describe('actor collection routes', async () => {
           assert.strictEqual(typeof response.body.attributedTo, 'string')
         })
         it('should return an object with attributedTo matching the bot', async () => {
-          assert.strictEqual(response.body.attributedTo, origin + '/user/ok')
+          assert.strictEqual(response.body.attributedTo, `${origin}/user/${BOT_USERNAME}`)
         })
         it('should return an object with a to', async () => {
           assert.strictEqual(typeof response.body.to, 'string')
@@ -155,13 +189,14 @@ describe('actor collection routes', async () => {
           assert.strictEqual(typeof response.body.partOf, 'string')
         })
         it('should return an object with a partOf matching the collection', async () => {
-          assert.strictEqual(response.body.partOf, origin + `/user/ok/${coll}`)
+          assert.strictEqual(response.body.partOf, `${origin}/user/${BOT_USERNAME}/${coll}`)
         })
       })
+
       describe('GET collection page for non-existent user', async () => {
         let response = null
         it('should work without an error', async () => {
-          response = await request(app).get('/user/dne/' + coll + '/1')
+          response = await request(app).get(`/user/${DNE_USERNAME}/${coll}/1`)
         })
         it('should return 404 Not Found', async () => {
           assert.strictEqual(response.status, 404)
@@ -194,13 +229,14 @@ describe('actor collection routes', async () => {
           assert.strictEqual(typeof response.body.detail, 'string')
         })
         it('should return an object with a detail matching the request', async () => {
-          assert.strictEqual(response.body.detail, 'User dne not found')
+          assert.strictEqual(response.body.detail, `User ${DNE_USERNAME} not found`)
         })
       })
+
       describe('GET non-existent page for existent collection and existent user', async () => {
         let response = null
         it('should work without an error', async () => {
-          response = await request(app).get('/user/ok/' + coll + '/99999999')
+          response = await request(app).get(`/user/${BOT_USERNAME}/${coll}/99999999`)
         })
         it('should return 404 Not Found', async () => {
           assert.strictEqual(response.status, 404)
@@ -233,7 +269,7 @@ describe('actor collection routes', async () => {
           assert.strictEqual(typeof response.body.detail, 'string')
         })
         it('should return an object with a detail matching the request', async () => {
-          assert.strictEqual(response.body.detail, 'No such page 99999999 for collection ' + coll + ' for user ok')
+          assert.strictEqual(response.body.detail, `No such page 99999999 for collection ${coll} for user ${BOT_USERNAME}`)
         })
       })
     })
@@ -242,7 +278,7 @@ describe('actor collection routes', async () => {
   describe('GET non-existent collection for existent user', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/user/ok/dne')
+      response = await request(app).get(`/user/${BOT_USERNAME}/dne`)
     })
     it('should return 404 Not Found', async () => {
       assert.strictEqual(response.status, 404)
@@ -278,31 +314,33 @@ describe('actor collection routes', async () => {
 
   describe('GET /user/{botid}/outbox/1 with contents', async () => {
     let response = null
-    const username = 'test0'
-    const actorStorage = app.locals.actorStorage
-    const objectStorage = app.locals.objectStorage
-    const formatter = app.locals.formatter
 
-    for (let i = 0; i < 20; i++) {
-      const activity = await as2.import({
-        '@context': 'https://www.w3.org/ns/activitystreams',
-        to: 'as:Public',
-        actor: formatter.format({ username }),
-        type: 'IntransitiveActivity',
-        id: formatter.format({
-          username,
-          type: 'intransitiveactivity',
-          nanoid: nanoid()
-        }),
-        summary: 'An intransitive activity by the test0 bot',
-        published: (new Date()).toISOString()
-      })
-      await objectStorage.create(activity)
-      await actorStorage.addToCollection(username, 'outbox', activity)
-    }
+    before(async () => {
+      const actorStorage = app.locals.actorStorage
+      const objectStorage = app.locals.objectStorage
+      const formatter = app.locals.formatter
+
+      for (let i = 0; i < 20; i++) {
+        const activity = await as2.import({
+          '@context': 'https://www.w3.org/ns/activitystreams',
+          to: 'as:Public',
+          actor: formatter.format({ username: OUTBOX_MANY_USERNAME }),
+          type: 'IntransitiveActivity',
+          id: formatter.format({
+            username: OUTBOX_MANY_USERNAME,
+            type: 'intransitiveactivity',
+            nanoid: nanoid()
+          }),
+          summary: 'An intransitive activity by the test bot',
+          published: (new Date()).toISOString()
+        })
+        await objectStorage.create(activity)
+        await actorStorage.addToCollection(OUTBOX_MANY_USERNAME, 'outbox', activity)
+      }
+    })
 
     it('should work without an error', async () => {
-      response = await request(app).get(`/user/${username}/outbox/1`)
+      response = await request(app).get(`/user/${OUTBOX_MANY_USERNAME}/outbox/1`)
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -311,31 +349,31 @@ describe('actor collection routes', async () => {
 
   describe('GET /user/{botid}/outbox/1 with one item', async () => {
     let response = null
-    const username = 'test4'
-    const actorStorage = app.locals.actorStorage
-    const objectStorage = app.locals.objectStorage
-    const formatter = app.locals.formatter
 
     before(async () => {
+      const actorStorage = app.locals.actorStorage
+      const objectStorage = app.locals.objectStorage
+      const formatter = app.locals.formatter
+
       const activity = await as2.import({
         '@context': 'https://www.w3.org/ns/activitystreams',
         to: 'as:Public',
-        actor: formatter.format({ username }),
+        actor: formatter.format({ username: OUTBOX_ONE_USERNAME }),
         type: 'IntransitiveActivity',
         id: formatter.format({
-          username,
+          username: OUTBOX_ONE_USERNAME,
           type: 'intransitiveactivity',
           nanoid: nanoid()
         }),
-        summary: 'An intransitive activity by the test69 bot',
+        summary: 'An intransitive activity by the test bot',
         published: (new Date()).toISOString()
       })
       await objectStorage.create(activity)
-      await actorStorage.addToCollection(username, 'outbox', activity)
+      await actorStorage.addToCollection(OUTBOX_ONE_USERNAME, 'outbox', activity)
     })
 
     it('should work without an error', async () => {
-      response = await request(app).get(`/user/${username}/outbox/1`)
+      response = await request(app).get(`/user/${OUTBOX_ONE_USERNAME}/outbox/1`)
     })
 
     it('should return 200 OK', async () => {
