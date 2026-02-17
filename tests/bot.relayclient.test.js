@@ -9,7 +9,7 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { Transformer } from '../lib/microsyntax.js'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import {
   nockSetup,
   postInbox,
@@ -21,6 +21,12 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
+const LOCAL_HOST = 'bot-relayclient.local.test'
+const REMOTE_HOST = 'bot-relayclient.remote.test'
+const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
+const BOT_USERNAME = 'botrelayclienttest1'
+const RELAY_USERNAME = 'botrelayclientrelay1'
+const TEST_USERNAMES = [BOT_USERNAME]
 
 function isRelayFollow (activity) {
   return activity.type === `${AS2_NS}Follow` &&
@@ -28,9 +34,7 @@ function isRelayFollow (activity) {
 }
 
 describe('BotContext', () => {
-  const host = 'activitypubbot.example'
-  const origin = `https://${host}`
-  const botName = 'relayclient1'
+  const botName = BOT_USERNAME
   let connection = null
   let botDataStorage = null
   let objectStorage = null
@@ -43,7 +47,6 @@ describe('BotContext', () => {
   let transformer = null
   let logger = null
   let RelayClientBot = null
-  const relayName = 'relay0'
   let relay = null
   let bot = null
 
@@ -51,8 +54,13 @@ describe('BotContext', () => {
     logger = Logger({
       level: 'silent'
     })
-    formatter = new UrlFormatter(origin)
+    formatter = new UrlFormatter(LOCAL_ORIGIN)
     connection = await createMigratedTestConnection()
+    await cleanupTestData(connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
     botDataStorage = new BotDataStorage(connection)
     objectStorage = new ObjectStorage(connection)
     keyStorage = new KeyStorage(connection, logger)
@@ -61,7 +69,7 @@ describe('BotContext', () => {
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
-    transformer = new Transformer(`${origin}/tag/`, client)
+    transformer = new Transformer(`${LOCAL_ORIGIN}/tag/`, client)
     context = new BotContext(
       botName,
       botDataStorage,
@@ -73,10 +81,15 @@ describe('BotContext', () => {
       transformer,
       logger
     )
-    nockSetup('social.example')
-    relay = nockFormat({ username: relayName })
+    nockSetup(REMOTE_HOST)
+    relay = nockFormat({ username: RELAY_USERNAME, domain: REMOTE_HOST })
   })
   after(async () => {
+    await cleanupTestData(connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
     await connection.close()
     context = null
     distributor = null
@@ -87,6 +100,8 @@ describe('BotContext', () => {
     botDataStorage = null
     objectStorage = null
     connection = null
+    transformer = null
+    logger = null
   })
   beforeEach(async () => {
     resetInbox()
@@ -106,7 +121,7 @@ describe('BotContext', () => {
   it('subscribes to a remote relay on initialize', async () => {
     await bot.initialize(context)
     await context.onIdle()
-    assert.equal(postInbox[relayName], 1)
+    assert.equal(postInbox[RELAY_USERNAME], 1)
 
     let foundInOutbox = false
 
@@ -130,6 +145,6 @@ describe('BotContext', () => {
       }
     }
 
-    assert.ok(foundInOutbox)
+    assert.ok(foundInInbox)
   })
 })
