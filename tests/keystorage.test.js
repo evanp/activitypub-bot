@@ -4,6 +4,11 @@ import assert from 'node:assert'
 import Logger from 'pino'
 import { createMigratedTestConnection } from './utils/db.js'
 
+const BOT1 = 'keystoragetest1'
+const BOT2 = 'keystoragetest2'
+const SYSTEM_BOT = ''
+const TEST_BOTS = [BOT1, BOT2, SYSTEM_BOT]
+
 describe('KeyStorage', async () => {
   let connection = null
   let storage = null
@@ -16,29 +21,40 @@ describe('KeyStorage', async () => {
   let firstSystemPrivateKey = null
   let secondSystemPublicKey = null
   let secondSystemPrivateKey = null
+
+  async function cleanup () {
+    await connection.query(
+      'DELETE FROM new_keys WHERE username IN (:usernames)',
+      { replacements: { usernames: TEST_BOTS } }
+    )
+  }
+
   before(async () => {
     connection = await createMigratedTestConnection()
+    await cleanup()
     logger = new Logger({
       level: 'silent'
     })
   })
   after(async () => {
+    await cleanup()
     await connection.close()
     connection = null
+    storage = null
     logger = null
   })
   it('can initialize', async () => {
     storage = new KeyStorage(connection, logger)
   })
   it('can get a public key', async () => {
-    firstPublicKey = await storage.getPublicKey('test1')
+    firstPublicKey = await storage.getPublicKey(BOT1)
     assert.ok(firstPublicKey)
     assert.equal(typeof firstPublicKey, 'string')
     assert.match(firstPublicKey, /^-----BEGIN PUBLIC KEY-----\n/)
     assert.match(firstPublicKey, /-----END PUBLIC KEY-----\n$/)
   })
   it('can get a public key again', async () => {
-    secondPublicKey = await storage.getPublicKey('test1')
+    secondPublicKey = await storage.getPublicKey(BOT1)
     assert.ok(secondPublicKey)
     assert.equal(typeof secondPublicKey, 'string')
     assert.match(secondPublicKey, /^-----BEGIN PUBLIC KEY-----\n/)
@@ -46,21 +62,21 @@ describe('KeyStorage', async () => {
     assert.equal(firstPublicKey, secondPublicKey)
   })
   it('can get a private key after getting a public key', async () => {
-    const privateKey = await storage.getPrivateKey('test1')
+    const privateKey = await storage.getPrivateKey(BOT1)
     assert.ok(privateKey)
     assert.equal(typeof privateKey, 'string')
     assert.match(privateKey, /^-----BEGIN PRIVATE KEY-----\n/)
     assert.match(privateKey, /-----END PRIVATE KEY-----\n$/)
   })
   it('can get a private key', async () => {
-    firstPrivateKey = await storage.getPrivateKey('test2')
+    firstPrivateKey = await storage.getPrivateKey(BOT2)
     assert.ok(firstPrivateKey)
     assert.equal(typeof firstPrivateKey, 'string')
     assert.match(firstPrivateKey, /^-----BEGIN PRIVATE KEY-----\n/)
     assert.match(firstPrivateKey, /-----END PRIVATE KEY-----\n$/)
   })
   it('can get a private key again', async () => {
-    secondPrivateKey = await storage.getPrivateKey('test2')
+    secondPrivateKey = await storage.getPrivateKey(BOT2)
     assert.ok(secondPrivateKey)
     assert.equal(typeof secondPrivateKey, 'string')
     assert.match(secondPrivateKey, /^-----BEGIN PRIVATE KEY-----\n/)
@@ -68,22 +84,22 @@ describe('KeyStorage', async () => {
     assert.equal(firstPrivateKey, secondPrivateKey)
   })
   it('can get a public key after getting a private key', async () => {
-    const publicKey = await storage.getPublicKey('test2')
+    const publicKey = await storage.getPublicKey(BOT2)
     assert.ok(publicKey)
     assert.equal(typeof publicKey, 'string')
     assert.match(publicKey, /^-----BEGIN PUBLIC KEY-----\n/)
     assert.match(publicKey, /-----END PUBLIC KEY-----\n$/)
   })
   it('can get distinct public keys for distinct bots', async () => {
-    const publicKey = await storage.getPublicKey('test1')
-    const publicKey2 = await storage.getPublicKey('test2')
+    const publicKey = await storage.getPublicKey(BOT1)
+    const publicKey2 = await storage.getPublicKey(BOT2)
     assert.ok(publicKey)
     assert.ok(publicKey2)
     assert.notEqual(publicKey, publicKey2)
   })
   it('can get distinct private keys for distinct bots', async () => {
-    const privateKey = await storage.getPrivateKey('test1')
-    const privateKey2 = await storage.getPrivateKey('test2')
+    const privateKey = await storage.getPrivateKey(BOT1)
+    const privateKey2 = await storage.getPrivateKey(BOT2)
     assert.ok(privateKey)
     assert.ok(privateKey2)
     assert.notEqual(privateKey, privateKey2)
