@@ -12,17 +12,34 @@ import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
 import as2 from '../lib/activitystreams.js'
 import Logger from 'pino'
-import bots from './fixtures/bots.js'
-import { nockSetup, postInbox, makeActor, nockFormat } from '@evanp/activitypub-nock'
+import { nockSetup, postInbox, makeActor as makeNockActor, nockFormat as rawNockFormat } from '@evanp/activitypub-nock'
 import { Digester } from '../lib/digester.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { BotContext } from '../lib/botcontext.js'
 import { Transformer } from '../lib/microsyntax.js'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
+import OKBot from '../lib/bots/ok.js'
+import EventLoggingBot from './fixtures/eventloggingbot.js'
 
 describe('ActivityHandler', () => {
-  const domain = 'activitypubbot.example'
+  const domain = 'activityhandler.local.test'
+  const socialDomain = 'activityhandler-social.test'
+  const thirdDomain = 'activityhandler-third.test'
   const origin = `https://${domain}`
+  const botName = 'activityhandlertestok'
+  const loggerBotName = 'activityhandlertestlogging'
+  const calculonName = 'activityhandlertestcalculon'
+  const localObjectUser = 'activityhandlertest1'
+  const testUsernames = [botName, loggerBotName, calculonName, localObjectUser]
+
+  function makeActor (username, domain = socialDomain) {
+    return makeNockActor(username, domain)
+  }
+
+  function nockFormat (params) {
+    return rawNockFormat(params.domain ? params : { domain: socialDomain, ...params })
+  }
+
   let connection = null
   let botDataStorage = null
   let objectStorage = null
@@ -36,9 +53,7 @@ describe('ActivityHandler', () => {
   let handler = null
   let logger = null
   let botId = null
-  const botName = 'ok'
   let bot = null
-  const loggerBotName = 'logging'
   let lb = null
   let lbId = null
   let transformer = null
@@ -46,6 +61,11 @@ describe('ActivityHandler', () => {
     logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter(origin)
     connection = await createMigratedTestConnection()
+    await cleanupTestData(connection, {
+      usernames: testUsernames,
+      localDomain: domain,
+      remoteDomains: [socialDomain, thirdDomain]
+    })
     botDataStorage = new BotDataStorage(connection)
     objectStorage = new ObjectStorage(connection)
     keyStorage = new KeyStorage(connection, logger)
@@ -57,35 +77,51 @@ describe('ActivityHandler', () => {
     authz = new Authorizer(actorStorage, formatter, client)
     cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
     transformer = new Transformer(`${origin}/tag/`, client)
-    await Promise.all(
-      Object.values(bots).map(bot => bot.initialize(
-        new BotContext(
-          bot.username,
-          botDataStorage,
-          objectStorage,
-          actorStorage,
-          client,
-          distributor,
-          formatter,
-          transformer,
-          logger
-        )
-      ))
+    bot = new OKBot(botName)
+    lb = new EventLoggingBot(loggerBotName)
+    await bot.initialize(
+      new BotContext(
+        bot.username,
+        botDataStorage,
+        objectStorage,
+        actorStorage,
+        client,
+        distributor,
+        formatter,
+        transformer,
+        logger
+      )
+    )
+    await lb.initialize(
+      new BotContext(
+        lb.username,
+        botDataStorage,
+        objectStorage,
+        actorStorage,
+        client,
+        distributor,
+        formatter,
+        transformer,
+        logger
+      )
     )
     botId = formatter.format({ username: botName })
     lbId = formatter.format({ username: loggerBotName })
-    bot = bots[botName]
-    lb = bots[loggerBotName]
     await objectStorage.create(await as2.import({
-      id: formatter.format({ username: 'test1', type: 'object', nanoid: '_pEWsKke-7lACTdM3J_qd' }),
+      id: formatter.format({ username: localObjectUser, type: 'object', nanoid: '_pEWsKke-7lACTdM3J_qd' }),
       type: 'Object',
-      attributedTo: formatter.format({ username: 'test1' }),
+      attributedTo: formatter.format({ username: localObjectUser }),
       to: 'as:Public'
     }))
-    nockSetup('social.example')
-    nockSetup('third.example')
+    nockSetup(socialDomain)
+    nockSetup(thirdDomain)
   })
   after(async () => {
+    await cleanupTestData(connection, {
+      usernames: testUsernames,
+      localDomain: domain,
+      remoteDomains: [socialDomain, thirdDomain]
+    })
     await connection.close()
     handler = null
     cache = null
@@ -121,7 +157,7 @@ describe('ActivityHandler', () => {
       actor: nockFormat({ username: 'remote1' }),
       id: nockFormat({ username: 'remote1', type: 'create', num: 1 }),
       object: {
-        id: 'https://social.example/user/remote1/note/1',
+        id: 'https://activityhandler-social.test/user/remote1/note/1',
         type: 'Note',
         content: 'Hello, world!',
         to: 'as:Public'
@@ -148,11 +184,11 @@ describe('ActivityHandler', () => {
     await objectStorage.create(original)
     const activity = await as2.import({
       type: 'Create',
-      actor: 'https://social.example/user/remote1',
-      id: 'https://social.example/user/remote1/object/3',
+      actor: 'https://activityhandler-social.test/user/remote1',
+      id: 'https://activityhandler-social.test/user/remote1/object/3',
       object: {
         inReplyTo: oid,
-        id: 'https://social.example/user/remote1/object/4',
+        id: 'https://activityhandler-social.test/user/remote1/object/4',
         type: 'Note',
         content: 'Reply note',
         to: 'as:Public'
@@ -171,10 +207,10 @@ describe('ActivityHandler', () => {
   it('can handle an update activity', async () => {
     const activity = await as2.import({
       type: 'Update',
-      actor: 'https://social.example/user/remote1',
-      id: 'https://social.example/user/remote1/update/1',
+      actor: 'https://activityhandler-social.test/user/remote1',
+      id: 'https://activityhandler-social.test/user/remote1/update/1',
       object: {
-        id: 'https://social.example/user/remote1/note/1',
+        id: 'https://activityhandler-social.test/user/remote1/note/1',
         type: 'Note',
         content: 'Hello, world! (updated)',
         to: 'as:Public'
@@ -188,9 +224,9 @@ describe('ActivityHandler', () => {
   it('can handle a delete activity', async () => {
     const activity = await as2.import({
       type: 'Delete',
-      actor: 'https://social.example/user/remote1',
-      id: 'https://social.example/user/remote1/delete/1',
-      object: 'https://social.example/user/remote1/note/1',
+      actor: 'https://activityhandler-social.test/user/remote1',
+      id: 'https://activityhandler-social.test/user/remote1/delete/1',
+      object: 'https://activityhandler-social.test/user/remote1/note/1',
       to: 'as:Public'
     })
     await handler.handleActivity(bot, activity)
@@ -200,18 +236,18 @@ describe('ActivityHandler', () => {
   it('can handle an add activity', async () => {
     const activity = await as2.import({
       type: 'Add',
-      actor: 'https://social.example/user/remote1',
-      id: 'https://social.example/user/remote1/add/1',
+      actor: 'https://activityhandler-social.test/user/remote1',
+      id: 'https://activityhandler-social.test/user/remote1/add/1',
       object: {
-        id: 'https://social.example/user/remote1/note/1',
+        id: 'https://activityhandler-social.test/user/remote1/note/1',
         type: 'Note',
-        attributedTo: 'https://social.example/user/remote1',
+        attributedTo: 'https://activityhandler-social.test/user/remote1',
         to: 'as:Public'
       },
       target: {
-        id: 'https://social.example/user/remote1/collection/1',
+        id: 'https://activityhandler-social.test/user/remote1/collection/1',
         type: 'Collection',
-        attributedTo: 'https://social.example/user/remote1',
+        attributedTo: 'https://activityhandler-social.test/user/remote1',
         to: 'as:Public'
       },
       to: 'as:Public'
@@ -230,18 +266,18 @@ describe('ActivityHandler', () => {
   it('can handle a remove activity', async () => {
     const activity = await as2.import({
       type: 'Remove',
-      actor: 'https://social.example/user/remote1',
-      id: 'https://social.example/user/remote1/remove/1',
+      actor: 'https://activityhandler-social.test/user/remote1',
+      id: 'https://activityhandler-social.test/user/remote1/remove/1',
       object: {
-        id: 'https://social.example/user/remote1/note/1',
+        id: 'https://activityhandler-social.test/user/remote1/note/1',
         type: 'Note',
-        attributedTo: 'https://social.example/user/remote1',
+        attributedTo: 'https://activityhandler-social.test/user/remote1',
         to: 'as:Public'
       },
       target: {
-        id: 'https://social.example/user/remote1/collection/1',
+        id: 'https://activityhandler-social.test/user/remote1/collection/1',
         type: 'Collection',
-        attributedTo: 'https://social.example/user/remote1',
+        attributedTo: 'https://activityhandler-social.test/user/remote1',
         to: 'as:Public'
       },
       to: 'as:Public'
@@ -263,7 +299,7 @@ describe('ActivityHandler', () => {
       await actorStorage.isInCollection(botName, 'followers', actor))
     const activity = await as2.import({
       type: 'Follow',
-      id: 'https://social.example/user/follower1/follow/1',
+      id: 'https://activityhandler-social.test/user/follower1/follow/1',
       actor: actor.id,
       object: botId,
       to: botId
@@ -281,7 +317,7 @@ describe('ActivityHandler', () => {
     await actorStorage.addToCollection(botName, 'followers', actor)
     const activity = await as2.import({
       type: 'Follow',
-      id: 'https://social.example/user/follower2/follow/2',
+      id: 'https://activityhandler-social.test/user/follower2/follow/2',
       actor: actor.id,
       object: botId,
       to: botId
@@ -306,7 +342,7 @@ describe('ActivityHandler', () => {
     )
     const activity = await as2.import({
       type: 'Follow',
-      id: 'https://social.example/user/follower3/follow/1',
+      id: 'https://activityhandler-social.test/user/follower3/follow/1',
       actor: actor.id,
       object: botId,
       to: botId
@@ -322,7 +358,7 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('follower4')
     const activity = await as2.import({
       type: 'Follow',
-      id: 'https://social.example/user/follower4/follow/1',
+      id: 'https://activityhandler-social.test/user/follower4/follow/1',
       actor: actor.id,
       object: lbId,
       to: lbId
@@ -335,7 +371,7 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('accepter1')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://activitypubbot.example/user/ok/follow/1',
+      id: 'https://activityhandler.local.test/user/activityhandlertestok/follow/1',
       actor: botId,
       object: actor.id,
       to: actor.id
@@ -347,7 +383,7 @@ describe('ActivityHandler', () => {
       await actorStorage.isInCollection(botName, 'following', actor))
     const activity = await as2.import({
       type: 'Accept',
-      id: 'https://social.example/user/remote1/accept/1',
+      id: 'https://activityhandler-social.test/user/remote1/accept/1',
       actor: actor.id,
       object: followActivity.id,
       to: botId
@@ -364,9 +400,9 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('accepter2')
     const activity = await as2.import({
       type: 'Accept',
-      id: 'https://social.example/user/accepter2/accept/1',
+      id: 'https://activityhandler-social.test/user/accepter2/accept/1',
       actor: actor.id,
-      object: 'https://activitypubbot.example/user/ok/follow/69',
+      object: 'https://activityhandler.local.test/user/activityhandlertestok/follow/69',
       to: botId
     })
     await handler.handleActivity(bot, activity)
@@ -378,7 +414,7 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('accepter3')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://activitypubbot.example/user/ok/follow/3',
+      id: 'https://activityhandler.local.test/user/activityhandlertestok/follow/3',
       actor: botId,
       object: actor.id,
       to: actor.id
@@ -388,7 +424,7 @@ describe('ActivityHandler', () => {
     await actorStorage.addToCollection(botName, 'blocked', actor)
     const activity = await as2.import({
       type: 'Accept',
-      id: 'https://social.example/user/accepter3/accept/1',
+      id: 'https://activityhandler-social.test/user/accepter3/accept/1',
       actor: actor.id,
       object: followActivity.id,
       to: botId
@@ -403,16 +439,16 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('accepter4')
     const activity = await as2.import({
       type: 'Accept',
-      id: 'https://social.example/user/accepter3/accept/1',
+      id: 'https://activityhandler-social.test/user/accepter3/accept/1',
       actor: actor.id,
       object: {
         type: 'Follow',
-        id: 'https://third.example/user/other/follow/3',
-        actor: 'https://third.example/user/other',
+        id: 'https://activityhandler-third.test/user/other/follow/3',
+        actor: 'https://activityhandler-third.test/user/other',
         object: actor.id,
         to: [actor.id, 'as:Public']
       },
-      to: ['https://third.example/user/other', 'as:Public']
+      to: ['https://activityhandler-third.test/user/other', 'as:Public']
     })
     await handler.handleActivity(bot, activity)
     assert.equal(
@@ -424,7 +460,7 @@ describe('ActivityHandler', () => {
     const actor6 = await makeActor('accepter6')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://activitypubbot.example/user/ok/follow/6',
+      id: 'https://activityhandler.local.test/user/activityhandlertestok/follow/6',
       actor: botId,
       object: actor6.id,
       to: [actor6.id, 'as:Public']
@@ -436,7 +472,7 @@ describe('ActivityHandler', () => {
       await actorStorage.isInCollection(botName, 'following', actor5))
     const activity = await as2.import({
       type: 'Accept',
-      id: 'https://social.example/user/remote1/accept/1',
+      id: 'https://activityhandler-social.test/user/remote1/accept/1',
       actor: actor5.id,
       object: followActivity.id,
       to: [botId, 'as:Public']
@@ -456,19 +492,19 @@ describe('ActivityHandler', () => {
     const actor7 = await makeActor('accepter7')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://activitypubbot.example/user/calculon/follow/7',
-      actor: 'https://activitypubbot.example/user/calculon',
+      id: 'https://activityhandler.local.test/user/activityhandlertestcalculon/follow/7',
+      actor: 'https://activityhandler.local.test/user/activityhandlertestcalculon',
       object: actor7.id,
       to: [actor7.id, 'as:Public']
     })
     await objectStorage.create(followActivity)
-    await actorStorage.addToCollection('calculon', 'pendingFollowing', followActivity)
+    await actorStorage.addToCollection('activityhandlertestcalculon', 'pendingFollowing', followActivity)
     assert.equal(
       false,
       await actorStorage.isInCollection(botName, 'following', actor7))
     const activity = await as2.import({
       type: 'Accept',
-      id: 'https://social.example/user/accepter7/accept/7',
+      id: 'https://activityhandler-social.test/user/accepter7/accept/7',
       actor: actor7.id,
       object: followActivity.id,
       to: [botId, 'as:Public']
@@ -479,16 +515,16 @@ describe('ActivityHandler', () => {
       await actorStorage.isInCollection(botName, 'following', actor7))
     assert.equal(
       false,
-      await actorStorage.isInCollection('calculon', 'following', actor7))
+      await actorStorage.isInCollection('activityhandlertestcalculon', 'following', actor7))
     assert.equal(
       true,
-      await actorStorage.isInCollection('calculon', 'pendingFollowing', followActivity))
+      await actorStorage.isInCollection('activityhandlertestcalculon', 'pendingFollowing', followActivity))
   })
   it('can handle an reject activity', async () => {
     const actor = await makeActor('rejecter1')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://activitypubbot.example/user/ok/follow/101',
+      id: 'https://activityhandler.local.test/user/activityhandlertestok/follow/101',
       actor: botId,
       object: actor.id,
       to: actor.id
@@ -500,7 +536,7 @@ describe('ActivityHandler', () => {
       await actorStorage.isInCollection(botName, 'following', actor))
     const activity = await as2.import({
       type: 'Reject',
-      id: 'https://social.example/user/rejecter1/reject/1',
+      id: 'https://activityhandler-social.test/user/rejecter1/reject/1',
       actor: actor.id,
       object: followActivity.id,
       to: botId
@@ -517,9 +553,9 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('rejecter2')
     const activity = await as2.import({
       type: 'Reject',
-      id: 'https://social.example/user/rejecter2/reject/1',
+      id: 'https://activityhandler-social.test/user/rejecter2/reject/1',
       actor: actor.id,
-      object: 'https://activitypubbot.example/user/ok/follow/69',
+      object: 'https://activityhandler.local.test/user/activityhandlertestok/follow/69',
       to: botId
     })
     await handler.handleActivity(bot, activity)
@@ -531,7 +567,7 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('rejecter3')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://activitypubbot.example/user/ok/follow/103',
+      id: 'https://activityhandler.local.test/user/activityhandlertestok/follow/103',
       actor: botId,
       object: actor.id,
       to: actor.id
@@ -541,7 +577,7 @@ describe('ActivityHandler', () => {
     await actorStorage.addToCollection(botName, 'blocked', actor)
     const activity = await as2.import({
       type: 'Reject',
-      id: 'https://social.example/user/rejecter3/reject/1',
+      id: 'https://activityhandler-social.test/user/rejecter3/reject/1',
       actor: actor.id,
       object: followActivity.id,
       to: botId
@@ -556,16 +592,16 @@ describe('ActivityHandler', () => {
     const actor = await makeActor('rejecter4')
     const activity = await as2.import({
       type: 'Reject',
-      id: 'https://social.example/user/rejecter4/reject/1',
+      id: 'https://activityhandler-social.test/user/rejecter4/reject/1',
       actor: actor.id,
       object: {
         type: 'Follow',
-        id: 'https://third.example/user/other/follow/103',
-        actor: 'https://third.example/user/other',
+        id: 'https://activityhandler-third.test/user/other/follow/103',
+        actor: 'https://activityhandler-third.test/user/other',
         object: actor.id,
         to: [actor.id, 'as:Public']
       },
-      to: ['https://third.example/user/other', 'as:Public']
+      to: ['https://activityhandler-third.test/user/other', 'as:Public']
     })
     await handler.handleActivity(bot, activity)
     assert.equal(
@@ -577,7 +613,7 @@ describe('ActivityHandler', () => {
     const actor6 = await makeActor('rejecter6')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://activitypubbot.example/user/ok/follow/106',
+      id: 'https://activityhandler.local.test/user/activityhandlertestok/follow/106',
       actor: botId,
       object: actor6.id,
       to: [actor6.id, 'as:Public']
@@ -589,7 +625,7 @@ describe('ActivityHandler', () => {
       await actorStorage.isInCollection(botName, 'following', actor5))
     const activity = await as2.import({
       type: 'Reject',
-      id: 'https://social.example/user/rejecter5/reject/1',
+      id: 'https://activityhandler-social.test/user/rejecter5/reject/1',
       actor: actor5.id,
       object: followActivity.id,
       to: [botId, 'as:Public']
@@ -609,19 +645,19 @@ describe('ActivityHandler', () => {
     const actor7 = await makeActor('rejecter7')
     const followActivity = await as2.import({
       type: 'Follow',
-      id: 'https://activitypubbot.example/user/calculon/follow/107',
-      actor: 'https://activitypubbot.example/user/calculon',
+      id: 'https://activityhandler.local.test/user/activityhandlertestcalculon/follow/107',
+      actor: 'https://activityhandler.local.test/user/activityhandlertestcalculon',
       object: actor7.id,
       to: [actor7.id, 'as:Public']
     })
     await objectStorage.create(followActivity)
-    await actorStorage.addToCollection('calculon', 'pendingFollowing', followActivity)
+    await actorStorage.addToCollection('activityhandlertestcalculon', 'pendingFollowing', followActivity)
     assert.equal(
       false,
       await actorStorage.isInCollection(botName, 'following', actor7))
     const activity = await as2.import({
       type: 'Reject',
-      id: 'https://social.example/user/rejecter7/reject/7',
+      id: 'https://activityhandler-social.test/user/rejecter7/reject/7',
       actor: actor7.id,
       object: followActivity.id,
       to: [botId, 'as:Public']
@@ -632,10 +668,10 @@ describe('ActivityHandler', () => {
       await actorStorage.isInCollection(botName, 'following', actor7))
     assert.equal(
       false,
-      await actorStorage.isInCollection('calculon', 'following', actor7))
+      await actorStorage.isInCollection('activityhandlertestcalculon', 'following', actor7))
     assert.equal(
       true,
-      await actorStorage.isInCollection('calculon', 'pendingFollowing', followActivity))
+      await actorStorage.isInCollection('activityhandlertestcalculon', 'pendingFollowing', followActivity))
   })
   it('can handle a like activity', async () => {
     const actor = await makeActor('liker1')
@@ -654,7 +690,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/liker1/like/1',
+      id: 'https://activityhandler-social.test/user/liker1/like/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -668,11 +704,11 @@ describe('ActivityHandler', () => {
   })
   it('can ignore a like activity for a remote object', async () => {
     const actor = await makeActor('liker2')
-    const objectId = 'https://third.example/user/other/note/1'
+    const objectId = 'https://activityhandler-third.test/user/other/note/1'
     const activity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/liker2/like/1',
+      id: 'https://activityhandler-social.test/user/liker2/like/1',
       object: objectId,
       to: [botId, 'as:Public']
     })
@@ -687,8 +723,8 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/liker3/like/1',
-      object: 'https://activitypubbot.example/user/ok/note/doesnotexist',
+      id: 'https://activityhandler-social.test/user/liker3/like/1',
+      object: 'https://activityhandler.local.test/user/activityhandlertestok/note/doesnotexist',
       to: [botId, 'as:Public']
     })
     await handler.handleActivity(bot, activity)
@@ -715,7 +751,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/liker4/like/1',
+      id: 'https://activityhandler-social.test/user/liker4/like/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -743,7 +779,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/liker4/like/1',
+      id: 'https://activityhandler-social.test/user/liker4/like/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -770,7 +806,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/liker6/like/1',
+      id: 'https://activityhandler-social.test/user/liker6/like/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -797,7 +833,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/liker7/like/1',
+      id: 'https://activityhandler-social.test/user/liker7/like/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -825,14 +861,14 @@ describe('ActivityHandler', () => {
     const activity1 = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/liker8/like/1',
+      id: 'https://activityhandler-social.test/user/liker8/like/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
     const activity2 = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/liker8/like/2',
+      id: 'https://activityhandler-social.test/user/liker8/like/2',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -888,7 +924,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Announce',
       actor: actor.id,
-      id: 'https://social.example/user/announcer1/announce/1',
+      id: 'https://activityhandler-social.test/user/announcer1/announce/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -902,11 +938,11 @@ describe('ActivityHandler', () => {
   })
   it('can ignore an announce activity for a remote object', async () => {
     const actor = await makeActor('announcer2')
-    const objectId = 'https://third.example/user/other/note/1'
+    const objectId = 'https://activityhandler-third.test/user/other/note/1'
     const activity = await as2.import({
       type: 'Announce',
       actor: actor.id,
-      id: 'https://social.example/user/announcer2/announce/1',
+      id: 'https://activityhandler-social.test/user/announcer2/announce/1',
       object: objectId,
       to: [botId, 'as:Public']
     })
@@ -921,8 +957,8 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Announce',
       actor: actor.id,
-      id: 'https://social.example/user/announcer3/announce/1',
-      object: 'https://activitypubbot.example/user/ok/note/doesnotexist',
+      id: 'https://activityhandler-social.test/user/announcer3/announce/1',
+      object: 'https://activityhandler.local.test/user/activityhandlertestok/note/doesnotexist',
       to: [botId, 'as:Public']
     })
     await handler.handleActivity(bot, activity)
@@ -949,7 +985,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Announce',
       actor: actor.id,
-      id: 'https://social.example/user/announcer4/announce/1',
+      id: 'https://activityhandler-social.test/user/announcer4/announce/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -977,7 +1013,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Announce',
       actor: actor.id,
-      id: 'https://social.example/user/announcer4/announce/1',
+      id: 'https://activityhandler-social.test/user/announcer4/announce/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1004,7 +1040,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Announce',
       actor: actor.id,
-      id: 'https://social.example/user/announcer6/announce/1',
+      id: 'https://activityhandler-social.test/user/announcer6/announce/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1031,7 +1067,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Announce',
       actor: actor.id,
-      id: 'https://social.example/user/announcer7/announce/1',
+      id: 'https://activityhandler-social.test/user/announcer7/announce/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1059,14 +1095,14 @@ describe('ActivityHandler', () => {
     const activity1 = await as2.import({
       type: 'Announce',
       actor: actor.id,
-      id: 'https://social.example/user/announcer8/announce/1',
+      id: 'https://activityhandler-social.test/user/announcer8/announce/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
     const activity2 = await as2.import({
       type: 'Announce',
       actor: actor.id,
-      id: 'https://social.example/user/announcer8/announce/2',
+      id: 'https://activityhandler-social.test/user/announcer8/announce/2',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1111,7 +1147,7 @@ describe('ActivityHandler', () => {
     await actorStorage.addToCollection(botName, 'following', actor)
     const activity = await as2.import({
       type: 'Block',
-      id: 'https://social.example/user/blocker1/block/1',
+      id: 'https://activityhandler-social.test/user/blocker1/block/1',
       actor: actor.id,
       object: botId,
       to: botId
@@ -1129,7 +1165,7 @@ describe('ActivityHandler', () => {
     await actorStorage.addToCollection(botName, 'pendingFollowing', actor)
     const activity = await as2.import({
       type: 'Block',
-      id: 'https://social.example/user/blocker2/block/1',
+      id: 'https://activityhandler-social.test/user/blocker2/block/1',
       actor: actor.id,
       object: botId,
       to: botId
@@ -1144,7 +1180,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Flag',
       actor: actor.id,
-      id: 'https://social.example/user/flagger1/flag/1',
+      id: 'https://activityhandler-social.test/user/flagger1/flag/1',
       object: botId,
       to: [botId, formatter.format({ server: true })]
     })
@@ -1167,7 +1203,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Flag',
       actor: actor.id,
-      id: 'https://social.example/user/flagger2/flag/1',
+      id: 'https://activityhandler-social.test/user/flagger2/flag/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1188,10 +1224,10 @@ describe('ActivityHandler', () => {
       ],
       type: 'Undo',
       actor: actor.id,
-      id: 'https://social.example/user/undoer1/undo/1',
+      id: 'https://activityhandler-social.test/user/undoer1/undo/1',
       object: {
         type: 'Foo',
-        id: 'https://social.example/user/undoer1/foo/1'
+        id: 'https://activityhandler-social.test/user/undoer1/foo/1'
       },
       to: botId
     })
@@ -1214,7 +1250,7 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/undoer2/like/1',
+      id: 'https://activityhandler-social.test/user/undoer2/like/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1226,7 +1262,7 @@ describe('ActivityHandler', () => {
     const undoActivity = await as2.import({
       type: 'Undo',
       actor: actor.id,
-      id: 'https://social.example/user/undoer2/undo/1',
+      id: 'https://activityhandler-social.test/user/undoer2/undo/1',
       object: {
         type: 'Like',
         id: activity.id,
@@ -1255,11 +1291,11 @@ describe('ActivityHandler', () => {
       to: 'as:Public'
     })
     await objectStorage.create(note)
-    const liker = await makeActor('liker9', 'third.example')
+    const liker = await makeActor('liker9', 'activityhandler-third.test')
     const likeActivity = await as2.import({
       type: 'Like',
       actor: liker.id,
-      id: nockFormat({ domain: 'third.example', username: 'liker9', type: 'like', num: 1, obj: note.id }),
+      id: nockFormat({ domain: 'activityhandler-third.test', username: 'liker9', type: 'like', num: 1, obj: note.id }),
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1268,11 +1304,11 @@ describe('ActivityHandler', () => {
       true,
       await objectStorage.isInCollection(note.id, 'likes', likeActivity)
     )
-    const undoer = await makeActor('undoer3', 'social.example')
+    const undoer = await makeActor('undoer3', 'activityhandler-social.test')
     const undoActivity = await as2.import({
       type: 'Undo',
       actor: undoer.id,
-      id: nockFormat({ domain: 'social.example', username: 'undoer3', type: 'undo', num: 1, obj: likeActivity.id }),
+      id: nockFormat({ domain: 'activityhandler-social.test', username: 'undoer3', type: 'undo', num: 1, obj: likeActivity.id }),
       object: {
         type: 'Like',
         id: likeActivity.id
@@ -1290,12 +1326,12 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Undo',
       actor: actor.id,
-      id: 'https://social.example/user/undoer4/undo/1',
+      id: 'https://activityhandler-social.test/user/undoer4/undo/1',
       object: {
         type: 'Like',
-        id: 'https://social.example/user/undoer4/like/1',
-        actor: 'https://social.example/user/undoer4',
-        object: 'https://third.example/user/other/note/1',
+        id: 'https://activityhandler-social.test/user/undoer4/like/1',
+        actor: 'https://activityhandler-social.test/user/undoer4',
+        object: 'https://activityhandler-third.test/user/other/note/1',
         to: [botId, 'as:Public']
       },
       to: [botId, 'as:Public']
@@ -1308,12 +1344,12 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Undo',
       actor: actor.id,
-      id: 'https://social.example/user/undoer5/undo/1',
+      id: 'https://activityhandler-social.test/user/undoer5/undo/1',
       object: {
         type: 'Like',
-        id: 'https://social.example/user/undoer5/like/1',
+        id: 'https://activityhandler-social.test/user/undoer5/like/1',
         actor: actor.id,
-        object: 'https://activitypubbot.example/user/ok/note/doesnotexist',
+        object: 'https://activityhandler.local.test/user/activityhandlertestok/note/doesnotexist',
         to: [botId, 'as:Public']
       },
       to: [botId, 'as:Public']
@@ -1338,10 +1374,10 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Undo',
       actor: actor.id,
-      id: 'https://social.example/user/undoer6/undo/1',
+      id: 'https://activityhandler-social.test/user/undoer6/undo/1',
       object: {
         type: 'Like',
-        id: 'https://social.example/user/undoer6/like/1',
+        id: 'https://activityhandler-social.test/user/undoer6/like/1',
         actor: actor.id,
         object: note.id,
         to: [botId]
@@ -1369,10 +1405,10 @@ describe('ActivityHandler', () => {
     const activity = await as2.import({
       type: 'Undo',
       actor: actor.id,
-      id: 'https://social.example/user/undoer7/undo/1',
+      id: 'https://activityhandler-social.test/user/undoer7/undo/1',
       object: {
         type: 'Like',
-        id: 'https://social.example/user/undoer7/like/1',
+        id: 'https://activityhandler-social.test/user/undoer7/like/1',
         actor: actor.id,
         object: note.id,
         to: [botId]
@@ -1399,7 +1435,7 @@ describe('ActivityHandler', () => {
     const likeActivity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/undoer8/like/1',
+      id: 'https://activityhandler-social.test/user/undoer8/like/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1411,10 +1447,10 @@ describe('ActivityHandler', () => {
     const undoActivity = await as2.import({
       type: 'Undo',
       actor: actor.id,
-      id: 'https://social.example/user/undoer8/undo/1',
+      id: 'https://activityhandler-social.test/user/undoer8/undo/1',
       object: {
         type: 'Like',
-        id: 'https://social.example/user/undoer8/like/1',
+        id: 'https://activityhandler-social.test/user/undoer8/like/1',
         actor: actor.id,
         object: note.id,
         to: [botId, 'as:Public']
@@ -1429,10 +1465,10 @@ describe('ActivityHandler', () => {
     const duplicateActivity = await as2.import({
       type: 'Undo',
       actor: actor.id,
-      id: 'https://social.example/user/undoer8/undo/2',
+      id: 'https://activityhandler-social.test/user/undoer8/undo/2',
       object: {
         type: 'Like',
-        id: 'https://social.example/user/undoer8/like/1',
+        id: 'https://activityhandler-social.test/user/undoer8/like/1',
         actor: actor.id,
         object: note.id,
         to: [botId, 'as:Public']
@@ -1459,7 +1495,7 @@ describe('ActivityHandler', () => {
     const likeActivity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/undoer9/like/1',
+      id: 'https://activityhandler-social.test/user/undoer9/like/1',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1471,10 +1507,10 @@ describe('ActivityHandler', () => {
     const undoActivity = await as2.import({
       type: 'Undo',
       actor: actor.id,
-      id: 'https://social.example/user/undoer9/undo/1',
+      id: 'https://activityhandler-social.test/user/undoer9/undo/1',
       object: {
         type: 'Like',
-        id: 'https://social.example/user/undoer9/like/1',
+        id: 'https://activityhandler-social.test/user/undoer9/like/1',
         actor: actor.id,
         object: note.id,
         to: [botId, 'as:Public']
@@ -1489,7 +1525,7 @@ describe('ActivityHandler', () => {
     const reLikeActivity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/undoer9/like/2',
+      id: 'https://activityhandler-social.test/user/undoer9/like/2',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1520,7 +1556,7 @@ describe('ActivityHandler', () => {
     const likeActivity = await as2.import({
       type: 'Like',
       actor: actor.id,
-      id: 'https://social.example/user/undoer10/like/1/activitypubbot.example/user/ok/note/nhzIHLcnHgU2l0lMb7dRl',
+      id: 'https://activityhandler-social.test/user/undoer10/like/1/activityhandler.local.test/user/activityhandlertestok/note/nhzIHLcnHgU2l0lMb7dRl',
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1532,7 +1568,7 @@ describe('ActivityHandler', () => {
     const undoActivity = await as2.import({
       type: 'Undo',
       actor: actor.id,
-      id: 'https://social.example/user/undoer2/undo/1/social.example/user/undoer10/like/1/activitypubbot.example/user/ok/note/nhzIHLcnHgU2l0lMb7dRl',
+      id: 'https://activityhandler-social.test/user/undoer2/undo/1/activityhandler-social.test/user/undoer10/like/1/activityhandler.local.test/user/activityhandlertestok/note/nhzIHLcnHgU2l0lMb7dRl',
       object: likeActivity.id,
       to: [botId, 'as:Public']
     })
@@ -1600,11 +1636,11 @@ describe('ActivityHandler', () => {
       to: 'as:Public'
     })
     await objectStorage.create(note)
-    const sharer = await makeActor('sharer10', 'third.example')
+    const sharer = await makeActor('sharer10', 'activityhandler-third.test')
     const shareActivity = await as2.import({
       type: 'Announce',
       actor: sharer.id,
-      id: nockFormat({ domain: 'third.example', username: 'sharer10', type: 'announce', num: 1, obj: note.id }),
+      id: nockFormat({ domain: 'activityhandler-third.test', username: 'sharer10', type: 'announce', num: 1, obj: note.id }),
       object: note.id,
       to: [botId, 'as:Public']
     })
@@ -1613,11 +1649,11 @@ describe('ActivityHandler', () => {
       true,
       await objectStorage.isInCollection(note.id, 'shares', shareActivity)
     )
-    const undoer = await makeActor('undoer12', 'social.example')
+    const undoer = await makeActor('undoer12', 'activityhandler-social.test')
     const undoActivity = await as2.import({
       type: 'Undo',
       actor: undoer.id,
-      id: nockFormat({ domain: 'social.example', username: 'undoer12', type: 'undo', num: 1, obj: shareActivity.id }),
+      id: nockFormat({ domain: 'activityhandler-social.test', username: 'undoer12', type: 'undo', num: 1, obj: shareActivity.id }),
       object: {
         type: 'Announce',
         id: shareActivity.id
@@ -1632,7 +1668,7 @@ describe('ActivityHandler', () => {
   })
   it('can ignore an undo for a share activity of a remote object', async () => {
     const actor = await makeActor('undoer13')
-    const remoteObjectId = nockFormat({ domain: 'third.example', username: 'other', type: 'note', num: 1 })
+    const remoteObjectId = nockFormat({ domain: 'activityhandler-third.test', username: 'other', type: 'note', num: 1 })
     const announceActivityId = nockFormat({ username: 'undoer13', type: 'announce', num: 1, obj: remoteObjectId })
     const activity = await as2.import({
       type: 'Undo',
@@ -1944,7 +1980,7 @@ describe('ActivityHandler', () => {
 
   it('can ignore an undo for a block activity of another user', async () => {
     const actor = await makeActor('undoer22')
-    const otherId = nockFormat({ username: 'other', domain: 'third.example' })
+    const otherId = nockFormat({ username: 'other', domain: 'activityhandler-third.test' })
     const blockActivity = await as2.import({
       type: 'Block',
       actor: actor.id,
@@ -2036,7 +2072,7 @@ describe('ActivityHandler', () => {
   it('can ignore an undo for a follow activity of another user', async () => {
     const username = 'undoer25'
     const actor = await makeActor(username)
-    const otherId = nockFormat({ username: 'other', domain: 'third.example' })
+    const otherId = nockFormat({ username: 'other', domain: 'activityhandler-third.test' })
     const followActivity = await as2.import({
       type: 'Follow',
       actor: actor.id,
@@ -2069,11 +2105,11 @@ describe('ActivityHandler', () => {
     const username = 'undoer26'
     const otherName = 'other'
     const actor = await makeActor(username)
-    const other = await makeActor(otherName, 'third.example')
+    const other = await makeActor(otherName, 'activityhandler-third.test')
     const followActivity = await as2.import({
       type: 'Follow',
       actor: other.id,
-      id: nockFormat({ domain: 'third.example', username: otherName, type: 'follow', num: 1, obj: botId }),
+      id: nockFormat({ domain: 'activityhandler-third.test', username: otherName, type: 'follow', num: 1, obj: botId }),
       object: botId,
       to: [botId, 'as:Public']
     })
@@ -2253,11 +2289,11 @@ describe('ActivityHandler', () => {
     await objectStorage.addToCollection(oid, 'thread', original)
     const activity = await as2.import({
       type: 'Create',
-      actor: 'https://social.example/user/remote1',
-      id: 'https://social.example/user/remote1/object/23',
+      actor: 'https://activityhandler-social.test/user/remote1',
+      id: 'https://activityhandler-social.test/user/remote1/object/23',
       object: {
         inReplyTo: oid,
-        id: 'https://social.example/user/remote1/object/24',
+        id: 'https://activityhandler-social.test/user/remote1/object/24',
         type: 'Note',
         content: 'Reply note',
         to: 'as:Public',
