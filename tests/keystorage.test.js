@@ -2,7 +2,7 @@ import { describe, before, after, it } from 'node:test'
 import { KeyStorage } from '../lib/keystorage.js'
 import assert from 'node:assert'
 import Logger from 'pino'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const BOT1 = 'keystoragetest1'
 const BOT2 = 'keystoragetest2'
@@ -22,22 +22,15 @@ describe('KeyStorage', async () => {
   let secondSystemPublicKey = null
   let secondSystemPrivateKey = null
 
-  async function cleanup () {
-    await connection.query(
-      'DELETE FROM new_keys WHERE username IN (:usernames)',
-      { replacements: { usernames: TEST_BOTS } }
-    )
-  }
-
   before(async () => {
     connection = await createMigratedTestConnection()
-    await cleanup()
+    await cleanupTestData(connection, { usernames: TEST_BOTS })
     logger = new Logger({
       level: 'silent'
     })
   })
   after(async () => {
-    await cleanup()
+    await cleanupTestData(connection, { usernames: TEST_BOTS })
     await connection.close()
     connection = null
     storage = null

@@ -1,6 +1,6 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 import Logger from 'pino'
 
@@ -21,8 +21,6 @@ describe('ActivityDeliverer', async () => {
   const remoteHost = 'activitydeliverer.remote.test'
   const origin = `https://${localHost}`
   const testUsernames = ['activitydeliverertest1', 'activitydeliverertest2']
-  const localPattern = `${origin}/%`
-  const remotePattern = `https://${remoteHost}/%`
   let connection
   let actorStorage
   let handler
@@ -32,50 +30,15 @@ describe('ActivityDeliverer', async () => {
   let ActivityDeliverer
   let deliverer
 
-  async function cleanup () {
-    await connection.query(
-      'DELETE FROM actorcollectionpage WHERE username IN (:usernames) OR item LIKE :localPattern OR item LIKE :remotePattern',
-      { replacements: { usernames: testUsernames, localPattern, remotePattern } }
-    )
-    await connection.query(
-      'DELETE FROM actorcollection WHERE username IN (:usernames)',
-      { replacements: { usernames: testUsernames } }
-    )
-    await connection.query(
-      'DELETE FROM lastactivity WHERE username IN (:usernames)',
-      { replacements: { usernames: testUsernames } }
-    )
-    await connection.query(
-      'DELETE FROM botdata WHERE username IN (:usernames)',
-      { replacements: { usernames: testUsernames } }
-    )
-    await connection.query(
-      'DELETE FROM new_keys WHERE username IN (:usernames)',
-      { replacements: { usernames: testUsernames } }
-    )
-    await connection.query(
-      'DELETE FROM new_remotekeys WHERE id LIKE ? OR owner LIKE ?',
-      { replacements: [remotePattern, remotePattern] }
-    )
-    await connection.query(
-      'DELETE FROM pages WHERE id LIKE ? OR item LIKE ? OR id LIKE ? OR item LIKE ?',
-      { replacements: [localPattern, localPattern, remotePattern, remotePattern] }
-    )
-    await connection.query(
-      'DELETE FROM collections WHERE id LIKE ? OR id LIKE ?',
-      { replacements: [localPattern, remotePattern] }
-    )
-    await connection.query(
-      'DELETE FROM objects WHERE id LIKE ? OR id LIKE ?',
-      { replacements: [localPattern, remotePattern] }
-    )
-  }
-
   before(async () => {
     logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter(origin)
     connection = await createMigratedTestConnection()
-    await cleanup()
+    await cleanupTestData(connection, {
+      usernames: testUsernames,
+      localDomain: localHost,
+      remoteDomains: [remoteHost]
+    })
     actorStorage = new ActorStorage(connection, formatter)
     const objectStorage = new ObjectStorage(connection)
     const keyStorage = new KeyStorage(connection, logger)
@@ -97,7 +60,11 @@ describe('ActivityDeliverer', async () => {
     )
   })
   after(async () => {
-    await cleanup()
+    await cleanupTestData(connection, {
+      usernames: testUsernames,
+      localDomain: localHost,
+      remoteDomains: [remoteHost]
+    })
     await connection.close()
     connection = null
     actorStorage = null

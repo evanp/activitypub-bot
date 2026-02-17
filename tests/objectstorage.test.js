@@ -2,9 +2,10 @@ import { describe, it, before, after } from 'node:test'
 import as2 from '../lib/activitystreams.js'
 import assert from 'node:assert'
 import { ObjectStorage, NoSuchObjectError } from '../lib/objectstorage.js'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
-const TEST_NOTE_BASE = 'https://objectstorage.test/users/objectstoragetest/note'
+const LOCAL_HOST = 'objectstorage.test'
+const TEST_NOTE_BASE = `https://${LOCAL_HOST}/users/objectstoragetest/note`
 const DOC1_ID = `${TEST_NOTE_BASE}/1`
 const DOC2_ID = `${TEST_NOTE_BASE}/2`
 const DOC3_ID = `${TEST_NOTE_BASE}/3`
@@ -15,22 +16,6 @@ describe('ObjectStorage', async () => {
   let doc3 = null
   let connection = null
   let storage = null
-
-  async function cleanup () {
-    const pattern = `${TEST_NOTE_BASE}/%`
-    await connection.query(
-      'DELETE FROM pages WHERE id LIKE ? OR item LIKE ?',
-      { replacements: [pattern, pattern] }
-    )
-    await connection.query(
-      'DELETE FROM collections WHERE id LIKE ?',
-      { replacements: [pattern] }
-    )
-    await connection.query(
-      'DELETE FROM objects WHERE id LIKE ?',
-      { replacements: [pattern] }
-    )
-  }
 
   before(async () => {
     doc = await as2.import({
@@ -56,10 +41,10 @@ describe('ObjectStorage', async () => {
       content: 'test'
     })
     connection = await createMigratedTestConnection()
-    await cleanup()
+    await cleanupTestData(connection, { localDomain: LOCAL_HOST })
   })
   after(async () => {
-    await cleanup()
+    await cleanupTestData(connection, { localDomain: LOCAL_HOST })
     await connection.close()
     connection = null
     storage = null

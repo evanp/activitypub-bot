@@ -3,7 +3,7 @@ import assert from 'node:assert'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 const LOCAL_USER = 'actorstoragetest1'
@@ -34,24 +34,9 @@ describe('ActorStorage', () => {
   let other = null
   let unfollowed = null
 
-  async function cleanup () {
-    await connection.query(
-      'DELETE FROM actorcollectionpage WHERE username IN (:usernames)',
-      { replacements: { usernames: TEST_USERNAMES } }
-    )
-    await connection.query(
-      'DELETE FROM actorcollection WHERE username IN (:usernames)',
-      { replacements: { usernames: TEST_USERNAMES } }
-    )
-    await connection.query(
-      'DELETE FROM lastactivity WHERE username IN (:usernames)',
-      { replacements: { usernames: TEST_USERNAMES } }
-    )
-  }
-
   before(async () => {
     connection = await createMigratedTestConnection()
-    await cleanup()
+    await cleanupTestData(connection, { usernames: TEST_USERNAMES })
     formatter = new UrlFormatter('https://activitypubbot.example')
     other = await as2.import({
       id: 'https://social.example/user/test2',
@@ -63,7 +48,7 @@ describe('ActorStorage', () => {
     })
   })
   after(async () => {
-    await cleanup()
+    await cleanupTestData(connection, { usernames: TEST_USERNAMES })
     await connection.close()
     connection = null
     formatter = null

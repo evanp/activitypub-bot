@@ -8,7 +8,7 @@ import { nockSetup, nockFormat, getPublicKey, nockKeyRotate } from '@evanp/activ
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const LOCAL_HOST = 'remotekeystorage.local.test'
 const REMOTE_HOST = 'remotekeystorage.remote.test'
@@ -23,20 +23,15 @@ describe('RemoteKeyStorage', async () => {
   let client = null
   let logger = null
 
-  async function cleanup () {
-    const remotePattern = `https://${REMOTE_HOST}/%`
-    await connection.query(
-      'DELETE FROM new_remotekeys WHERE id LIKE ? OR owner LIKE ?',
-      { replacements: [remotePattern, remotePattern] }
-    )
-  }
-
   before(async () => {
     logger = Logger({
       level: 'silent'
     })
     connection = await createMigratedTestConnection()
-    await cleanup()
+    await cleanupTestData(connection, {
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
     const keyStorage = new KeyStorage(connection, logger)
     const formatter = new UrlFormatter(origin)
     const digester = new Digester(logger)
@@ -46,7 +41,10 @@ describe('RemoteKeyStorage', async () => {
   })
 
   after(async () => {
-    await cleanup()
+    await cleanupTestData(connection, {
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
     await connection.close()
     connection = null
     remoteKeyStorage = null

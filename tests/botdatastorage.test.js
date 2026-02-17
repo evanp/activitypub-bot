@@ -1,7 +1,7 @@
 import { describe, before, after, it } from 'node:test'
 import { BotDataStorage, NoSuchValueError } from '../lib/botdatastorage.js'
 import assert from 'node:assert'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const BOT1 = 'botdatastoragetest1'
 const BOT2 = 'botdatastoragetest2'
@@ -12,19 +12,12 @@ describe('BotDataStorage', async () => {
   let connection = null
   let storage = null
 
-  async function cleanup () {
-    await connection.query(
-      'DELETE FROM botdata WHERE username IN (:usernames)',
-      { replacements: { usernames: TEST_BOTS } }
-    )
-  }
-
   before(async () => {
     connection = await createMigratedTestConnection()
-    await cleanup()
+    await cleanupTestData(connection, { usernames: TEST_BOTS })
   })
   after(async () => {
-    await cleanup()
+    await cleanupTestData(connection, { usernames: TEST_BOTS })
     await connection.close()
     connection = null
     storage = null
