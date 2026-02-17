@@ -16,6 +16,10 @@ import {
   nockFormat
 } from '@evanp/activitypub-nock'
 
+function escapeRegex (str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 describe('ActivityPubClient', async () => {
   const LOCAL_HOST = 'local.activitypubclient.test'
   const REMOTE_HOST = 'social.activitypubclient.test'
@@ -32,6 +36,15 @@ describe('ActivityPubClient', async () => {
   const REMOTE_NOTE_1 = `https://${REMOTE_HOST}/user/${REMOTE_PROFILE_USER}/note/1`
   const REMOTE_PUBLIC_KEY = `https://${REMOTE_HOST}/user/${REMOTE_PROFILE_USER}/publickey`
   const REMOTE_INBOX = `https://${REMOTE_HOST}/user/${REMOTE_PROFILE_USER}/inbox`
+  const SIGNATURE_GET_WITH_USER_RE = new RegExp(
+    `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_SIGNING_USER)}/publickey",headers="\\(request-target\\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$`
+  )
+  const SIGNATURE_GET_WITHOUT_USER_RE = new RegExp(
+    `^keyId="https://${escapeRegex(LOCAL_HOST)}/publickey",headers="\\(request-target\\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$`
+  )
+  const SIGNATURE_POST_RE = new RegExp(
+    `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_SIGNING_USER)}/publickey",headers="\\(request-target\\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$`
+  )
 
   function nockFormatPlus (params) {
     return nockFormat(params.domain ? params : { domain: REMOTE_HOST, ...params })
@@ -106,7 +119,7 @@ describe('ActivityPubClient', async () => {
     assert.equal(obj.id, id)
     const h = getRequestHeaders(id)
     assert.ok(h.signature)
-    assert.match(h.signature, /^keyId="https:\/\/activitypubclient\.local\.test\/user\/activitypubclienttestfoobot\/publickey",headers="\(request-target\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(h.signature, SIGNATURE_GET_WITH_USER_RE)
     assert.equal(typeof h.digest, 'undefined')
     assert.equal(typeof h.date, 'string')
     assert.match(h.date, /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
@@ -122,7 +135,7 @@ describe('ActivityPubClient', async () => {
     assert.equal(obj.id, id)
     const h = getRequestHeaders(id)
     assert.ok(h.signature)
-    assert.match(h.signature, /^keyId="https:\/\/activitypubclient\.local\.test\/publickey",headers="\(request-target\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(h.signature, SIGNATURE_GET_WITHOUT_USER_RE)
     assert.equal(typeof h.digest, 'undefined')
     assert.equal(typeof h.date, 'string')
     assert.match(h.date, /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
@@ -157,7 +170,7 @@ describe('ActivityPubClient', async () => {
     const h = getRequestHeaders(inbox)
     assert.ok(h.signature)
     assert.ok(h.digest)
-    assert.match(h.signature, /^keyId="https:\/\/activitypubclient\.local\.test\/user\/activitypubclienttestfoobot\/publickey",headers="\(request-target\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(h.signature, SIGNATURE_POST_RE)
     assert.match(h.digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
     assert.equal(typeof h.date, 'string')
     assert.match(h.date, /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)

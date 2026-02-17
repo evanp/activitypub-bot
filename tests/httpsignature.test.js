@@ -6,6 +6,10 @@ import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
+function escapeRegex (str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 describe('HTTPSignature', async () => {
   const domain = 'local.httpsignature.test'
   const remoteDomain = 'social.httpsignature.test'
@@ -14,6 +18,12 @@ describe('HTTPSignature', async () => {
   const signerUser = 'httpsignaturetestsigner'
   const rotateUser = 'httpsignaturetestrotate'
   const testUsernames = [localUser]
+  const SIGNATURE_GET_RE = new RegExp(
+    `^keyId="https://${escapeRegex(remoteDomain)}/user/${escapeRegex(signerUser)}/publickey",headers="\\(request-target\\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$`
+  )
+  const SIGNATURE_POST_RE = new RegExp(
+    `^keyId="https://${escapeRegex(remoteDomain)}/user/${escapeRegex(signerUser)}/publickey",headers="\\(request-target\\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$`
+  )
   let connection = null
   let httpSignature = null
   let logger = null
@@ -141,7 +151,7 @@ describe('HTTPSignature', async () => {
     const keyId = nockFormat({ domain: remoteDomain, username: signerUser, key: true })
     const signature = await httpSignature.sign({ privateKey, keyId, url, method, headers })
     assert.ok(signature)
-    assert.match(signature, /^keyId="https:\/\/httpsignature-social\.test\/user\/httpsignaturetestsigner\/publickey",headers="\(request-target\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature, SIGNATURE_GET_RE)
   })
 
   it('can sign a POST request', async () => {
@@ -164,7 +174,7 @@ describe('HTTPSignature', async () => {
     const keyId = nockFormat({ domain: remoteDomain, username: signerUser, key: true })
     const signature = await httpSignature.sign({ privateKey, keyId, url, method, headers })
     assert.ok(signature)
-    assert.match(signature, /^keyId="https:\/\/httpsignature-social\.test\/user\/httpsignaturetestsigner\/publickey",headers="\(request-target\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature, SIGNATURE_POST_RE)
   })
 
   it('errors if required GET headers not present', async () => {
