@@ -1,4 +1,4 @@
-import { describe, it, before } from 'node:test'
+import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { createMigratedTestConnection } from './utils/db.js'
 
@@ -17,8 +17,13 @@ import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
 
 describe('ActivityDeliverer', async () => {
-  const host = 'activitypubbot.example'
-  const origin = `https://${host}`
+  const localHost = 'activitydeliverer.local.test'
+  const remoteHost = 'activitydeliverer.remote.test'
+  const origin = `https://${localHost}`
+  const testUsernames = ['activitydeliverertest1', 'activitydeliverertest2']
+  const localPattern = `${origin}/%`
+  const remotePattern = `https://${remoteHost}/%`
+  let connection
   let actorStorage
   let handler
   let formatter
@@ -27,10 +32,50 @@ describe('ActivityDeliverer', async () => {
   let ActivityDeliverer
   let deliverer
 
+  async function cleanup () {
+    await connection.query(
+      'DELETE FROM actorcollectionpage WHERE username IN (:usernames) OR item LIKE :localPattern OR item LIKE :remotePattern',
+      { replacements: { usernames: testUsernames, localPattern, remotePattern } }
+    )
+    await connection.query(
+      'DELETE FROM actorcollection WHERE username IN (:usernames)',
+      { replacements: { usernames: testUsernames } }
+    )
+    await connection.query(
+      'DELETE FROM lastactivity WHERE username IN (:usernames)',
+      { replacements: { usernames: testUsernames } }
+    )
+    await connection.query(
+      'DELETE FROM botdata WHERE username IN (:usernames)',
+      { replacements: { usernames: testUsernames } }
+    )
+    await connection.query(
+      'DELETE FROM new_keys WHERE username IN (:usernames)',
+      { replacements: { usernames: testUsernames } }
+    )
+    await connection.query(
+      'DELETE FROM new_remotekeys WHERE id LIKE ? OR owner LIKE ?',
+      { replacements: [remotePattern, remotePattern] }
+    )
+    await connection.query(
+      'DELETE FROM pages WHERE id LIKE ? OR item LIKE ? OR id LIKE ? OR item LIKE ?',
+      { replacements: [localPattern, localPattern, remotePattern, remotePattern] }
+    )
+    await connection.query(
+      'DELETE FROM collections WHERE id LIKE ? OR id LIKE ?',
+      { replacements: [localPattern, remotePattern] }
+    )
+    await connection.query(
+      'DELETE FROM objects WHERE id LIKE ? OR id LIKE ?',
+      { replacements: [localPattern, remotePattern] }
+    )
+  }
+
   before(async () => {
     logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter(origin)
-    const connection = await createMigratedTestConnection()
+    connection = await createMigratedTestConnection()
+    await cleanup()
     actorStorage = new ActorStorage(connection, formatter)
     const objectStorage = new ObjectStorage(connection)
     const keyStorage = new KeyStorage(connection, logger)
@@ -50,6 +95,18 @@ describe('ActivityDeliverer', async () => {
       logger,
       client
     )
+  })
+  after(async () => {
+    await cleanup()
+    await connection.close()
+    connection = null
+    actorStorage = null
+    handler = null
+    formatter = null
+    logger = null
+    client = null
+    ActivityDeliverer = null
+    deliverer = null
   })
 
   it('can import the library', async () => {
