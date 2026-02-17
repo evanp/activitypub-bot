@@ -333,7 +333,7 @@ PRs accepted.
 JavaScript code should use [JavaScript Standard Style](https://standardjs.com).
 
 There is a test suite using the Node [test runner](https://nodejs.org/api/test.html#test-runner). Run `npm run test` to start the tests. You can run just one test
-by adding it to the command-line, like `npm run test -- tests/botcontext.test.js`. The tests run with a SQLite in-memory database by default; you can pass a database URL as an environment variable, `TEST_DATABASE_URL`, if you want to test against a Postgres or MySQL database. NOTE that the tests are destructive af and you should
+by adding it to the command-line, like `npm run test -- tests/botcontext.test.js`. The tests use `TEST_DATABASE_URL` for database configuration and default to `sqlite::memory:` (SQLite in-memory) when it is unset. This lets you test against Postgres or MySQL when needed. NOTE that the tests are destructive af and you should
 not use your production database as a unit test DB!
 
 If you add a new feature, add tests for it. If you find a bug and fix it, add a test to make sure it stays fixed.
