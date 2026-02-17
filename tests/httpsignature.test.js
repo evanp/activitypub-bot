@@ -4,11 +4,16 @@ import { nockSetup, nockSignature, nockKeyRotate, getPublicKey, getPrivateKey, n
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 describe('HTTPSignature', async () => {
-  const domain = 'activitypubbot.example'
+  const domain = 'httpsignature.local.test'
+  const remoteDomain = 'httpsignature-social.test'
   const origin = `https://${domain}`
+  const localUser = 'httpsignaturetestlocal'
+  const signerUser = 'httpsignaturetestsigner'
+  const rotateUser = 'httpsignaturetestrotate'
+  const testUsernames = [localUser]
   let connection = null
   let httpSignature = null
   let logger = null
@@ -18,11 +23,21 @@ describe('HTTPSignature', async () => {
       level: 'silent'
     })
     connection = await createMigratedTestConnection()
-    nockSetup('social.example')
+    await cleanupTestData(connection, {
+      usernames: testUsernames,
+      localDomain: domain,
+      remoteDomains: [remoteDomain]
+    })
+    nockSetup(remoteDomain)
     digester = new Digester(logger)
   })
 
   after(async () => {
+    await cleanupTestData(connection, {
+      usernames: testUsernames,
+      localDomain: domain,
+      remoteDomains: [remoteDomain]
+    })
     await connection.close()
     digester = null
   })
@@ -33,40 +48,42 @@ describe('HTTPSignature', async () => {
   })
 
   it('can validate a signature', async () => {
-    const username = 'test'
+    const username = signerUser
     const date = new Date().toUTCString()
     const signature = await nockSignature({
-      url: `${origin}/user/ok/outbox`,
+      url: `${origin}/user/${localUser}/outbox`,
       date,
-      username
+      username,
+      domain: remoteDomain
     })
     const headers = {
       date,
       signature,
       host: URL.parse(origin).host
     }
-    const publicKeyPem = await getPublicKey(username)
+    const publicKeyPem = await getPublicKey(username, remoteDomain)
     const method = 'GET'
-    const path = '/user/ok/outbox'
+    const path = `/user/${localUser}/outbox`
     const result = await httpSignature.validate(publicKeyPem, signature, method, path, headers)
     assert.ok(result)
   })
 
   it('can validate a signature on an URL with parameters', async () => {
-    const username = 'test'
-    const lname = 'ok'
+    const username = signerUser
+    const lname = localUser
     const date = new Date().toUTCString()
     const signature = await nockSignature({
       url: `${origin}/.well-known/webfinger?resource=acct:${lname}@${domain}`,
       date,
-      username
+      username,
+      domain: remoteDomain
     })
     const headers = {
       date,
       signature,
       host: URL.parse(origin).host
     }
-    const publicKeyPem = await getPublicKey(username)
+    const publicKeyPem = await getPublicKey(username, remoteDomain)
     const method = 'GET'
     const path = `/.well-known/webfinger?resource=acct:${lname}@${domain}`
     const result = await httpSignature.validate(publicKeyPem, signature, method, path, headers)
@@ -74,34 +91,36 @@ describe('HTTPSignature', async () => {
   })
 
   it('can handle key rotation', async () => {
-    const username = 'rotate'
+    const username = rotateUser
     const date = new Date().toUTCString()
     const signature = await nockSignature({
-      url: `${origin}/user/ok/outbox`,
+      url: `${origin}/user/${localUser}/outbox`,
       date,
-      username
+      username,
+      domain: remoteDomain
     })
     const headers = {
       date,
       signature,
       host: URL.parse(origin).host
     }
-    const publicKeyPem = await getPublicKey(username)
+    const publicKeyPem = await getPublicKey(username, remoteDomain)
     const method = 'GET'
-    const path = '/user/ok/outbox'
+    const path = `/user/${localUser}/outbox`
     await httpSignature.validate(publicKeyPem, signature, method, path, headers)
-    await nockKeyRotate(username)
+    await nockKeyRotate(username, remoteDomain)
     const signature2 = await nockSignature({
-      url: `${origin}/user/ok/outbox`,
+      url: `${origin}/user/${localUser}/outbox`,
       date,
-      username
+      username,
+      domain: remoteDomain
     })
     const headers2 = {
       date,
       signature,
       host: URL.parse(origin).host
     }
-    const publicKeyPem2 = await getPublicKey(username)
+    const publicKeyPem2 = await getPublicKey(username, remoteDomain)
     assert.notStrictEqual(publicKeyPem, publicKeyPem2)
     const result2 = await httpSignature.validate(publicKeyPem2, signature2, method, path, headers2)
     assert.ok(result2)
@@ -116,21 +135,21 @@ describe('HTTPSignature', async () => {
       Accept: 'application/activity+json',
       'User-Agent': 'activitypubbot-test/0.0.1'
     }
-    const privateKey = await getPrivateKey('test')
+    const privateKey = await getPrivateKey(signerUser, remoteDomain)
     const method = 'GET'
-    const url = nockFormat({ username: 'test', obj: 'outbox' })
-    const keyId = nockFormat({ username: 'test', key: true })
+    const url = nockFormat({ domain: remoteDomain, username: signerUser, obj: 'outbox' })
+    const keyId = nockFormat({ domain: remoteDomain, username: signerUser, key: true })
     const signature = await httpSignature.sign({ privateKey, keyId, url, method, headers })
     assert.ok(signature)
-    assert.match(signature, /^keyId="https:\/\/social\.example\/user\/test\/publickey",headers="\(request-target\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature, /^keyId="https:\/\/httpsignature-social\.test\/user\/httpsignaturetestsigner\/publickey",headers="\(request-target\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$/)
   })
 
   it('can sign a POST request', async () => {
     const body = JSON.stringify({
       '@context': 'https://www.w3.org/ns/activitystreams',
       type: 'Create',
-      actor: nockFormat({ username: 'test' }),
-      object: nockFormat({ username: 'test', obj: 'note', num: 1 })
+      actor: nockFormat({ domain: remoteDomain, username: signerUser }),
+      object: nockFormat({ domain: remoteDomain, username: signerUser, obj: 'note', num: 1 })
     })
     const headers = {
       date: new Date().toUTCString(),
@@ -139,13 +158,13 @@ describe('HTTPSignature', async () => {
       'content-type': 'application/activity+json',
       'User-Agent': 'activitypubbot-test/0.0.1'
     }
-    const privateKey = await getPrivateKey('test')
+    const privateKey = await getPrivateKey(signerUser, remoteDomain)
     const method = 'POST'
-    const url = nockFormat({ username: 'test', obj: 'outbox' })
-    const keyId = nockFormat({ username: 'test', key: true })
+    const url = nockFormat({ domain: remoteDomain, username: signerUser, obj: 'outbox' })
+    const keyId = nockFormat({ domain: remoteDomain, username: signerUser, key: true })
     const signature = await httpSignature.sign({ privateKey, keyId, url, method, headers })
     assert.ok(signature)
-    assert.match(signature, /^keyId="https:\/\/social\.example\/user\/test\/publickey",headers="\(request-target\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$/)
+    assert.match(signature, /^keyId="https:\/\/httpsignature-social\.test\/user\/httpsignaturetestsigner\/publickey",headers="\(request-target\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$/)
   })
 
   it('errors if required GET headers not present', async () => {
@@ -155,10 +174,10 @@ describe('HTTPSignature', async () => {
       Host: URL.parse(origin).host,
       'User-Agent': 'activitypubbot-test/0.0.1'
     }
-    const privateKey = await getPrivateKey('test')
+    const privateKey = await getPrivateKey(signerUser, remoteDomain)
     const method = 'GET'
-    const url = nockFormat({ username: 'test', obj: 'outbox' })
-    const keyId = nockFormat({ username: 'test', key: true })
+    const url = nockFormat({ domain: remoteDomain, username: signerUser, obj: 'outbox' })
+    const keyId = nockFormat({ domain: remoteDomain, username: signerUser, key: true })
     try {
       await httpSignature.sign({ privateKey, keyId, url, method, headers })
       assert.fail('Expected error not thrown')
@@ -172,8 +191,8 @@ describe('HTTPSignature', async () => {
     const body = JSON.stringify({
       '@context': 'https://www.w3.org/ns/activitystreams',
       type: 'Create',
-      actor: nockFormat({ username: 'test' }),
-      object: nockFormat({ username: 'test', obj: 'note', num: 1 })
+      actor: nockFormat({ domain: remoteDomain, username: signerUser }),
+      object: nockFormat({ domain: remoteDomain, username: signerUser, obj: 'note', num: 1 })
     })
     const headers = {
       date: new Date().toUTCString(),
@@ -181,10 +200,10 @@ describe('HTTPSignature', async () => {
       digest: await digester.digest(body),
       'User-Agent': 'activitypubbot-test/0.0.1'
     }
-    const privateKey = await getPrivateKey('test')
+    const privateKey = await getPrivateKey(signerUser, remoteDomain)
     const method = 'POST'
-    const url = nockFormat({ username: 'test', obj: 'outbox' })
-    const keyId = nockFormat({ username: 'test', key: true })
+    const url = nockFormat({ domain: remoteDomain, username: signerUser, obj: 'outbox' })
+    const keyId = nockFormat({ domain: remoteDomain, username: signerUser, key: true })
     try {
       await httpSignature.sign({ privateKey, keyId, url, method, headers })
       assert.fail('Expected error not thrown')
@@ -195,13 +214,14 @@ describe('HTTPSignature', async () => {
   })
 
   it('can validate an hs2019 signature', async () => {
-    const username = 'test'
+    const username = signerUser
     const date = new Date().toUTCString()
     const algorithm = 'hs2019'
     const signature = await nockSignature({
-      url: `${origin}/user/ok/outbox`,
+      url: `${origin}/user/${localUser}/outbox`,
       date,
       username,
+      domain: remoteDomain,
       algorithm
     })
     const headers = {
@@ -209,9 +229,9 @@ describe('HTTPSignature', async () => {
       signature,
       host: URL.parse(origin).host
     }
-    const publicKeyPem = await getPublicKey(username)
+    const publicKeyPem = await getPublicKey(username, remoteDomain)
     const method = 'GET'
-    const path = '/user/ok/outbox'
+    const path = `/user/${localUser}/outbox`
     const result = await httpSignature.validate(publicKeyPem, signature, method, path, headers)
     assert.ok(result)
   })
