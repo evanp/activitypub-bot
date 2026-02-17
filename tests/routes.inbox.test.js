@@ -1,30 +1,72 @@
-import { describe, it, before } from 'node:test'
+import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import as2 from '../lib/activitystreams.js'
 import request from 'supertest'
-import { getTestDatabaseUrl } from './utils/db.js'
-
 import { makeApp } from '../lib/app.js'
-
+import DoNothingBot from '../lib/bots/donothing.js'
 import { nockSetup, nockSignature, nockFormat } from '@evanp/activitypub-nock'
 import { makeDigest } from './utils/digest.js'
-import bots from './fixtures/bots.js'
+import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('routes.inbox', async () => {
-  const host = 'activitypubbot.test'
+  const LOCAL_HOST = 'routes-inbox.local.test'
+  const REMOTE_HOST = 'routes-inbox.remote.test'
+  const BOT_USERNAME = 'routesinboxtestreadonly'
+  const INBOX_BOT_1 = 'routesinboxtest1'
+  const INBOX_BOT_2 = 'routesinboxtest2'
+  const INBOX_BOT_3 = 'routesinboxtest3'
+  const REMOTE_ACTOR_1 = 'routesinboxtestactor1'
+  const REMOTE_ACTOR_2 = 'routesinboxtestactor2'
+  const REMOTE_ACTOR_3 = 'routesinboxtestactor3'
+  const TEST_USERNAMES = [BOT_USERNAME, INBOX_BOT_1, INBOX_BOT_2, INBOX_BOT_3]
+
+  const host = LOCAL_HOST
   const origin = `https://${host}`
   const databaseUrl = getTestDatabaseUrl()
+  const testBots = {
+    [BOT_USERNAME]: new DoNothingBot(BOT_USERNAME),
+    [INBOX_BOT_1]: new DoNothingBot(INBOX_BOT_1),
+    [INBOX_BOT_2]: new DoNothingBot(INBOX_BOT_2),
+    [INBOX_BOT_3]: new DoNothingBot(INBOX_BOT_3)
+  }
+
+  function nockFormatDefault (params) {
+    return nockFormat({ ...params, domain: params.domain ?? REMOTE_HOST })
+  }
+
+  function nockSignatureDefault (params) {
+    return nockSignature({ ...params, domain: params.domain ?? REMOTE_HOST })
+  }
+
   let app = null
 
   before(async () => {
-    nockSetup('social.example')
-    app = await makeApp(databaseUrl, origin, bots, 'silent')
+    nockSetup(REMOTE_HOST)
+    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+    await cleanupTestData(app.locals.connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
+  })
+
+  after(async () => {
+    if (!app) {
+      return
+    }
+    await cleanupTestData(app.locals.connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
+    await app.cleanup()
+    app = null
   })
 
   describe('GET /user/{botid}/inbox', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/user/ok/inbox')
+      response = await request(app).get(`/user/${BOT_USERNAME}/inbox`)
     })
     it('should return 403 Forbidden', async () => {
       assert.strictEqual(response.status, 403)
@@ -64,7 +106,7 @@ describe('routes.inbox', async () => {
   describe('GET /user/{botid}/inbox/1', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/user/ok/inbox/1')
+      response = await request(app).get(`/user/${BOT_USERNAME}/inbox/1`)
     })
     it('should return 403 Forbidden', async () => {
       assert.strictEqual(response.status, 403)
@@ -102,19 +144,19 @@ describe('routes.inbox', async () => {
   })
 
   describe('can handle an incoming activity', async () => {
-    const username = 'actor1'
-    const botName = 'test0'
+    const username = REMOTE_ACTOR_1
+    const botName = INBOX_BOT_1
     const path = `/user/${botName}/inbox`
     const url = `${origin}${path}`
     const date = new Date().toUTCString()
     const activity = await as2.import({
       type: 'Activity',
-      actor: nockFormat({ username }),
-      id: nockFormat({ username, type: 'activity', num: 1 })
+      actor: nockFormatDefault({ username }),
+      id: nockFormatDefault({ username, type: 'activity', num: 1 })
     })
     const body = await activity.write()
     const digest = makeDigest(body)
-    const signature = await nockSignature({
+    const signature = await nockSignatureDefault({
       method: 'POST',
       username,
       url,
@@ -151,20 +193,20 @@ describe('routes.inbox', async () => {
   })
 
   describe('can handle a duplicate incoming activity', async () => {
-    const username = 'actor2'
-    const botName = 'test1'
+    const username = REMOTE_ACTOR_2
+    const botName = INBOX_BOT_2
     const path = `/user/${botName}/inbox`
     const url = `${origin}${path}`
     const date = new Date().toUTCString()
     const activity = await as2.import({
       type: 'Activity',
-      actor: nockFormat({ username }),
-      id: nockFormat({ username, type: 'activity', num: 2 }),
+      actor: nockFormatDefault({ username }),
+      id: nockFormatDefault({ username, type: 'activity', num: 2 }),
       to: 'as:Public'
     })
     const body = await activity.write()
     const digest = makeDigest(body)
-    const signature = await nockSignature({
+    const signature = await nockSignatureDefault({
       method: 'POST',
       username,
       url,
@@ -216,20 +258,20 @@ describe('routes.inbox', async () => {
   })
 
   describe('rejects a non-activity', async () => {
-    const username = 'actor3'
-    const botName = 'test2'
+    const username = REMOTE_ACTOR_3
+    const botName = INBOX_BOT_3
     const path = `/user/${botName}/inbox`
     const url = `${origin}${path}`
     const date = new Date().toUTCString()
     const note = await as2.import({
       type: 'Note',
-      attributedTo: nockFormat({ username }),
+      attributedTo: nockFormatDefault({ username }),
       to: 'as:Public',
-      id: nockFormat({ username, type: 'Note', num: 1 })
+      id: nockFormatDefault({ username, type: 'Note', num: 1 })
     })
     const body = await note.write()
     const digest = makeDigest(body)
-    const signature = await nockSignature({
+    const signature = await nockSignatureDefault({
       method: 'POST',
       username,
       url,
