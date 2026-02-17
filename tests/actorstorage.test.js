@@ -6,6 +6,26 @@ import as2 from '../lib/activitystreams.js'
 import { createMigratedTestConnection } from './utils/db.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
+const LOCAL_USER = 'actorstoragetest1'
+const FOLLOWERS_USER = 'actorstoragetest3'
+const LIKED_USER_A = 'actorstoragetest4'
+const LIKED_USER_B = 'actorstoragetest5'
+const LIKED_USER_C = 'actorstoragetest6'
+const LIKED_USER_D = 'actorstoragetest7'
+const CUSTOM_USER = 'actorstoragetest8'
+const LAST_ACTIVITY_USER = 'actorstoragetest16'
+const FOLLOWING_USERS = Array.from({ length: 5 }, (_, i) => `actorstoragetest${101 + i}`)
+const TEST_USERNAMES = [
+  LOCAL_USER,
+  FOLLOWERS_USER,
+  LIKED_USER_A,
+  LIKED_USER_B,
+  LIKED_USER_C,
+  LIKED_USER_D,
+  CUSTOM_USER,
+  LAST_ACTIVITY_USER,
+  ...FOLLOWING_USERS
+]
 
 describe('ActorStorage', () => {
   let connection = null
@@ -13,8 +33,25 @@ describe('ActorStorage', () => {
   let formatter = null
   let other = null
   let unfollowed = null
+
+  async function cleanup () {
+    await connection.query(
+      'DELETE FROM actorcollectionpage WHERE username IN (:usernames)',
+      { replacements: { usernames: TEST_USERNAMES } }
+    )
+    await connection.query(
+      'DELETE FROM actorcollection WHERE username IN (:usernames)',
+      { replacements: { usernames: TEST_USERNAMES } }
+    )
+    await connection.query(
+      'DELETE FROM lastactivity WHERE username IN (:usernames)',
+      { replacements: { usernames: TEST_USERNAMES } }
+    )
+  }
+
   before(async () => {
     connection = await createMigratedTestConnection()
+    await cleanup()
     formatter = new UrlFormatter('https://activitypubbot.example')
     other = await as2.import({
       id: 'https://social.example/user/test2',
@@ -26,6 +63,7 @@ describe('ActorStorage', () => {
     })
   })
   after(async () => {
+    await cleanup()
     await connection.close()
     connection = null
     formatter = null
@@ -37,7 +75,7 @@ describe('ActorStorage', () => {
   it('can initialize the storage', async () => {
   })
   it('can get an actor', async () => {
-    const actor = await storage.getActor('test')
+    const actor = await storage.getActor(LOCAL_USER)
     assert.ok(actor)
     assert.ok(actor.id)
     assert.ok(actor.inbox)
@@ -45,11 +83,11 @@ describe('ActorStorage', () => {
     assert.ok(actor.followers)
     assert.ok(actor.following)
     assert.ok(actor.liked)
-    assert.strictEqual(actor.get('preferredUsername').first, 'test')
+    assert.strictEqual(actor.get('preferredUsername').first, LOCAL_USER)
   })
 
   it('can get an actor by id', async () => {
-    const actor = await storage.getActorById('https://activitypubbot.example/user/test')
+    const actor = await storage.getActorById(`https://activitypubbot.example/user/${LOCAL_USER}`)
     assert.ok(actor)
     assert.ok(actor.id)
     assert.ok(actor.inbox)
@@ -57,55 +95,55 @@ describe('ActorStorage', () => {
     assert.ok(actor.followers)
     assert.ok(actor.following)
     assert.ok(actor.liked)
-    assert.strictEqual(actor.get('preferredUsername').first, 'test')
+    assert.strictEqual(actor.get('preferredUsername').first, LOCAL_USER)
   })
   it('can get an empty collection', async () => {
-    const collection = await storage.getCollection('test', 'followers')
+    const collection = await storage.getCollection(LOCAL_USER, 'followers')
     assert.ok(collection)
-    assert.strictEqual(collection.id, 'https://activitypubbot.example/user/test/followers')
+    assert.strictEqual(collection.id, `https://activitypubbot.example/user/${LOCAL_USER}/followers`)
     assert.strictEqual(collection.type, 'https://www.w3.org/ns/activitystreams#OrderedCollection')
     assert.strictEqual(collection.totalItems, 0)
     assert.ok(collection.first)
     assert.ok(collection.last)
   })
   it('can get an empty collection page', async () => {
-    const page = await storage.getCollectionPage('test', 'followers', 1)
+    const page = await storage.getCollectionPage(LOCAL_USER, 'followers', 1)
     assert.ok(page)
     assert.strictEqual(
       page.id,
-      'https://activitypubbot.example/user/test/followers/1'
+      `https://activitypubbot.example/user/${LOCAL_USER}/followers/1`
     )
     assert.strictEqual(page.type, 'https://www.w3.org/ns/activitystreams#OrderedCollectionPage')
     assert.strictEqual(
       page.partOf.id,
-      'https://activitypubbot.example/user/test/followers'
+      `https://activitypubbot.example/user/${LOCAL_USER}/followers`
     )
     assert.ok(!page.next)
     assert.ok(!page.prev)
   })
   it('can add to a collection', async () => {
-    const collection = await storage.getCollection('test3', 'followers')
+    const collection = await storage.getCollection(FOLLOWERS_USER, 'followers')
     assert.strictEqual(collection.totalItems, 0)
     await storage.addToCollection(
-      'test3',
+      FOLLOWERS_USER,
       'followers',
       other
     )
-    const collection2 = await storage.getCollection('test3', 'followers')
+    const collection2 = await storage.getCollection(FOLLOWERS_USER, 'followers')
     assert.strictEqual(collection2.totalItems, 1)
-    const page = await storage.getCollectionPage('test3', 'followers', 1)
+    const page = await storage.getCollectionPage(FOLLOWERS_USER, 'followers', 1)
     assert.strictEqual(page.items.length, 1)
     assert.strictEqual(Array.from(page.items)[0].id, 'https://social.example/user/test2')
   })
   it('can remove from a collection', async () => {
     await storage.removeFromCollection(
-      'test3',
+      FOLLOWERS_USER,
       'followers',
       other
     )
-    const collection2 = await storage.getCollection('test3', 'followers')
+    const collection2 = await storage.getCollection(FOLLOWERS_USER, 'followers')
     assert.strictEqual(collection2.totalItems, 0)
-    const page = await storage.getCollectionPage('test3', 'followers', 1)
+    const page = await storage.getCollectionPage(FOLLOWERS_USER, 'followers', 1)
     assert.ok(!page.items)
   })
   it('can add a lot of items a collection', async () => {
@@ -116,20 +154,20 @@ describe('ActorStorage', () => {
         content: `Hello World ${i}`
       })
       await storage.addToCollection(
-        'test4',
+        LIKED_USER_A,
         'liked',
         other
       )
     }
-    const collection = await storage.getCollection('test4', 'liked')
+    const collection = await storage.getCollection(LIKED_USER_A, 'liked')
     assert.strictEqual(collection.totalItems, 100)
-    const page = await storage.getCollectionPage('test4', 'liked', 3)
+    const page = await storage.getCollectionPage(LIKED_USER_A, 'liked', 3)
     assert.strictEqual(page.items.length, 20)
-    assert.strictEqual(page.next.id, 'https://activitypubbot.example/user/test4/liked/2')
+    assert.strictEqual(page.next.id, `https://activitypubbot.example/user/${LIKED_USER_A}/liked/2`)
   })
   it('can iterate over a collection', async () => {
     const seen = new Set()
-    for await (const item of storage.items('test4', 'liked')) {
+    for await (const item of storage.items(LIKED_USER_A, 'liked')) {
       assert.ok(!(item.id in seen))
       seen.add(item.id)
     }
@@ -146,26 +184,26 @@ describe('ActorStorage', () => {
       type: 'Note',
       content: 'Hello World 201'
     })
-    const collection = await storage.getCollection('test5', 'liked')
+    const collection = await storage.getCollection(LIKED_USER_B, 'liked')
     assert.strictEqual(collection.totalItems, 0)
     await storage.addToCollection(
-      'test5',
+      LIKED_USER_B,
       'liked',
       other
     )
     await storage.addToCollection(
-      'test5',
+      LIKED_USER_B,
       'liked',
       other2
     )
-    const collection2 = await storage.getCollection('test5', 'liked')
+    const collection2 = await storage.getCollection(LIKED_USER_B, 'liked')
     assert.strictEqual(collection2.totalItems, 2)
     await storage.removeFromCollection(
-      'test5',
+      LIKED_USER_B,
       'liked',
       other
     )
-    const collection3 = await storage.getCollection('test5', 'liked')
+    const collection3 = await storage.getCollection(LIKED_USER_B, 'liked')
     assert.strictEqual(collection3.totalItems, 1)
   })
   it('can check if something is in the collection', async () => {
@@ -179,22 +217,22 @@ describe('ActorStorage', () => {
       type: 'Note',
       content: 'Hello World 301'
     })
-    let collection = await storage.getCollection('test6', 'liked')
+    let collection = await storage.getCollection(LIKED_USER_C, 'liked')
     assert.strictEqual(collection.totalItems, 0)
     await storage.addToCollection(
-      'test6',
+      LIKED_USER_C,
       'liked',
       other
     )
-    collection = await storage.getCollection('test6', 'liked')
+    collection = await storage.getCollection(LIKED_USER_C, 'liked')
     assert.strictEqual(collection.totalItems, 1)
     assert.ok(await storage.isInCollection(
-      'test6',
+      LIKED_USER_C,
       'liked',
       other
     ))
     assert.ok(!await storage.isInCollection(
-      'test6',
+      LIKED_USER_C,
       'liked',
       other2
     ))
@@ -216,26 +254,26 @@ describe('ActorStorage', () => {
       type: 'Note',
       content: 'Hello World 402'
     })
-    let collection = await storage.getCollection('test7', 'liked')
+    let collection = await storage.getCollection(LIKED_USER_D, 'liked')
     assert.strictEqual(collection.totalItems, 0)
     await storage.addToCollection(
-      'test7',
+      LIKED_USER_D,
       'liked',
       other
     )
     await storage.addToCollection(
-      'test7',
+      LIKED_USER_D,
       'liked',
       other2
     )
-    collection = await storage.getCollection('test7', 'liked')
+    collection = await storage.getCollection(LIKED_USER_D, 'liked')
     assert.strictEqual(collection.totalItems, 2)
     await storage.removeFromCollection(
-      'test7',
+      LIKED_USER_D,
       'liked',
       other3
     )
-    collection = await storage.getCollection('test7', 'liked')
+    collection = await storage.getCollection(LIKED_USER_D, 'liked')
     assert.strictEqual(collection.totalItems, 2)
   })
   it('can get an actor with custom properties', async () => {
@@ -244,7 +282,7 @@ describe('ActorStorage', () => {
       summary: 'A test user',
       type: 'Person'
     }
-    const actor = await storage.getActor('test8', props)
+    const actor = await storage.getActor(CUSTOM_USER, props)
     assert.ok(actor)
     assert.ok(actor.id)
     assert.ok(actor.inbox)
@@ -252,7 +290,7 @@ describe('ActorStorage', () => {
     assert.ok(actor.followers)
     assert.ok(actor.following)
     assert.ok(actor.liked)
-    assert.strictEqual(actor.get('preferredUsername').first, 'test8')
+    assert.strictEqual(actor.get('preferredUsername').first, CUSTOM_USER)
     assert.strictEqual(actor.name.get(), 'Test User')
     assert.strictEqual(actor.summary.get(), 'A test user')
     assert.ok(Array.isArray(actor.type))
@@ -261,16 +299,14 @@ describe('ActorStorage', () => {
   })
 
   it('can get all actors with an object in a collection', async () => {
-    for (const i of [101, 102, 103, 104, 105]) {
-      await storage.addToCollection(`test${i}`, 'following', other)
+    for (const username of FOLLOWING_USERS) {
+      await storage.addToCollection(username, 'following', other)
     }
     const usernames = await storage.getUsernamesWith('following', other)
     assert.strictEqual(usernames.length, 5)
-    assert.ok(usernames.includes('test101'))
-    assert.ok(usernames.includes('test102'))
-    assert.ok(usernames.includes('test103'))
-    assert.ok(usernames.includes('test104'))
-    assert.ok(usernames.includes('test105'))
+    for (const username of FOLLOWING_USERS) {
+      assert.ok(usernames.includes(username))
+    }
   })
 
   it('gets zero usernames when an object is in no collection', async () => {
@@ -279,7 +315,7 @@ describe('ActorStorage', () => {
   })
 
   describe('last activity', async () => {
-    const username = 'test16'
+    const username = LAST_ACTIVITY_USER
     let object, activity1, activity2
 
     before(async () => {
