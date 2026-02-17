@@ -1,20 +1,31 @@
-import { describe, it, before } from 'node:test'
+import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { makeApp } from '../lib/app.js'
 import request from 'supertest'
-import bots from './fixtures/bots.js'
+import OKBot from '../lib/bots/ok.js'
 import as2 from '../lib/activitystreams.js'
 import { nockSetup, nockFormat, nockSignature, makeActor } from '@evanp/activitypub-nock'
-import { getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 const uppercase = (string) => string.charAt(0).toUpperCase() + string.slice(1)
 
 describe('object collection routes', async () => {
+  const LOCAL_HOST = 'routes-object.local.test'
+  const REMOTE_HOST = 'routes-object.remote.test'
+  const BOT_USERNAME = 'routesobjecttestbot'
+  const REMOTE_FOLLOWER_USERNAME = 'routesobjecttestfollower'
+  const REMOTE_REPLIER_USERNAME = 'routesobjecttestreplier'
+  const REMOTE_LIKER_USERNAME = 'routesobjecttestliker'
+  const REMOTE_SHARER_USERNAME = 'routesobjecttestsharer'
   const databaseUrl = getTestDatabaseUrl()
-  const host = 'activitypubbot.test'
+  const host = LOCAL_HOST
   const origin = `https://${host}`
-  const remote = 'social.example'
-  const username = 'ok'
+  const remote = REMOTE_HOST
+  const username = BOT_USERNAME
+  const TEST_USERNAMES = [BOT_USERNAME]
+  const testBots = {
+    [BOT_USERNAME]: new OKBot(BOT_USERNAME)
+  }
   const type = 'object'
   const nanoid = 'hUQC9HWian7dzOxZJlJBA'
   let app = null
@@ -26,7 +37,12 @@ describe('object collection routes', async () => {
   const privateNanoid = 'Ic3Sa_0xOQKvlPsWU16as'
 
   before(async () => {
-    app = await makeApp(databaseUrl, origin, bots, 'silent')
+    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+    await cleanupTestData(app.locals.connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
     const { formatter, objectStorage, actorStorage } = app.locals
     nockSetup(remote)
     obj = await as2.import({
@@ -46,14 +62,14 @@ describe('object collection routes', async () => {
     reply = await as2.import({
       id: nockFormat({
         domain: remote,
-        username: 'replier1',
+        username: REMOTE_REPLIER_USERNAME,
         type: 'note',
         num: 1
       }),
       type: 'Note',
       attributedTo: nockFormat({
         domain: remote,
-        username: 'replier1'
+        username: REMOTE_REPLIER_USERNAME
       }),
       content: 'This is a reply to the test object',
       inReplyTo: obj.id,
@@ -64,7 +80,7 @@ describe('object collection routes', async () => {
     like = await as2.import({
       id: nockFormat({
         domain: remote,
-        username: 'liker1',
+        username: REMOTE_LIKER_USERNAME,
         type: 'like',
         num: 1,
         obj: obj.id
@@ -72,7 +88,7 @@ describe('object collection routes', async () => {
       type: 'Like',
       attributedTo: nockFormat({
         domain: remote,
-        username: 'liker1'
+        username: REMOTE_LIKER_USERNAME
       }),
       object: obj.id,
       to: [formatter.format({ username }), 'as:Public']
@@ -81,7 +97,7 @@ describe('object collection routes', async () => {
     share = await as2.import({
       id: nockFormat({
         domain: remote,
-        username: 'sharer1',
+        username: REMOTE_SHARER_USERNAME,
         type: 'announce',
         num: 1,
         obj: obj.id
@@ -89,7 +105,7 @@ describe('object collection routes', async () => {
       type: 'Announce',
       attributedTo: nockFormat({
         domain: remote,
-        username: 'sharer1'
+        username: REMOTE_SHARER_USERNAME
       }),
       object: obj.id,
       to: [formatter.format({ username }), 'as:Public']
@@ -108,7 +124,7 @@ describe('object collection routes', async () => {
       to: formatter.format({ username, collection: 'followers' })
     })
     await objectStorage.create(privateObj)
-    const follower = await makeActor('follower1', remote)
+    const follower = await makeActor(REMOTE_FOLLOWER_USERNAME, remote)
     await actorStorage.addToCollection(
       username,
       'followers',
@@ -117,6 +133,19 @@ describe('object collection routes', async () => {
     assert.ok(
       await actorStorage.isInCollection(username, 'followers', follower)
     )
+  })
+
+  after(async () => {
+    if (!app) {
+      return
+    }
+    await cleanupTestData(app.locals.connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
+    await app.cleanup()
+    app = null
   })
 
   describe('GET /user/{username}/{type}/{nanoid}', async () => {
@@ -434,7 +463,12 @@ describe('object collection routes', async () => {
       const path = `/user/${username}/${type}/${privateNanoid}`
       const url = `${origin}${path}`
       const date = new Date().toISOString()
-      const signature = await nockSignature({ username: 'follower1', url, date })
+      const signature = await nockSignature({
+        username: REMOTE_FOLLOWER_USERNAME,
+        domain: REMOTE_HOST,
+        url,
+        date
+      })
       response = await request(app)
         .get(path)
         .set('Signature', signature)
