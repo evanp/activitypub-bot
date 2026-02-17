@@ -10,9 +10,21 @@ import { nanoid } from 'nanoid'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 describe('Authorizer', () => {
+  const LOCAL_HOST = 'authorizer.local.test'
+  const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
+  const REMOTE_HOST = 'authorizer-remote.test'
+  const REMOTE_ORIGIN = `https://${REMOTE_HOST}`
+  const LOCAL_USER_1 = 'authorizertest1'
+  const LOCAL_USER_2 = 'authorizertest2'
+  const LOCAL_USER_3 = 'authorizertest3'
+  const REMOTE_USER_1 = 'authorizerremote1'
+  const REMOTE_USER_2 = 'authorizerremote2'
+  const REMOTE_USER_3 = 'authorizerremote3'
+  const TEST_USERNAMES = [LOCAL_USER_1, LOCAL_USER_2, LOCAL_USER_3]
+
   let authorizer = null
   let actorStorage = null
   let formatter = null
@@ -36,47 +48,52 @@ describe('Authorizer', () => {
     const logger = Logger({
       level: 'silent'
     })
-    formatter = new UrlFormatter('https://activitypubbot.example')
+    formatter = new UrlFormatter(LOCAL_ORIGIN)
     connection = await createMigratedTestConnection()
+    await cleanupTestData(connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
     actorStorage = new ActorStorage(connection, formatter)
     keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
-    actor1 = await actorStorage.getActor('test1')
-    actor2 = await actorStorage.getActor('test2')
+    actor1 = await actorStorage.getActor(LOCAL_USER_1)
+    actor2 = await actorStorage.getActor(LOCAL_USER_2)
     await actorStorage.addToCollection(
-      'test1',
+      LOCAL_USER_1,
       'followers',
       actor2
     )
-    actor3 = await actorStorage.getActor('test3')
+    actor3 = await actorStorage.getActor(LOCAL_USER_3)
     remoteUnconnected = await as2.import({
-      id: 'https://remote.example/user/remote1',
+      id: `${REMOTE_ORIGIN}/user/${REMOTE_USER_1}`,
       type: 'Person',
-      preferredUsername: 'remote1',
+      preferredUsername: REMOTE_USER_1,
       to: 'as:Public'
     })
     remoteFollower = await as2.import({
-      id: 'https://remote.example/user/remote2',
+      id: `${REMOTE_ORIGIN}/user/${REMOTE_USER_2}`,
       type: 'Person',
-      preferredUsername: 'remote2',
+      preferredUsername: REMOTE_USER_2,
       to: 'as:Public'
     })
     await actorStorage.addToCollection(
-      'test1',
+      LOCAL_USER_1,
       'followers',
       remoteFollower
     )
     remoteAddressee = await as2.import({
-      id: 'https://remote.example/user/remote3',
+      id: `${REMOTE_ORIGIN}/user/${REMOTE_USER_3}`,
       type: 'Person',
-      preferredUsername: 'remote3',
+      preferredUsername: REMOTE_USER_3,
       to: 'as:Public'
     })
     publicObject = await as2.import({
       id: formatter.format({
-        username: 'test1',
+        username: LOCAL_USER_1,
         type: 'object',
         nanoid: nanoid()
       }),
@@ -86,20 +103,20 @@ describe('Authorizer', () => {
     })
     followersOnlyObject = await as2.import({
       id: formatter.format({
-        username: 'test1',
+        username: LOCAL_USER_1,
         type: 'object',
         nanoid: nanoid()
       }),
       type: 'Object',
       attributedTo: actor1.id,
       to: formatter.format({
-        username: 'test1',
+        username: LOCAL_USER_1,
         collection: 'followers'
       })
     })
     privateObject = await as2.import({
       id: formatter.format({
-        username: 'test1',
+        username: LOCAL_USER_1,
         type: 'object',
         nanoid: nanoid()
       }),
@@ -108,13 +125,13 @@ describe('Authorizer', () => {
       to: [actor2.id, remoteAddressee.id]
     })
     remotePublicObject = await as2.import({
-      id: 'https://remote.example/user/remote1/object/1',
+      id: `${REMOTE_ORIGIN}/user/${REMOTE_USER_1}/object/1`,
       type: 'Object',
       attributedTo: remoteUnconnected.id,
       to: 'as:Public'
     })
     remotePrivateObject = await as2.import({
-      id: 'https://remote.example/user/remote1/object/2',
+      id: `${REMOTE_ORIGIN}/user/${REMOTE_USER_1}/object/2`,
       type: 'Object',
       attributedTo: remoteUnconnected.id,
       to: actor2.id
@@ -122,6 +139,11 @@ describe('Authorizer', () => {
   })
 
   after(async () => {
+    await cleanupTestData(connection, {
+      usernames: TEST_USERNAMES,
+      localDomain: LOCAL_HOST,
+      remoteDomains: [REMOTE_HOST]
+    })
     await connection.close()
     formatter = null
     actorStorage = null
