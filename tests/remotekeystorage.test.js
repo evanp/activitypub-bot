@@ -10,29 +10,47 @@ import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
 import { createMigratedTestConnection } from './utils/db.js'
 
+const LOCAL_HOST = 'remotekeystorage.local.test'
+const REMOTE_HOST = 'remotekeystorage.remote.test'
+const REMOTE_USER_1 = 'remotekeystoragetest1'
+const REMOTE_USER_2 = 'remotekeystoragetest2'
+const REMOTE_USER_3 = 'remotekeystoragetest3'
+
 describe('RemoteKeyStorage', async () => {
-  const host = 'activitypubbot.example'
-  const remoteHost = 'social.example'
-  const origin = `https://${host}`
+  const origin = `https://${LOCAL_HOST}`
   let connection = null
   let remoteKeyStorage = null
   let client = null
   let logger = null
+
+  async function cleanup () {
+    const remotePattern = `https://${REMOTE_HOST}/%`
+    await connection.query(
+      'DELETE FROM new_remotekeys WHERE id LIKE ? OR owner LIKE ?',
+      { replacements: [remotePattern, remotePattern] }
+    )
+  }
+
   before(async () => {
     logger = Logger({
       level: 'silent'
     })
     connection = await createMigratedTestConnection()
+    await cleanup()
     const keyStorage = new KeyStorage(connection, logger)
     const formatter = new UrlFormatter(origin)
     const digester = new Digester(logger)
     const signer = new HTTPSignature(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
-    nockSetup(remoteHost)
+    nockSetup(REMOTE_HOST)
   })
 
   after(async () => {
+    await cleanup()
     await connection.close()
+    connection = null
+    remoteKeyStorage = null
+    client = null
     logger = null
   })
 
@@ -43,8 +61,8 @@ describe('RemoteKeyStorage', async () => {
   })
 
   it('can get a remote public key', async () => {
-    const username = 'test'
-    const domain = remoteHost
+    const username = REMOTE_USER_1
+    const domain = REMOTE_HOST
     const id = nockFormat({ username, key: true, domain })
     const publicKey = await getPublicKey(username, domain)
     const remote = await remoteKeyStorage.getPublicKey(id)
@@ -52,8 +70,8 @@ describe('RemoteKeyStorage', async () => {
   })
 
   it('can get the same remote public key twice', async () => {
-    const username = 'test'
-    const domain = remoteHost
+    const username = REMOTE_USER_2
+    const domain = REMOTE_HOST
     const id = nockFormat({ username, key: true, domain })
     const publicKey = await getPublicKey(username, domain)
     const remote = await remoteKeyStorage.getPublicKey(id)
@@ -61,13 +79,13 @@ describe('RemoteKeyStorage', async () => {
   })
 
   it('can get the right public key after key rotation', async () => {
-    const username = 'test'
-    const domain = remoteHost
+    const username = REMOTE_USER_3
+    const domain = REMOTE_HOST
     const id = nockFormat({ username, key: true, domain })
     const publicKey = await getPublicKey(username, domain)
     const remote = await remoteKeyStorage.getPublicKey(id)
     assert.equal(remote.publicKeyPem, publicKey)
-    await nockKeyRotate(username)
+    await nockKeyRotate(username, domain)
     const publicKey2 = await getPublicKey(username, domain)
     const remote2 = await remoteKeyStorage.getPublicKey(id, false)
     assert.equal(remote2.publicKeyPem, publicKey2)
