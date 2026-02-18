@@ -5,6 +5,7 @@ export default class EventLoggingBot extends Bot {
   #mentions = new Map()
   #likes = new Map()
   #publics = new Map()
+  #dupes = new Map()
   #shares = new Map()
 
   get fullname () {
@@ -28,7 +29,11 @@ export default class EventLoggingBot extends Bot {
   }
 
   async onPublic (activity) {
-    this.#publics.set(activity.id, activity)
+    if (this.#publics.has(activity.id)) {
+      this.#dupes.set(activity.id, activity)
+    } else {
+      this.#publics.set(activity.id, activity)
+    }
   }
 
   async onAnnounce (object, activity) {
@@ -53,5 +58,9 @@ export default class EventLoggingBot extends Bot {
 
   get shares () {
     return this.#shares
+  }
+
+  get dupes () {
+    return this.#dupes
   }
 }

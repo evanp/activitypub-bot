@@ -7,6 +7,7 @@ import DoNothingBot from '../lib/bots/donothing.js'
 import { nockSetup, nockSignature, nockFormat } from '@evanp/activitypub-nock'
 import { makeDigest } from './utils/digest.js'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+import EventLoggingBot from './fixtures/eventloggingbot.js'
 
 describe('routes.inbox', async () => {
   const LOCAL_HOST = 'local.routes-inbox.test'
@@ -15,19 +16,26 @@ describe('routes.inbox', async () => {
   const INBOX_BOT_1 = 'routesinboxtest1'
   const INBOX_BOT_2 = 'routesinboxtest2'
   const INBOX_BOT_3 = 'routesinboxtest3'
+  const INBOX_BOT_4 = 'routesinboxtest4'
+  const INBOX_BOT_5 = 'routesinboxtest5'
+  const LOGGING_BOT = 'routesinboxtestlogging1'
   const REMOTE_ACTOR_1 = 'routesinboxtestactor1'
   const REMOTE_ACTOR_2 = 'routesinboxtestactor2'
   const REMOTE_ACTOR_3 = 'routesinboxtestactor3'
-  const TEST_USERNAMES = [BOT_USERNAME, INBOX_BOT_1, INBOX_BOT_2, INBOX_BOT_3]
-
+  const REMOTE_ACTOR_4 = 'routesinboxtestactor4'
+  const TEST_USERNAMES = [BOT_USERNAME, INBOX_BOT_1, INBOX_BOT_2, INBOX_BOT_3, INBOX_BOT_4, INBOX_BOT_5, LOGGING_BOT]
   const host = LOCAL_HOST
   const origin = `https://${host}`
   const databaseUrl = getTestDatabaseUrl()
+  const lb = new EventLoggingBot(LOGGING_BOT)
   const testBots = {
     [BOT_USERNAME]: new DoNothingBot(BOT_USERNAME),
     [INBOX_BOT_1]: new DoNothingBot(INBOX_BOT_1),
     [INBOX_BOT_2]: new DoNothingBot(INBOX_BOT_2),
-    [INBOX_BOT_3]: new DoNothingBot(INBOX_BOT_3)
+    [INBOX_BOT_3]: new DoNothingBot(INBOX_BOT_3),
+    [INBOX_BOT_4]: new DoNothingBot(INBOX_BOT_4),
+    [INBOX_BOT_5]: new DoNothingBot(INBOX_BOT_5),
+    [LOGGING_BOT]: lb
   }
 
   function nockFormatDefault (params) {
@@ -42,7 +50,7 @@ describe('routes.inbox', async () => {
 
   before(async () => {
     nockSetup(REMOTE_HOST)
-    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+    app = await makeApp(databaseUrl, origin, testBots, 'debug')
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
@@ -304,6 +312,82 @@ describe('routes.inbox', async () => {
           note
         )
       )
+    })
+  })
+
+  describe('delivers an incoming public activity', async () => {
+    const username = REMOTE_ACTOR_4
+    const botName = INBOX_BOT_4
+    const path = `/user/${botName}/inbox`
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    let response = null
+    let activity
+    let body
+    let digest
+    let signature
+    before(async () => {
+      const formatter = app.locals.formatter
+      activity = await as2.import({
+        type: 'Activity',
+        actor: nockFormatDefault({ username }),
+        id: nockFormatDefault({ username, type: 'activity', num: 1 }),
+        to: ['as:Public', formatter.format({ username }), formatter.format({ username: INBOX_BOT_5 })]
+      })
+      body = await activity.write()
+      digest = makeDigest(body)
+      signature = await nockSignatureDefault({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date
+      })
+    })
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
+    })
+    it('should be delivered to onPublic()', async () => {
+      assert.ok(lb.publics.has(activity.id))
+    })
+    it('should deliver to another inbox', async () => {
+      const path = `/user/${INBOX_BOT_5}/inbox`
+      const url = `${origin}${path}`
+      signature = await nockSignatureDefault({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date
+      })
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should also return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
+    })
+    it('should not be delivered to onPublic() a second time', async () => {
+      assert.ok(!lb.dupes.has(activity.id))
     })
   })
 })
