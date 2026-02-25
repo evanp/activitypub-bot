@@ -737,6 +737,12 @@ describe('BotContext', () => {
 
     assert.strictEqual(activity.type, `${AS2_NS}Announce`)
     assert.strictEqual(activity.object?.first?.id, obj.id)
+    assert.strictEqual(typeof activity.summary.get(), 'string')
+    assert.strictEqual(typeof activity.summary.get('en'), 'string')
+    assert.strictEqual(
+      activity.summary.get('en'),
+      activity.summary.get()
+    )
 
     await context.onIdle()
 
