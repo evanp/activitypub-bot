@@ -69,7 +69,8 @@ export async function createMigratedTestConnection (databaseUrl = getTestDatabas
 export async function cleanupTestData (connection, {
   usernames = [],
   localDomain = null,
-  remoteDomains = []
+  remoteDomains = [],
+  queues = []
 } = {}) {
   const localPattern = toUrlPattern(localDomain)
   const normalizedRemotePatterns = remoteDomains.map(toUrlPattern).filter(Boolean)
@@ -121,4 +122,11 @@ export async function cleanupTestData (connection, {
   const objectReplacements = {}
   addLikeClauses(objectClauses, objectReplacements, 'id', allPatterns, 'objectIdPattern')
   await deleteWhere(connection, 'objects', objectClauses, objectReplacements)
+
+  if (queues.length > 0) {
+    await connection.query(
+      'DELETE FROM job WHERE queue_id in (?);',
+      { replacements: [queues] }
+    )
+  }
 }
