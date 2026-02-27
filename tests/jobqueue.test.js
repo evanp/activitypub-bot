@@ -105,4 +105,16 @@ describe('JobQueue', async () => {
     await queue.onIdle(queueId)
     assert.ok(true)
   })
+
+  it('can abort a queue server', async () => {
+    const queueId = 'jobqueue.test.js:6'
+    setTimeout(() => {
+      queue.abort()
+    }, 100)
+    try {
+      await queue.dequeue(queueId, JOB_RUNNER_ID)
+    } catch (err) {
+    }
+    assert.ok(true)
+  })
 })
