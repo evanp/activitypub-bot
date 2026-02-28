@@ -50,7 +50,7 @@ describe('routes.inbox', async () => {
 
   before(async () => {
     nockSetup(REMOTE_HOST)
-    app = await makeApp(databaseUrl, origin, testBots, 'debug')
+    app = await makeApp(databaseUrl, origin, testBots, 'silent')
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
