@@ -39,7 +39,7 @@ describe('DeliveryWorker', async () => {
   let queue
 
   before(async () => {
-    logger = Logger({ level: 'debug' })
+    logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter(origin)
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
@@ -102,8 +102,8 @@ describe('DeliveryWorker', async () => {
       type: 'Activity'
     })
     const json = await activity.export()
-    queue.enqueue('delivery', { bot: testUsernames[0], activity: json })
-    queue.enqueue('delivery', { bot: testUsernames[1], activity: json })
+    queue.enqueue('delivery', { botUsername: testUsernames[0], activity: json })
+    queue.enqueue('delivery', { botUsername: testUsernames[1], activity: json })
     setTimeout(() => {
       queue.onIdle('delivery').then(() => {
         logger.debug('Stopping worker')
