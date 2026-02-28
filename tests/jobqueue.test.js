@@ -8,7 +8,7 @@ import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 const JOB_RUNNER_ID = 'jobqueue.test.js'
 
 describe('JobQueue', async () => {
-  const testQueues = [...Array(7).keys()].map(i => `jobqueue.test.js:${i}`)
+  const testQueues = [...Array(8).keys()].map(i => `jobqueue.test.js:${i}`)
   let connection = null
   let logger = null
   let JobQueue = null
@@ -106,8 +106,21 @@ describe('JobQueue', async () => {
     assert.ok(true)
   })
 
-  it('can abort a queue server', async () => {
+  it('can retry a job after an amount of time', async () => {
     const queueId = 'jobqueue.test.js:6'
+    const delay = 1000
+    await queue.enqueue(queueId, { foo: 'bar' })
+    const { jobId } = await queue.dequeue(queueId, JOB_RUNNER_ID)
+    const startTime = Date.now()
+    await queue.retryAfter(jobId, JOB_RUNNER_ID, delay)
+    const res = await queue.dequeue(queueId, JOB_RUNNER_ID)
+    const endTime = Date.now()
+    assert.strictEqual(res.jobId, jobId)
+    assert.ok(endTime - startTime >= delay)
+  })
+
+  it('can abort a queue server', async () => {
+    const queueId = 'jobqueue.test.js:7'
     setTimeout(() => {
       queue.abort()
     }, 100)
