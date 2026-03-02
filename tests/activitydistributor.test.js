@@ -1,8 +1,6 @@
 import { describe, it, before, after, beforeEach } from 'node:test'
-import { ActorStorage } from '../lib/actorstorage.js'
-import { UrlFormatter } from '../lib/urlformatter.js'
-import as2 from '../lib/activitystreams.js'
-import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
+import assert from 'node:assert'
+
 import {
   nockSetup,
   nockFormat,
@@ -17,13 +15,25 @@ import {
   addFollower,
   addFollowing
 } from '@evanp/activitypub-nock'
+import Logger from 'pino'
+
+import { ActorStorage } from '../lib/actorstorage.js'
+import { UrlFormatter } from '../lib/urlformatter.js'
+import as2 from '../lib/activitystreams.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
-import assert from 'node:assert'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
-import Logger from 'pino'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
+import { JobQueue } from '../lib/jobqueue.js'
+import { DistributionWorker } from '../lib/distributionworker.js'
+import { DeliveryWorker } from '../lib/deliveryworker.js'
+import { ObjectCache } from '../lib/objectcache.js'
+import { ObjectStorage } from '../lib/objectstorage.js'
+import { Authorizer } from '../lib/authorizer.js'
+import { ActivityHandler } from '../lib/activityhandler.js'
+import DoNothingBot from '../lib/bots/donothing.js'
 
 const LOCAL_HOST = 'local.activitydistributor.test'
 const ORIGIN = `https://${LOCAL_HOST}`
@@ -47,7 +57,6 @@ const REMOTE_USER4 = 'activitydistributorremote4'
 const REMOTE_USER5 = 'activitydistributorremote5'
 const REMOTE_USER6 = 'activitydistributorremote6'
 const REMOTE_USER7 = 'activitydistributorremote7'
-const FLAKY_USER = 'activitydistributorflaky1'
 const SHARED_USER_PREFIX = 'activitydistributorsharedtest'
 const LOCAL_USERNAMES = [
   LOCAL_USER0,
@@ -71,6 +80,18 @@ describe('ActivityDistributor', () => {
   let client = null
   let distributor = null
   let logger = null
+  let jobQueue = null
+  let distributionWorker
+  let distributionWorkerRun
+  let handler
+  let authz
+  let cache
+  let deliveryWorker
+  let deliveryWorkerRun
+  let objectStorage
+  const testBots = Object.fromEntries(
+    LOCAL_USERNAMES.map(n => [n, new DoNothingBot(n)])
+  )
 
   async function cleanup () {
     await cleanupTestData(connection, {
@@ -86,10 +107,16 @@ describe('ActivityDistributor', () => {
     connection = await createMigratedTestConnection()
     await cleanup()
     actorStorage = new ActorStorage(connection, formatter)
+    objectStorage = new ObjectStorage(connection)
     keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+    jobQueue = new JobQueue(connection, logger)
+    distributionWorker = new DistributionWorker(jobQueue, client, logger)
+    distributionWorkerRun = distributionWorker.run()
+    authz = new Authorizer(actorStorage, formatter, client)
+    cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
     const actor2 = await as2.import({
       id: nockFormat({ domain: SOCIAL_HOST, username: LOCAL_USER1 })
     })
@@ -122,6 +149,10 @@ describe('ActivityDistributor', () => {
     addFollowing(REMOTE_USER2, formatter.format({ username: LOCAL_USER7 }), SOCIAL_HOST)
   })
   after(async () => {
+    distributionWorker.stop()
+    deliveryWorker.stop()
+    jobQueue.abort()
+    await Promise.allSettled([distributionWorkerRun, deliveryWorkerRun])
     await cleanup()
     await connection.close()
     distributor = null
@@ -139,8 +170,22 @@ describe('ActivityDistributor', () => {
     resetSharedInbox()
   })
   it('can create an instance', () => {
-    distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
+    distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
     assert.ok(distributor instanceof ActivityDistributor)
+    handler = new ActivityHandler(
+      actorStorage,
+      objectStorage,
+      distributor,
+      formatter,
+      cache,
+      authz,
+      logger,
+      client
+    )
+    deliveryWorker = new DeliveryWorker(
+      jobQueue, actorStorage, handler, logger, testBots
+    )
+    deliveryWorkerRun = deliveryWorker.run()
   })
   it('can distribute an activity to a single recipient', async () => {
     const activity = await as2.import({
