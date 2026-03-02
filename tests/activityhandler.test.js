@@ -20,6 +20,9 @@ import { Transformer } from '../lib/microsyntax.js'
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import OKBot from '../lib/bots/ok.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
+import { DistributionWorker } from '../lib/distributionworker.js'
+import { DeliveryWorker } from '../lib/deliveryworker.js'
+import { JobQueue } from '../lib/jobqueue.js'
 
 describe('ActivityHandler', () => {
   const domain = 'local.activityhandler.test'
@@ -31,6 +34,7 @@ describe('ActivityHandler', () => {
   const calculonName = 'activityhandlertestcalculon'
   const localObjectUser = 'activityhandlertest1'
   const testUsernames = [botName, loggerBotName, calculonName, localObjectUser]
+  let testBots
 
   function makeActor (username, domain = socialDomain) {
     return makeNockActor(username, domain)
@@ -57,6 +61,12 @@ describe('ActivityHandler', () => {
   let lb = null
   let lbId = null
   let transformer = null
+  let jobQueue
+  let distributionWorker
+  let distributionWorkerRun
+  let deliveryWorker
+  let deliveryWorkerRun
+
   before(async () => {
     logger = Logger({ level: 'silent' })
     formatter = new UrlFormatter(origin)
@@ -73,7 +83,10 @@ describe('ActivityHandler', () => {
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
-    distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
+    jobQueue = new JobQueue(connection, logger)
+    distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
+    distributionWorker = new DistributionWorker(jobQueue, client, logger)
+    distributionWorkerRun = distributionWorker.run()
     authz = new Authorizer(actorStorage, formatter, client)
     cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
     transformer = new Transformer(`${origin}/tag/`, client)
@@ -105,6 +118,11 @@ describe('ActivityHandler', () => {
         logger
       )
     )
+    testBots = {
+      [bot.username]: bot,
+      [lb.username]: lb
+    }
+
     botId = formatter.format({ username: botName })
     lbId = formatter.format({ username: loggerBotName })
     await objectStorage.create(await as2.import({
@@ -117,6 +135,10 @@ describe('ActivityHandler', () => {
     nockSetup(thirdDomain)
   })
   after(async () => {
+    jobQueue.abort()
+    distributionWorker.stop()
+    deliveryWorker.stop()
+    await Promise.allSettled([distributionWorkerRun, deliveryWorkerRun])
     await cleanupTestData(connection, {
       usernames: testUsernames,
       localDomain: domain,
@@ -150,6 +172,8 @@ describe('ActivityHandler', () => {
       client
     )
     assert.ok(handler)
+    deliveryWorker = new DeliveryWorker(jobQueue, actorStorage, handler, logger, testBots)
+    deliveryWorkerRun = deliveryWorker.run()
   })
   it('can handle a create activity', async () => {
     const activity = await as2.import({

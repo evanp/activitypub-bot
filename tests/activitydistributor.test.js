@@ -149,9 +149,9 @@ describe('ActivityDistributor', () => {
     addFollowing(REMOTE_USER2, formatter.format({ username: LOCAL_USER7 }), SOCIAL_HOST)
   })
   after(async () => {
+    jobQueue.abort()
     distributionWorker.stop()
     deliveryWorker.stop()
-    jobQueue.abort()
     await Promise.allSettled([distributionWorkerRun, deliveryWorkerRun])
     await cleanup()
     await connection.close()
