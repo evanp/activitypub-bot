@@ -22,6 +22,14 @@ import Logger from 'pino'
 import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
+import { JobQueue } from '../lib/jobqueue.js'
+import { DistributionWorker } from '../lib/distributionworker.js'
+import { DeliveryWorker } from '../lib/deliveryworker.js'
+import { ActivityHandler } from '../lib/activityhandler.js'
+import { Authorizer } from '../lib/authorizer.js'
+import { ObjectCache } from '../lib/objectcache.js'
+import DoNothingBot from '../lib/bots/donothing.js'
+import OKBot from '../lib/bots/ok.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 const LOCAL_HOST = 'local.botcontext.test'
@@ -72,6 +80,17 @@ describe('BotContext', () => {
   let transformer = null
   let logger = null
   const botName = BOT_USERNAME
+  let jobQueue
+  let distributionWorker
+  let distributionWorkerRun
+  let deliveryWorker
+  let deliveryWorkerRun
+  const bots = {
+    [BOT_USERNAME]: new DoNothingBot(BOT_USERNAME),
+    [LOCAL_OK_USERNAME]: new OKBot(LOCAL_OK_USERNAME),
+    [DUPLICATE_USERNAME]: new DoNothingBot(BOT_USERNAME)
+  }
+
   before(async () => {
     logger = Logger({
       level: 'silent'
@@ -90,7 +109,24 @@ describe('BotContext', () => {
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
-    distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
+    jobQueue = new JobQueue(connection, logger)
+    distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
+    distributionWorker = new DistributionWorker(jobQueue, client, logger)
+    distributionWorkerRun = distributionWorker.run()
+    const authz = new Authorizer(actorStorage, formatter, client)
+    const cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
+    const handler = new ActivityHandler(
+      actorStorage,
+      objectStorage,
+      distributor,
+      formatter,
+      cache,
+      authz,
+      logger,
+      client
+    )
+    deliveryWorker = new DeliveryWorker(jobQueue, actorStorage, handler, logger, bots)
+    deliveryWorkerRun = deliveryWorker.run()
     transformer = new Transformer(`${LOCAL_ORIGIN}/tag/`, client)
     await objectStorage.create(
       await as2.import({
@@ -107,6 +143,10 @@ describe('BotContext', () => {
     nockSetup(REMOTE_HOST)
   })
   after(async () => {
+    jobQueue.abort()
+    distributionWorker.stop()
+    deliveryWorker.stop()
+    await Promise.allSettled([distributionWorkerRun, deliveryWorkerRun])
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
@@ -129,17 +169,22 @@ describe('BotContext', () => {
     resetInbox()
   })
   it('can initialize', async () => {
-    context = new BotContext(
-      botName,
-      botDataStorage,
-      objectStorage,
-      actorStorage,
-      client,
-      distributor,
-      formatter,
-      transformer,
-      logger
-    )
+    try {
+      context = new BotContext(
+        botName,
+        botDataStorage,
+        objectStorage,
+        actorStorage,
+        client,
+        distributor,
+        formatter,
+        transformer,
+        logger
+      )
+      assert.ok(true)
+    } catch (err) {
+      assert.ok(false, err)
+    }
   })
   it('can get the bot ID', () => {
     assert.strictEqual(context.botId, botName)

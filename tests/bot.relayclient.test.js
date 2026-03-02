@@ -19,6 +19,12 @@ import {
 import Logger from 'pino'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
+import { JobQueue } from '../lib/jobqueue.js'
+import { DistributionWorker } from '../lib/distributionworker.js'
+import { DeliveryWorker } from '../lib/deliveryworker.js'
+import { ActivityHandler } from '../lib/activityhandler.js'
+import { Authorizer } from '../lib/authorizer.js'
+import { ObjectCache } from '../lib/objectcache.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 const LOCAL_HOST = 'local.bot-relayclient.test'
@@ -49,6 +55,15 @@ describe('BotContext', () => {
   let RelayClientBot = null
   let relay = null
   let bot = null
+  let jobQueue
+  let distributionWorker
+  let distributionWorkerRun
+  let deliveryWorker
+  let deliveryWorkerRun
+  const bots = {}
+  let authz
+  let cache
+  let handler
 
   before(async () => {
     logger = Logger({
@@ -68,8 +83,25 @@ describe('BotContext', () => {
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
-    distributor = new ActivityDistributor(client, formatter, actorStorage, logger)
+    jobQueue = new JobQueue(connection, logger)
+    distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
+    distributionWorker = new DistributionWorker(jobQueue, client, logger)
+    distributionWorkerRun = distributionWorker.run()
     transformer = new Transformer(`${LOCAL_ORIGIN}/tag/`, client)
+    authz = new Authorizer(actorStorage, formatter, client)
+    cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
+    handler = new ActivityHandler(
+      actorStorage,
+      objectStorage,
+      distributor,
+      formatter,
+      cache,
+      authz,
+      logger,
+      client
+    )
+    deliveryWorker = new DeliveryWorker(jobQueue, actorStorage, handler, logger, bots)
+    deliveryWorkerRun = deliveryWorker.run()
     context = new BotContext(
       botName,
       botDataStorage,
@@ -85,6 +117,10 @@ describe('BotContext', () => {
     relay = nockFormat({ username: RELAY_USERNAME, domain: REMOTE_HOST })
   })
   after(async () => {
+    jobQueue.abort()
+    deliveryWorker.stop()
+    distributionWorker.stop()
+    await Promise.allSettled([distributionWorkerRun, deliveryWorkerRun])
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
@@ -116,6 +152,7 @@ describe('BotContext', () => {
   it('can be constructed', async () => {
     bot = new RelayClientBot(botName, relay)
     assert.ok(bot)
+    bots[botName] = bot
   })
 
   it('subscribes to a remote relay on initialize', async () => {
