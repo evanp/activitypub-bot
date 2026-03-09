@@ -1,15 +1,19 @@
 import { describe, it, before, after } from 'node:test'
+import assert from 'node:assert/strict'
+
+import { nanoid } from 'nanoid'
+import Logger from 'pino'
+import { nockSetup, nockFormat, addFollower, addFollowing, addToCollection, makeActor } from '@evanp/activitypub-nock'
+
 import { Authorizer } from '../lib/authorizer.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import as2 from '../lib/activitystreams.js'
-import assert from 'node:assert/strict'
-import { nanoid } from 'nanoid'
 import { HTTPSignature } from '../lib/httpsignature.js'
-import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
+
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 describe('Authorizer', () => {
@@ -17,13 +21,39 @@ describe('Authorizer', () => {
   const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
   const REMOTE_HOST = 'remote.authorizer.test'
   const REMOTE_ORIGIN = `https://${REMOTE_HOST}`
+  const THIRD_HOST = 'third.authorizer.test'
   const LOCAL_USER_1 = 'authorizertest1'
   const LOCAL_USER_2 = 'authorizertest2'
   const LOCAL_USER_3 = 'authorizertest3'
+  const LOCAL_USER_4 = 'authorizertest4'
+  const LOCAL_USER_5 = 'authorizertest5'
+  const LOCAL_USER_6 = 'authorizertest6'
+  const LOCAL_USER_7 = 'authorizertest7'
+  const LOCAL_USER_8 = 'authorizertest8'
+  const LOCAL_USER_9 = 'authorizertest9'
+  const LOCAL_USER_10 = 'authorizertest10'
+  const LOCAL_USER_11 = 'authorizertest11'
+  const LOCAL_USER_12 = 'authorizertest12'
+  const LOCAL_USER_13 = 'authorizertest13'
+  const LOCAL_USER_14 = 'authorizertest14'
+  const LOCAL_USER_15 = 'authorizertest15'
+
   const REMOTE_USER_1 = 'authorizerremote1'
   const REMOTE_USER_2 = 'authorizerremote2'
   const REMOTE_USER_3 = 'authorizerremote3'
-  const TEST_USERNAMES = [LOCAL_USER_1, LOCAL_USER_2, LOCAL_USER_3]
+  const REMOTE_USER_4 = 'authorizerremote4'
+  const REMOTE_USER_6 = 'authorizerremote6'
+  const REMOTE_USER_7 = 'authorizerremote7'
+  const REMOTE_USER_8 = 'authorizerremote8'
+  const REMOTE_USER_9 = 'authorizerremote9'
+  const REMOTE_USER_10 = 'authorizerremote10'
+  const REMOTE_USER_11 = 'authorizerremote11'
+
+  const THIRD_USER_1 = 'authorizerthird1'
+  const THIRD_USER_2 = 'authorizerthird2'
+  const THIRD_USER_3 = 'authorizerthird3'
+
+  const TEST_USERNAMES = [LOCAL_USER_1, LOCAL_USER_2, LOCAL_USER_3, LOCAL_USER_4, LOCAL_USER_5, LOCAL_USER_6, LOCAL_USER_7, LOCAL_USER_8, LOCAL_USER_9, LOCAL_USER_10, LOCAL_USER_11, LOCAL_USER_12, LOCAL_USER_13, LOCAL_USER_14, LOCAL_USER_15]
 
   let authorizer = null
   let actorStorage = null
@@ -60,6 +90,8 @@ describe('Authorizer', () => {
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+    nockSetup(REMOTE_HOST)
+    nockSetup(THIRD_HOST)
     actor1 = await actorStorage.getActor(LOCAL_USER_1)
     actor2 = await actorStorage.getActor(LOCAL_USER_2)
     await actorStorage.addToCollection(
@@ -316,5 +348,168 @@ describe('Authorizer', () => {
       type: 'Object'
     })
     assert.strictEqual(false, await authorizer.sameOrigin(object1, object2))
+  })
+
+  it('can authorize a local member of a remote followers collection', async () => {
+    const actor = await actorStorage.getActor(LOCAL_USER_4)
+    addFollower(REMOTE_USER_4, actor.id, REMOTE_HOST)
+    await actorStorage.addToCollection(
+      LOCAL_USER_4,
+      'following',
+      await makeActor(REMOTE_USER_4, REMOTE_HOST))
+    const obj = await as2.import({
+      id: formatter.format({ username: LOCAL_USER_5, type: 'object', nanoid: '55UW4OscbRfr0tXpbES49' }),
+      attributedTo: formatter.format({ username: LOCAL_USER_5 }),
+      to: nockFormat({ username: REMOTE_USER_4, collection: 'followers', domain: REMOTE_HOST }),
+      type: 'Object'
+    })
+    assert.strictEqual(true, await authorizer.canRead(actor, obj))
+  })
+
+  it('can authorize a local member of a remote following collection', async () => {
+    const actor = await actorStorage.getActor(LOCAL_USER_6)
+    addFollowing(REMOTE_USER_6, actor.id, REMOTE_HOST)
+    await actorStorage.addToCollection(
+      LOCAL_USER_6,
+      'followers',
+      await makeActor(REMOTE_USER_6, REMOTE_HOST)
+    )
+    const obj = await as2.import({
+      id: formatter.format({ username: LOCAL_USER_7, type: 'object', nanoid: 'S1s-po_XzeIsjuXGp7UQV' }),
+      attributedTo: formatter.format({ username: LOCAL_USER_7 }),
+      to: nockFormat({ username: REMOTE_USER_6, collection: 'following', domain: REMOTE_HOST }),
+      type: 'Object'
+    })
+    assert.strictEqual(true, await authorizer.canRead(actor, obj))
+  })
+
+  it('can authorize a local member of a local following collection', async () => {
+    const actor1 = await actorStorage.getActor(LOCAL_USER_8)
+    const actor2 = await actorStorage.getActor(LOCAL_USER_9)
+
+    await actorStorage.addToCollection(
+      LOCAL_USER_8,
+      'followers',
+      actor2
+    )
+
+    await actorStorage.addToCollection(
+      LOCAL_USER_9,
+      'following',
+      actor1
+    )
+
+    const obj = await as2.import({
+      id: formatter.format({ username: LOCAL_USER_9, type: 'object', nanoid: 'VralZ6EJrn4ROoDNGIfqH' }),
+      attributedTo: actor2.id,
+      to: formatter.format({ username: LOCAL_USER_9, collection: 'following' }),
+      type: 'Object'
+    })
+    assert.strictEqual(true, await authorizer.canRead(actor1, obj))
+  })
+
+  it('can authorize a remote member of a local following collection', async () => {
+    const actor1 = await actorStorage.getActor(LOCAL_USER_10)
+    const actor2 = await makeActor(REMOTE_USER_7, REMOTE_HOST)
+
+    addFollower(REMOTE_USER_7, actor1.id, REMOTE_HOST)
+
+    await actorStorage.addToCollection(
+      LOCAL_USER_10,
+      'following',
+      actor2
+    )
+
+    const obj = await as2.import({
+      id: formatter.format({ username: LOCAL_USER_10, type: 'object', nanoid: '_ka_vxuI5tZDvXZnAFXYK' }),
+      attributedTo: actor1.id,
+      to: formatter.format({ username: LOCAL_USER_10, collection: 'following' }),
+      type: 'Object'
+    })
+    assert.strictEqual(true, await authorizer.canRead(actor2, obj))
+  })
+
+  it('can authorize a remote member of a remote following collection', async () => {
+    const actor1 = await makeActor(REMOTE_USER_8, REMOTE_HOST)
+    const actor2 = await makeActor(THIRD_USER_1, THIRD_HOST)
+    const actor3 = await actorStorage.getActor(LOCAL_USER_11)
+
+    addFollower(REMOTE_USER_8, actor2.id, REMOTE_HOST)
+    addFollowing(THIRD_USER_1, actor1.id, THIRD_HOST)
+
+    const obj = await as2.import({
+      id: formatter.format({ username: LOCAL_USER_11, type: 'object', nanoid: 'yjT5rJ9a-pTsq3H5PSvJn' }),
+      attributedTo: actor3.id,
+      type: 'Object',
+      to: actor2.following.first.id
+    })
+
+    assert.strictEqual(true, await authorizer.canRead(actor1, obj))
+  })
+
+  it('can authorize a remote member of a remote followers collection', async () => {
+    const actor1 = await makeActor(REMOTE_USER_9, REMOTE_HOST)
+    const actor2 = await makeActor(THIRD_USER_2, THIRD_HOST)
+    const actor3 = await actorStorage.getActor(LOCAL_USER_12)
+
+    addFollowing(REMOTE_USER_9, actor2.id, REMOTE_HOST)
+    addFollower(THIRD_USER_2, actor1.id, THIRD_HOST)
+
+    const obj = await as2.import({
+      id: formatter.format({ username: LOCAL_USER_12, type: 'object', nanoid: 'l9yNfZ8Yd6KVMs5qzIIem' }),
+      attributedTo: actor3.id,
+      type: 'Object',
+      to: actor2.followers.first.id
+    })
+
+    assert.strictEqual(true, await authorizer.canRead(actor1, obj))
+  })
+
+  it('can authorize a local member of a remote generic collection', async () => {
+    const actor2 = await actorStorage.getActor(LOCAL_USER_13)
+    const actor3 = await actorStorage.getActor(LOCAL_USER_14)
+
+    const collection = 24435
+    const collectionId = nockFormat({
+      username: REMOTE_USER_10,
+      type: 'collection',
+      num: collection,
+      domain: REMOTE_HOST
+    })
+
+    addToCollection(REMOTE_USER_10, collection, actor2.id, REMOTE_HOST)
+
+    const obj = await as2.import({
+      id: formatter.format({ username: LOCAL_USER_14, type: 'object', nanoid: 'k-GTPhF_jmjN0sD-wIddB' }),
+      attributedTo: actor3.id,
+      type: 'Object',
+      to: collectionId
+    })
+
+    assert.strictEqual(true, await authorizer.canRead(actor2, obj))
+  })
+
+  it('can authorize a remote member of a remote generic collection', async () => {
+    const actor2 = await makeActor(THIRD_USER_3, THIRD_HOST)
+    const actor3 = await actorStorage.getActor(LOCAL_USER_15)
+
+    const collection = 8344
+    const collectionId = nockFormat({
+      username: REMOTE_USER_11,
+      type: 'collection',
+      num: collection,
+      domain: REMOTE_HOST
+    })
+
+    addToCollection(REMOTE_USER_11, collection, actor2.id, REMOTE_HOST)
+
+    const obj = await as2.import({
+      id: formatter.format({ username: LOCAL_USER_15, type: 'object', nanoid: 'ydSxp1N_5-Iu4fnN07EXg' }),
+      attributedTo: actor3.id,
+      type: 'Object',
+      to: collectionId
+    })
+
+    assert.strictEqual(true, await authorizer.canRead(actor2, obj))
   })
 })
