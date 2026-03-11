@@ -18,7 +18,9 @@ describe('actor routes', async () => {
   let app = null
 
   before(async () => {
-    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+    app = await makeApp({
+      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+    })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST

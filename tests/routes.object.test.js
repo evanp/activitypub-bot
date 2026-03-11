@@ -37,7 +37,9 @@ describe('object collection routes', async () => {
   const privateNanoid = 'Ic3Sa_0xOQKvlPsWU16as'
 
   before(async () => {
-    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+    app = await makeApp({
+      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+    })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,

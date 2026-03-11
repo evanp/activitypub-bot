@@ -53,7 +53,9 @@ const LOG_LEVEL =
 
 const bots = (await import(BOTS_CONFIG_FILE)).default
 
-const app = await makeApp(DATABASE_URL, ORIGIN, bots, LOG_LEVEL)
+const app = await makeApp({
+  databaseUrl: DATABASE_URL, origin: ORIGIN, bots, logLevel: LOG_LEVEL
+})
 
 const server = app.listen(parseInt(PORT), () => {
   app.locals.logger.info(`Listening on port ${PORT}`)

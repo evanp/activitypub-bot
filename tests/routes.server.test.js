@@ -12,7 +12,9 @@ describe('server routes', async () => {
   let app = null
 
   before(async () => {
-    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+    app = await makeApp({
+      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+    })
   })
 
   after(async () => {

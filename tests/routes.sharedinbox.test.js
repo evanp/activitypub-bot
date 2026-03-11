@@ -102,7 +102,9 @@ describe('routes.sharedinbox', async () => {
 
   before(async () => {
     nockSetup(remoteHost)
-    app = await makeApp(databaseUrl, origin, testBots, 'silent')
+    app = await makeApp({
+      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+    })
     formatter = app.locals.formatter
     actorStorage = app.locals.actorStorage
     await cleanupTestData(app.locals.connection, {
