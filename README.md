@@ -97,6 +97,24 @@ The path to the [config file](#config-file) for this server, which defines the u
 
 Falls back to `BOTS_CONFIG_FILE` environment variable. The default is to use the shipped default bot config file, which defines an [OKBot](#okbot) named `ok` and a [DoNothingBot](#donothingbot) named `null`.
 
+#### --delivery
+
+The number of background delivery workers to run for this server. These workers accept and process remote activities that arrive at the server. If the server has a lot of traffic, and it's taking a while for bots to do their thing, increase this number.
+
+Falls back to the `DELIVERY` environment variable. Default is 2.
+
+#### --distribution
+
+The number of background distribution workers to run for this server.  These workers distribute bot activities to followers and other recipients on remote servers.  If it's taking a while for bot activities to get to their recipients, increase this number.
+
+Falls back to the `DISTRIBUTION` environment variable. Default is 8.
+
+#### --index-file
+
+Path to the HTML file to show for the home page of your server. The activitypub.bot server doesn't support any other files, so any images or CSS stylesheets or JavaScript in this page have to be hosted elsewhere. Or just skip them!
+
+Falls back to the 'INDEX_FILE' environment variable. The default index file is in `web/index.html` and just says that this is an activitypub.bot server with a link to the GitHub repo.
+
 ### Config file
 
 The config file defines the bots provided by this server.
