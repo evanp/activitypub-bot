@@ -58,7 +58,7 @@ const LOG_LEVEL =
   process.env.LOG_LEVEL ||
   (process.env.NODE_ENV === 'test' ? 'silent' : 'info')
 const DELIVERY = parseNumber(values.delivery) || parseNumber(process.env.DELIVERY) || 2
-const DISTRIBUTION = parseNumber(values.distribution) || parseNumber(process.env.DISTRIBUTION) || 4
+const DISTRIBUTION = parseNumber(values.distribution) || parseNumber(process.env.DISTRIBUTION) || 8
 const INDEX_FILE = values['index-file'] || process.env.INDEX_FILE || DEFAULT_INDEX_FILE
 
 const bots = (await import(BOTS_CONFIG_FILE)).default
