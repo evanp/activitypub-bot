@@ -12,6 +12,9 @@ const { values } = parseArgs({
     port: { type: 'string' },
     'bots-config-file': { type: 'string' },
     'log-level': { type: 'string' },
+    delivery: { type: 'number' },
+    distribution: { type: 'number' },
+    'index-file': { type: 'string' },
     help: { type: 'boolean', short: 'h' }
   },
   allowPositionals: false
@@ -26,13 +29,16 @@ Options:
   --port <number>            Port to listen on
   --bots-config-file <path>  Path to bots config module
   --log-level <level>        Log level (e.g., info, debug)
+  --delivery <number>        Number of background delivery workers
+  --distribution <number>    Number of background distribution workers
+  --index-file <path>        HTML page to show at root path
   -h, --help                 Show this help
 `)
   process.exit(0)
 }
 
 const normalize = (value) => (value === '' ? undefined : value)
-const parsePort = (value) => {
+const parseNumber = (value) => {
   if (!value) return undefined
   const parsed = Number.parseInt(value, 10)
   return Number.isNaN(parsed) ? undefined : parsed
@@ -40,21 +46,31 @@ const parsePort = (value) => {
 
 const baseDir = dirname(fileURLToPath(import.meta.url))
 const DEFAULT_BOTS_CONFIG_FILE = resolve(baseDir, '..', 'bots', 'index.js')
+const DEFAULT_INDEX_FILE = resolve(baseDir, '..', 'web', 'index.html')
 
 const DATABASE_URL = normalize(values['database-url']) || process.env.DATABASE_URL || 'sqlite::memory:'
 const ORIGIN = normalize(values.origin) || process.env.ORIGIN || 'https://activitypubbot.test'
-const PORT = parsePort(normalize(values.port)) || parsePort(process.env.PORT) || 9000 // HAL
+const PORT = parseNumber(normalize(values.port)) || parseNumber(process.env.PORT) || 9000 // HAL
 const BOTS_CONFIG_FILE =
   normalize(values['bots-config-file']) || process.env.BOTS_CONFIG_FILE || DEFAULT_BOTS_CONFIG_FILE
 const LOG_LEVEL =
   normalize(values['log-level']) ||
   process.env.LOG_LEVEL ||
   (process.env.NODE_ENV === 'test' ? 'silent' : 'info')
+const DELIVERY = parseNumber(values.delivery) || parseNumber(process.env.DELIVERY) || 2
+const DISTRIBUTION = parseNumber(values.distribution) || parseNumber(process.env.DISTRIBUTION) || 4
+const INDEX_FILE = values['index-file'] || process.env.INDEX_FILE || DEFAULT_INDEX_FILE
 
 const bots = (await import(BOTS_CONFIG_FILE)).default
 
 const app = await makeApp({
-  databaseUrl: DATABASE_URL, origin: ORIGIN, bots, logLevel: LOG_LEVEL
+  databaseUrl: DATABASE_URL,
+  origin: ORIGIN,
+  bots,
+  logLevel: LOG_LEVEL,
+  deliveryWorkerCount: DELIVERY,
+  distributionWorkerCount: DISTRIBUTION,
+  indexFileName: INDEX_FILE
 })
 
 const server = app.listen(parseInt(PORT), () => {
