@@ -12,8 +12,8 @@ const { values } = parseArgs({
     port: { type: 'string' },
     'bots-config-file': { type: 'string' },
     'log-level': { type: 'string' },
-    delivery: { type: 'number' },
-    distribution: { type: 'number' },
+    delivery: { type: 'string' },
+    distribution: { type: 'string' },
     'index-file': { type: 'string' },
     help: { type: 'boolean', short: 'h' }
   },
