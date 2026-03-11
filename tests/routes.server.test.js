@@ -4,6 +4,14 @@ import { makeApp } from '../lib/app.js'
 import request from 'supertest'
 import { getTestDatabaseUrl } from './utils/db.js'
 
+const AS2_TYPES = [
+  'application/activity+json',
+  'application/ld+json',
+  'application/json'
+]
+
+const BROWSER_TYPES = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+
 describe('server routes', async () => {
   const LOCAL_HOST = 'local.routes-server.test'
   const databaseUrl = getTestDatabaseUrl()
@@ -25,10 +33,10 @@ describe('server routes', async () => {
     app = null
   })
 
-  describe('GET /', async () => {
+  describe('GET server actor', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/')
+      response = await request(app).get('/').set('Accept', AS2_TYPES.join(','))
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -49,7 +57,7 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.publicKey, 'string')
     })
   })
-  describe('GET /publickey', async () => {
+  describe('GET server publickey', async () => {
     let response = null
     it('should work without an error', async () => {
       response = await request(app).get('/publickey')
@@ -81,6 +89,21 @@ describe('server routes', async () => {
     it('publicKeyPem should be an RSA PKCS-8 key', async () => {
       assert.match(response.body.publicKeyPem, /^-----BEGIN PUBLIC KEY-----\n/)
       assert.match(response.body.publicKeyPem, /\n-----END PUBLIC KEY-----\n$/)
+    })
+  })
+  describe('GET home page', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get('/').set('Accept', BROWSER_TYPES)
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return HTML', async () => {
+      assert.strictEqual(response.type, 'text/html')
+    })
+    it('should include the default title', async () => {
+      assert.ok(response.text.match(/<title>activitypub.bot<\/title>/))
     })
   })
 })
