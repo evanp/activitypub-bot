@@ -14,7 +14,8 @@ import {
   nockSetup,
   postInbox,
   resetInbox,
-  nockFormat
+  nockFormat,
+  getBody
 } from '@evanp/activitypub-nock'
 import Logger from 'pino'
 import { HTTPSignature } from '../lib/httpsignature.js'
@@ -25,6 +26,7 @@ import { DeliveryWorker } from '../lib/deliveryworker.js'
 import { ActivityHandler } from '../lib/activityhandler.js'
 import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
+import as2 from '../lib/activitystreams.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 const LOCAL_HOST = 'local.bot-relayclient.test'
@@ -189,6 +191,72 @@ describe('RelayClientBot', () => {
     }
 
     assert.ok(foundInInbox)
+  })
+
+  it('handles an Accept activity for the relay follow', async () => {
+    const inbox = nockFormat({
+      username: RELAY_USERNAME,
+      collection: 'inbox',
+      domain: REMOTE_HOST
+    })
+    const body = getBody(inbox)
+    assert.ok(body)
+    const follow = JSON.parse(body)
+    const accept = await as2.import({
+      type: 'Accept',
+      id: nockFormat({
+        username: RELAY_USERNAME,
+        type: 'Accept',
+        num: 1,
+        domain: REMOTE_HOST
+      }),
+      actor: nockFormat({
+        username: RELAY_USERNAME,
+        collection: 'inbox',
+        domain: REMOTE_HOST
+      }),
+      to: formatter.format({ username: BOT_USERNAME }),
+      object: {
+        id: follow.id,
+        type: follow.type,
+        object: follow.object
+      }
+    })
+    const handled = await bot.handleActivity(accept)
+    assert.strictEqual(handled, true)
+  })
+
+  it('handles a Reject activity for the relay follow', async () => {
+    const inbox = nockFormat({
+      username: RELAY_USERNAME,
+      collection: 'inbox',
+      domain: REMOTE_HOST
+    })
+    const body = getBody(inbox)
+    assert.ok(body)
+    const follow = JSON.parse(body)
+    const reject = await as2.import({
+      type: 'Reject',
+      id: nockFormat({
+        username: RELAY_USERNAME,
+        type: 'Reject',
+        num: 1,
+        domain: REMOTE_HOST
+      }),
+      actor: nockFormat({
+        username: RELAY_USERNAME,
+        collection: 'inbox',
+        domain: REMOTE_HOST
+      }),
+      to: formatter.format({ username: BOT_USERNAME }),
+      object: {
+        id: follow.id,
+        type: follow.type,
+        object: follow.object
+      }
+    })
+    const handled = await bot.handleActivity(reject)
+    assert.strictEqual(handled, true)
   })
 
   it('unsubscribes from a remote relay on initialize', async () => {
