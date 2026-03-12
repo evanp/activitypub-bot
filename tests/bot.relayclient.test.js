@@ -39,7 +39,13 @@ function isRelayFollow (activity) {
     activity.object.first.id === `${AS2_NS}Public`
 }
 
-describe('BotContext', () => {
+function isRelayUnfollow (activity) {
+  return activity.type === `${AS2_NS}Undo` &&
+    activity.object.first.type === `${AS2_NS}Follow` &&
+    activity.object.first.object.first.id === `${AS2_NS}Public`
+}
+
+describe('RelayClientBot', () => {
   const botName = BOT_USERNAME
   let connection = null
   let botDataStorage = null
@@ -177,6 +183,39 @@ describe('BotContext', () => {
     for await (const item of actorStorage.items(botName, 'inbox')) {
       const activity = await objectStorage.read(item.id)
       foundInInbox = isRelayFollow(activity)
+      if (foundInInbox) {
+        break
+      }
+    }
+
+    assert.ok(foundInInbox)
+  })
+
+  it('unsubscribes from a remote relay on initialize', async () => {
+    bot = new RelayClientBot(botName, relay, 'unsubscribe')
+    assert.ok(bot)
+    bots[botName] = bot
+    await bot.initialize(context)
+    await context.onIdle()
+    assert.equal(postInbox[RELAY_USERNAME], 1)
+
+    let foundInOutbox = false
+
+    for await (const item of actorStorage.items(botName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      foundInOutbox = isRelayUnfollow(activity)
+      if (foundInOutbox) {
+        break
+      }
+    }
+
+    assert.ok(foundInOutbox)
+
+    let foundInInbox = false
+
+    for await (const item of actorStorage.items(botName, 'inbox')) {
+      const activity = await objectStorage.read(item.id)
+      foundInInbox = isRelayUnfollow(activity)
       if (foundInInbox) {
         break
       }
