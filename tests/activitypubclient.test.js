@@ -13,7 +13,8 @@ import {
   getRequestHeaders,
   resetRequestHeaders,
   addToCollection,
-  nockFormat
+  nockFormat,
+  getBody
 } from '@evanp/activitypub-nock'
 
 function escapeRegex (str) {
@@ -27,6 +28,7 @@ describe('ActivityPubClient', async () => {
   const LOCAL_SIGNING_USER = 'activitypubclienttestfoobot'
   const REMOTE_PROFILE_USER = 'activitypubclientevan'
   const REMOTE_COLLECTION_USER = 'activitypubclientremote1'
+  const REMOTE_RELAY_USER = 'activitypubclientrelay'
   const REMOTE_COLLECTION = 1
   const REMOTE_ORDERED_COLLECTION = 2
   const REMOTE_PAGED_COLLECTION = 3
@@ -243,5 +245,39 @@ describe('ActivityPubClient', async () => {
       counter = counter + 1
     }
     assert.strictEqual(counter, 5 * MAX_ITEMS)
+  })
+  it('sends a relay subscription with full Public URL', async () => {
+    const PUBLIC = 'https://www.w3.org/ns/activitystreams#Public'
+    const obj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(PUBLIC)
+      .to(`https://${REMOTE_HOST}/user/${REMOTE_RELAY_USER}`)
+      .publishedNow()
+      .get()
+    const inbox = REMOTE_INBOX
+    await client.post(inbox, obj, LOCAL_SIGNING_USER)
+    const body = JSON.parse(getBody(inbox))
+    assert.strictEqual(typeof body.object, 'string')
+    assert.strictEqual(body.object, PUBLIC)
+  })
+  it('sends a relay unsubscription with full Public URL', async () => {
+    const PUBLIC = 'https://www.w3.org/ns/activitystreams#Public'
+    const obj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(PUBLIC)
+      .to(`https://${REMOTE_HOST}/user/${REMOTE_RELAY_USER}`)
+      .publishedNow()
+      .get()
+    const undo = as2.undo()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(obj)
+      .to(`https://${REMOTE_HOST}/user/${REMOTE_RELAY_USER}`)
+      .publishedNow()
+      .get()
+    const inbox = REMOTE_INBOX
+    await client.post(inbox, undo, LOCAL_SIGNING_USER)
+    const body = JSON.parse(getBody(inbox))
+    assert.strictEqual(typeof body.object?.object, 'string')
+    assert.strictEqual(body.object?.object, PUBLIC)
   })
 })
