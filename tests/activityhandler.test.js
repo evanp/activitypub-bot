@@ -2330,4 +2330,36 @@ describe('ActivityHandler', () => {
     assert.equal(collection2.totalItems, 2)
     await handler.onIdle()
   })
+  it('can notify a bot of an unfollow activity', async () => {
+    const username = 'undoer30'
+    const actor = await makeActor(username)
+    const followActivity = await as2.import({
+      type: 'Follow',
+      actor: actor.id,
+      id: nockFormat({ username, type: 'follow', num: 1, obj: lbId }),
+      object: lbId,
+      to: [lbId, 'as:Public']
+    })
+    await handler.handleActivity(lb, followActivity)
+    await handler.onIdle()
+    assert.equal(
+      true,
+      await actorStorage.isInCollection(loggerBotName, 'followers', actor)
+    )
+    const undoActivity = await as2.import({
+      type: 'Undo',
+      actor: actor.id,
+      id: nockFormat({ username, type: 'undo', num: 1, obj: followActivity.id }),
+      object: {
+        type: 'Follow',
+        id: followActivity.id,
+        actor: actor.id,
+        object: lbId,
+        to: [lbId, 'as:Public']
+      },
+      to: [lbId, 'as:Public']
+    })
+    await handler.handleActivity(lb, undoActivity)
+    assert.ok(lb.unfollows.has(undoActivity.id))
+  })
 })

@@ -203,6 +203,10 @@ Called when the bot is mentioned in an incoming object. Can be used to implement
 Called when the bot is followed by another actor. The first argument is the actor, and the second is the `Follow` activity itself. This method is called after the acceptance has been sent and the new
 follower has been added to the `followers` collection.
 
+#### async onUndoFollow (actor, undoActivity, followActivity)
+
+Called when the bot is unfollowed by another actor. The first argument is the actor, the second is the `Undo` activity, and the third is the `Follow` activity. This method is called after the `followers` and/or `pendingFollowers` collections have been updated.
+
 #### async onLike (object, activity)
 
 Called when one of the bot's objects is liked by another actor. The first argument is the object, and the second is the `Like` activity itself. This method is called after the like has been added to the

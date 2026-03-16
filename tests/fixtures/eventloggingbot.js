@@ -7,6 +7,7 @@ export default class EventLoggingBot extends Bot {
   #publics = new Map()
   #dupes = new Map()
   #shares = new Map()
+  #unfollows = new Map()
 
   get fullname () {
     return 'Event-logging bot'
@@ -40,6 +41,10 @@ export default class EventLoggingBot extends Bot {
     this.#shares.set(activity.id, activity)
   }
 
+  async onUndoFollow (actor, undoActivity, followActivity) {
+    this.#unfollows.set(undoActivity.id, undoActivity)
+  }
+
   get follows () {
     return this.#follows
   }
@@ -62,5 +67,9 @@ export default class EventLoggingBot extends Bot {
 
   get dupes () {
     return this.#dupes
+  }
+
+  get unfollows () {
+    return this.#unfollows
   }
 }
