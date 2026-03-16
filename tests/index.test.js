@@ -43,4 +43,9 @@ describe('package exports', () => {
     const RelayServerBot = module.RelayServerBot
     assert.equal(typeof RelayServerBot, 'function')
   })
+
+  it('exports FollowBackBot', async () => {
+    const FollowBackBot = module.FollowBackBot
+    assert.equal(typeof FollowBackBot, 'function')
+  })
 })
