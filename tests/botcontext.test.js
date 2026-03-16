@@ -48,6 +48,8 @@ const REMOTE_USER_8 = 'botcontextremote8'
 const REMOTE_USER_9 = 'botcontextremote9'
 const REMOTE_USER_10 = 'botcontextremote10'
 const REMOTE_ACTOR_10 = 'botcontextactor10'
+const REMOTE_ACTOR_11 = 'botcontextactor11'
+
 const DUPLICATE_USERNAME = 'botcontextdupe1'
 const TEST_USERNAMES = [BOT_USERNAME, LOCAL_OK_USERNAME, DUPLICATE_USERNAME]
 
@@ -888,5 +890,17 @@ describe('BotContext', () => {
       }
     }
     assert.ok(foundInInbox)
+  })
+
+  it('can follow an actor twice', async () => {
+    const actor11 = await makeActorDefault(REMOTE_ACTOR_11)
+    await context.followActor(actor11)
+    await context.onIdle()
+    try {
+      await context.followActor(actor11)
+      assert.ok(true)
+    } catch (err) {
+      assert.fail(`Could not double-follow: ${err.message}`)
+    }
   })
 })
