@@ -10,12 +10,14 @@ import { makeDigest } from './utils/digest.js'
 const AS = 'https://www.w3.org/ns/activitystreams#'
 
 const FOLLOW_TYPE = `${AS}Follow`
+const UNDO_TYPE = `${AS}Undo`
 
 describe('FollowBack bot', async () => {
   const LOCAL_HOST = 'local.bot-followback.test'
   const REMOTE_HOST = 'remote.bot-followback.test'
   const BOT_USERNAME = 'botfollowbacktest'
   const REMOTE_ACTOR = 'botfollowbackremote'
+  const REMOTE_ACTOR_2 = 'botfollowbackremote2'
   const TEST_USERNAMES = [BOT_USERNAME]
 
   const host = LOCAL_HOST
@@ -131,6 +133,120 @@ describe('FollowBack bot', async () => {
         const obj = await objectStorage.read(item.id)
         if (obj.type === FOLLOW_TYPE &&
           obj.object?.first?.id === remoteId) {
+          foundActivity = obj
+          break
+        }
+      }
+      assert.ok(foundActivity)
+    })
+  })
+
+  describe('unfollows back when unfollowed', async () => {
+    const username = REMOTE_ACTOR_2
+    const domain = REMOTE_HOST
+    const remoteId = nockFormat({ username, domain })
+    const path = `/user/${BOT_USERNAME}/inbox`
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    let response
+    let body
+    let signature
+    let digest
+    let follow
+
+    before(async () => {
+      const { formatter } = app.locals
+      const botId = formatter.format({ username: BOT_USERNAME })
+      follow = await as2.import({
+        type: 'Follow',
+        actor: remoteId,
+        id: nockFormat({ username, type: 'follow', num: 1, obj: botId, domain }),
+        object: botId,
+        to: botId,
+        cc: [
+          'as:Public',
+          nockFormat({ username, collection: 'followers', domain })
+        ]
+      })
+      body = await follow.write()
+      digest = makeDigest(body)
+      signature = await nockSignature({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date,
+        domain
+      })
+      await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      await app.onIdle()
+      const undo = await as2.import({
+        type: 'Undo',
+        actor: remoteId,
+        id: nockFormat({ username, type: 'undo', num: 1, obj: follow.id, domain }),
+        object: {
+          type: 'Follow',
+          id: follow.id,
+          object: botId,
+          to: botId,
+          cc: [
+            'as:Public',
+            nockFormat({ username, collection: 'followers', domain })
+          ]
+        },
+        to: botId,
+        cc: [
+          'as:Public',
+          nockFormat({ username, collection: 'followers', domain })
+        ]
+      })
+      body = await undo.write()
+      digest = makeDigest(body)
+      signature = await nockSignature({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date,
+        domain
+      })
+    })
+
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202, JSON.stringify(response.body))
+    })
+
+    it('should deliver the reciprocal undo follow to the other actor', async () => {
+      assert.strictEqual(postInbox[username], 4)
+    })
+
+    it('should have the reciprocal undo follow in its outbox', async () => {
+      const { actorStorage, objectStorage } = app.locals
+      let foundActivity
+      for await (const item of actorStorage.items(BOT_USERNAME, 'outbox')) {
+        const obj = await objectStorage.read(item.id)
+        if (obj.type === UNDO_TYPE &&
+          obj.object?.first?.object?.first?.id === remoteId) {
           foundActivity = obj
           break
         }

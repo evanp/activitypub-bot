@@ -157,6 +157,19 @@ An *OKBot* instance will reply to any message that it's mentioned in with the co
 
 A *DoNothingBot* instance will only do default stuff, like accepting follows.
 
+#### FollowBackBot
+
+A *FollowBackBot* will follow back anyone who follows it. Useful for collecting
+public information.
+
+#### RelayClientBot
+
+A *RelayClientBot* can be the client of a Mastodon or Pleroma relay.
+
+#### RelayServerBot
+
+A *RelayServerBot* will act as a relay server for remote servers.
+
 ## API
 
 Custom bots can implement the [Bot](#bot) interface, which is easiest if you inherit from the `Bot` class.
