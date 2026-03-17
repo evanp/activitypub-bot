@@ -11,6 +11,15 @@ import { makeDigest } from './utils/digest.js'
 
 import ProvinceBotFactory from './fixtures/provincebotfactory.js'
 
+async function asyncSome (array, asyncPredicate) {
+  for (let i = 0; i < array.length; i++) {
+    if (await asyncPredicate(array[i], i, array)) {
+      return true
+    }
+  }
+  return false
+}
+
 describe('ProvinceBotFactory', async () => {
   const LOCAL_HOST = 'local.botfactory-provincebotfactory.test'
   const REMOTE_HOST = 'social.botfactory-provincebotfactory.test'
@@ -465,5 +474,24 @@ describe('ProvinceBotFactory', async () => {
         )
       )
     })
+  })
+
+  describe('All bots check for actorOK', async () => {
+    const username = REMOTE_ACTIVITY_USERNAME
+    const subject = nockFormatDefault({ username })
+    const activity = as2.import({
+      type: 'Activity',
+      actor: subject,
+      id: nockFormatDefault({ username, type: 'activity', num: 1 })
+    })
+    try {
+      await asyncSome(
+        Object.values(testBots),
+        bot => bot.actorOK(subject, activity)
+      )
+      assert.ok(true)
+    } catch (err) {
+      assert.fail(err)
+    }
   })
 })
