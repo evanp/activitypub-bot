@@ -8,6 +8,8 @@ import as2 from '../lib/activitystreams.js'
 import { nanoid } from 'nanoid'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
+const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
+
 describe('actor collection routes', async () => {
   const LOCAL_HOST = 'local.routes-collection.test'
   const databaseUrl = getTestDatabaseUrl()
@@ -102,6 +104,14 @@ describe('actor collection routes', async () => {
         it(`should return an object with a ${coll}Of to the actor`, async () => {
           assert.strictEqual(typeof response.body[coll + 'Of'], 'string')
           assert.strictEqual(response.body[coll + 'Of'], `${origin}/user/${BOT_USERNAME}`)
+        })
+        it('should return an object with a published property', async () => {
+          assert.strictEqual(typeof response.body.published, 'string')
+          assert.ok(response.body.published.match(DATE_FORMAT))
+        })
+        it('should return an object with an updated property', async () => {
+          assert.strictEqual(typeof response.body.updated, 'string')
+          assert.ok(response.body.updated.match(DATE_FORMAT))
         })
       })
 

@@ -7,6 +7,8 @@ import as2 from '../lib/activitystreams.js'
 import { nockSetup, nockFormat, nockSignature, makeActor } from '@evanp/activitypub-nock'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
+const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
+
 const uppercase = (string) => string.charAt(0).toUpperCase() + string.slice(1)
 
 describe('object collection routes', async () => {
@@ -232,6 +234,14 @@ describe('object collection routes', async () => {
       assert.strictEqual(typeof response.body.repliesOf, 'string')
       assert.strictEqual(response.body.repliesOf, `${origin}/user/${username}/${type}/${nanoid}`)
     })
+    it('should return an object with a published timestamp', async () => {
+      assert.strictEqual(typeof response.body.published, 'string')
+      assert.ok(response.body.published.match(DATE_FORMAT))
+    })
+    it('should return an object with an updated timestamp', async () => {
+      assert.strictEqual(typeof response.body.updated, 'string')
+      assert.ok(response.body.updated.match(DATE_FORMAT))
+    })
   })
 
   describe('GET /user/{username}/{type}/{nanoid}/replies/1', async () => {
@@ -309,6 +319,14 @@ describe('object collection routes', async () => {
       assert.strictEqual(typeof response.body.likesOf, 'string')
       assert.strictEqual(response.body.likesOf, `${origin}/user/${username}/${type}/${nanoid}`)
     })
+    it('should return an object with a published timestamp', async () => {
+      assert.strictEqual(typeof response.body.published, 'string')
+      assert.ok(response.body.published.match(DATE_FORMAT))
+    })
+    it('should return an object with an updated timestamp', async () => {
+      assert.strictEqual(typeof response.body.updated, 'string')
+      assert.ok(response.body.updated.match(DATE_FORMAT))
+    })
   })
 
   describe('GET /user/{username}/{type}/{nanoid}/likes/1', async () => {
@@ -385,6 +403,14 @@ describe('object collection routes', async () => {
     it('should return an object with the right sharesOf', async () => {
       assert.strictEqual(typeof response.body.sharesOf, 'string')
       assert.strictEqual(response.body.sharesOf, `${origin}/user/${username}/${type}/${nanoid}`)
+    })
+    it('should return an object with a published timestamp', async () => {
+      assert.strictEqual(typeof response.body.published, 'string')
+      assert.ok(response.body.published.match(DATE_FORMAT))
+    })
+    it('should return an object with an updated timestamp', async () => {
+      assert.strictEqual(typeof response.body.updated, 'string')
+      assert.ok(response.body.updated.match(DATE_FORMAT))
     })
   })
 
