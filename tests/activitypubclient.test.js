@@ -59,6 +59,7 @@ describe('ActivityPubClient', async () => {
   let signer = null
   let digester = null
   let logger = null
+
   before(async () => {
     logger = new Logger({
       level: 'silent'
@@ -91,6 +92,7 @@ describe('ActivityPubClient', async () => {
       addToCollection(REMOTE_COLLECTION_USER, REMOTE_PAGED_ORDERED_COLLECTION, id, REMOTE_HOST)
     }
   })
+
   after(async () => {
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
@@ -106,13 +108,16 @@ describe('ActivityPubClient', async () => {
     digester = null
     signer = null
   })
+
   beforeEach(async () => {
     resetRequestHeaders()
   })
+
   it('can initialize', () => {
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
     assert.ok(client)
   })
+
   it('can get a remote object with a username', async () => {
     const id = REMOTE_NOTE_1
     const obj = await client.get(id, LOCAL_SIGNING_USER)
@@ -129,6 +134,7 @@ describe('ActivityPubClient', async () => {
       Date.parse(h.date)
     })
   })
+
   it('can get a remote object without a username', async () => {
     const id = REMOTE_NOTE_1
     const obj = await client.get(id)
@@ -145,6 +151,7 @@ describe('ActivityPubClient', async () => {
       Date.parse(h.date)
     })
   })
+
   it('can get a remote key without a signature', async () => {
     const id = REMOTE_PUBLIC_KEY
     const obj = await client.getKey(id)
@@ -160,6 +167,7 @@ describe('ActivityPubClient', async () => {
       Date.parse(h.date)
     })
   })
+
   it('can deliver an activity', async () => {
     const obj = as2.follow()
       .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
@@ -180,6 +188,7 @@ describe('ActivityPubClient', async () => {
       Date.parse(h.date)
     })
   })
+
   it('throws an error on a non-2xx response', async () => {
     const inbox = REMOTE_INBOX
     try {
@@ -190,6 +199,7 @@ describe('ActivityPubClient', async () => {
       assert.equal(error.status, 403)
     }
   })
+
   it('can iterate over a Collection', async () => {
     const collectionUri = nockFormatPlus({
       domain: REMOTE_HOST,
@@ -204,6 +214,7 @@ describe('ActivityPubClient', async () => {
     }
     assert.strictEqual(counter, MAX_ITEMS)
   })
+
   it('can iterate over an OrderedCollection', async () => {
     const collectionUri = nockFormatPlus({
       domain: REMOTE_HOST,
@@ -218,6 +229,7 @@ describe('ActivityPubClient', async () => {
     }
     assert.strictEqual(counter, MAX_ITEMS)
   })
+
   it('can iterate over a paged Collection', async () => {
     const collectionUri = nockFormatPlus({
       domain: REMOTE_HOST,
@@ -232,6 +244,7 @@ describe('ActivityPubClient', async () => {
     }
     assert.strictEqual(counter, 5 * MAX_ITEMS)
   })
+
   it('can iterate over a paged OrderedCollection', async () => {
     const collectionUri = nockFormatPlus({
       domain: REMOTE_HOST,
@@ -246,6 +259,7 @@ describe('ActivityPubClient', async () => {
     }
     assert.strictEqual(counter, 5 * MAX_ITEMS)
   })
+
   it('sends a relay subscription with full Public URL', async () => {
     const PUBLIC = 'https://www.w3.org/ns/activitystreams#Public'
     const obj = as2.follow()
@@ -260,6 +274,7 @@ describe('ActivityPubClient', async () => {
     assert.strictEqual(typeof body.object, 'string')
     assert.strictEqual(body.object, PUBLIC)
   })
+
   it('sends a relay unsubscription with full Public URL', async () => {
     const PUBLIC = 'https://www.w3.org/ns/activitystreams#Public'
     const obj = as2.follow()
