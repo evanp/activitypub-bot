@@ -57,6 +57,46 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.publicKey, 'string')
     })
   })
+
+  describe('GET server actor with application/activity+json', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get('/').set('Accept', 'application/activity+json')
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return AS2', async () => {
+      assert.strictEqual(response.type, 'application/activity+json')
+    })
+  })
+
+  describe('GET server actor with application/ld+json', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get('/').set('Accept', 'application/ld+json')
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return AS2', async () => {
+      assert.strictEqual(response.type, 'application/activity+json')
+    })
+  })
+
+  describe('GET server actor with application/json', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get('/').set('Accept', 'application/json')
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return AS2', async () => {
+      assert.strictEqual(response.type, 'application/activity+json')
+    })
+  })
+
   describe('GET server publickey', async () => {
     let response = null
     it('should work without an error', async () => {
