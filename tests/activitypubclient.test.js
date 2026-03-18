@@ -24,14 +24,19 @@ function escapeRegex (str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+const EPSILON = 10
+
 describe('ActivityPubClient', async () => {
   const LOCAL_HOST = 'local.activitypubclient.test'
   const REMOTE_HOST = 'social.activitypubclient.test'
+  const LIMITED_HOST = 'limited.activitypubclient.test'
   const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
   const LOCAL_SIGNING_USER = 'activitypubclienttestfoobot'
   const REMOTE_PROFILE_USER = 'activitypubclientevan'
   const REMOTE_COLLECTION_USER = 'activitypubclientremote1'
   const REMOTE_RELAY_USER = 'activitypubclientrelay'
+  const LIMITED_USER_1 = 'activitypubclienttestlimit1'
+  const LIMITED_USER_2 = 'activitypubclienttestlimit2'
   const REMOTE_COLLECTION = 1
   const REMOTE_ORDERED_COLLECTION = 2
   const REMOTE_PAGED_COLLECTION = 3
@@ -74,13 +79,14 @@ describe('ActivityPubClient', async () => {
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, LIMITED_HOST]
     })
     keyStorage = new KeyStorage(connection, logger)
     formatter = new UrlFormatter(LOCAL_ORIGIN)
     limiter = new RateLimiter(connection, logger)
 
     nockSetup(REMOTE_HOST, logger)
+    nockSetup(LIMITED_HOST, { rateLimit: true })
     for (let i = 0; i < MAX_ITEMS; i++) {
       const id = nockFormatPlus({ domain: REMOTE_HOST, username: REMOTE_COLLECTION_USER, type: 'note', num: i })
       addToCollection(REMOTE_COLLECTION_USER, REMOTE_COLLECTION, id, REMOTE_HOST)
@@ -103,7 +109,7 @@ describe('ActivityPubClient', async () => {
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, LIMITED_HOST]
     })
     await connection.close()
     keyStorage = null
@@ -300,5 +306,32 @@ describe('ActivityPubClient', async () => {
     const body = JSON.parse(getBody(inbox))
     assert.strictEqual(typeof body.object?.object, 'string')
     assert.strictEqual(body.object?.object, PUBLIC)
+  })
+
+  it('does not wait for the first request to a limited server', async () => {
+    const id = nockFormat({
+      username: LIMITED_USER_1,
+      type: 'note',
+      num: 1,
+      domain: LIMITED_HOST
+    })
+    const startTime = new Date()
+    await client.get(id)
+    const endTime = new Date()
+    assert.ok(endTime - startTime < EPSILON, `${endTime - startTime} > ${EPSILON}`)
+  })
+
+  it('waits for the next request to a limited server', async () => {
+    const id = nockFormat({
+      username: LIMITED_USER_2,
+      type: 'note',
+      num: 1,
+      domain: LIMITED_HOST
+    })
+    const startTime = new Date()
+    await client.get(id)
+    const endTime = new Date()
+    assert.ok(endTime - startTime > 500)
+    assert.ok(endTime - startTime < 2000)
   })
 })
