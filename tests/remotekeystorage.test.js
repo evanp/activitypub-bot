@@ -9,6 +9,7 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
+import { RateLimiter } from '../lib/ratelimiter.js'
 
 const LOCAL_HOST = 'local.remotekeystorage.test'
 const REMOTE_HOST = 'remote.remotekeystorage.test'
@@ -22,6 +23,7 @@ describe('RemoteKeyStorage', async () => {
   let remoteKeyStorage = null
   let client = null
   let logger = null
+  let limiter
 
   before(async () => {
     logger = Logger({
@@ -36,7 +38,8 @@ describe('RemoteKeyStorage', async () => {
     const formatter = new UrlFormatter(origin)
     const digester = new Digester(logger)
     const signer = new HTTPSignature(logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+    limiter = new RateLimiter(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
     nockSetup(REMOTE_HOST)
   })
 

@@ -34,6 +34,7 @@ import { ObjectStorage } from '../lib/objectstorage.js'
 import { Authorizer } from '../lib/authorizer.js'
 import { ActivityHandler } from '../lib/activityhandler.js'
 import DoNothingBot from '../lib/bots/donothing.js'
+import { RateLimiter } from '../lib/ratelimiter.js'
 
 const LOCAL_HOST = 'local.activitydistributor.test'
 const ORIGIN = `https://${LOCAL_HOST}`
@@ -111,7 +112,8 @@ describe('ActivityDistributor', () => {
     keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+    const limiter = new RateLimiter(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
     jobQueue = new JobQueue(connection, logger)
     distributionWorker = new DistributionWorker(jobQueue, client, logger)
     distributionWorkerRun = distributionWorker.run()

@@ -23,6 +23,7 @@ import EventLoggingBot from './fixtures/eventloggingbot.js'
 import { DistributionWorker } from '../lib/distributionworker.js'
 import { DeliveryWorker } from '../lib/deliveryworker.js'
 import { JobQueue } from '../lib/jobqueue.js'
+import { RateLimiter } from '../lib/ratelimiter.js'
 
 describe('ActivityHandler', () => {
   const domain = 'local.activityhandler.test'
@@ -82,7 +83,8 @@ describe('ActivityHandler', () => {
     actorStorage = new ActorStorage(connection, formatter)
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+    const limiter = new RateLimiter(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
     jobQueue = new JobQueue(connection, logger)
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
     distributionWorker = new DistributionWorker(jobQueue, client, logger)

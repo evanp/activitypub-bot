@@ -11,6 +11,7 @@ import { ActorStorage } from '../lib/actorstorage.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 import { JobQueue } from '../lib/jobqueue.js'
+import { RateLimiter } from '../lib/ratelimiter.js'
 
 describe('ActivityDeliverer', async () => {
   const localHost = 'local.activitydeliverer.test'
@@ -39,7 +40,8 @@ describe('ActivityDeliverer', async () => {
     const keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+    const limiter = new RateLimiter(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
     jobQueue = new JobQueue(connection, logger)
   })
   after(async () => {

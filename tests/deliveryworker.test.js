@@ -18,6 +18,7 @@ import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import DoNothingBot from '../lib/bots/donothing.js'
+import { RateLimiter } from '../lib/ratelimiter.js'
 
 describe('DeliveryWorker', async () => {
   const localHost = 'local.deliveryworker.test'
@@ -52,7 +53,8 @@ describe('DeliveryWorker', async () => {
     const keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+    const limiter = new RateLimiter(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
     const distributor = new ActivityDistributor(client, formatter, actorStorage, logger, JobQueue)
     const authz = new Authorizer(actorStorage, formatter, client)
     const cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })

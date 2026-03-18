@@ -16,6 +16,7 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 import { JobQueue } from '../lib/jobqueue.js'
+import { RateLimiter } from '../lib/ratelimiter.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
@@ -45,7 +46,8 @@ describe('DistributionWorker', async () => {
     const keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+    const limiter = new RateLimiter(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
     queue = new JobQueue(connection, logger)
     nockSetup(remoteHost)
   })

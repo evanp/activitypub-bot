@@ -1,13 +1,7 @@
 import { describe, before, after, it, beforeEach } from 'node:test'
-import { KeyStorage } from '../lib/keystorage.js'
-import { UrlFormatter } from '../lib/urlformatter.js'
-import { ActivityPubClient } from '../lib/activitypubclient.js'
 import assert from 'node:assert'
-import as2 from '../lib/activitystreams.js'
+
 import Logger from 'pino'
-import { HTTPSignature } from '../lib/httpsignature.js'
-import { Digester } from '../lib/digester.js'
-import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import {
   nockSetup,
   getRequestHeaders,
@@ -16,6 +10,15 @@ import {
   nockFormat,
   getBody
 } from '@evanp/activitypub-nock'
+
+import { KeyStorage } from '../lib/keystorage.js'
+import { UrlFormatter } from '../lib/urlformatter.js'
+import { ActivityPubClient } from '../lib/activitypubclient.js'
+import as2 from '../lib/activitystreams.js'
+import { HTTPSignature } from '../lib/httpsignature.js'
+import { Digester } from '../lib/digester.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
+import { RateLimiter } from '../lib/ratelimiter.js'
 
 function escapeRegex (str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -59,6 +62,7 @@ describe('ActivityPubClient', async () => {
   let signer = null
   let digester = null
   let logger = null
+  let limiter = null
 
   before(async () => {
     logger = new Logger({
@@ -74,6 +78,8 @@ describe('ActivityPubClient', async () => {
     })
     keyStorage = new KeyStorage(connection, logger)
     formatter = new UrlFormatter(LOCAL_ORIGIN)
+    limiter = new RateLimiter(connection, logger)
+
     nockSetup(REMOTE_HOST, logger)
     for (let i = 0; i < MAX_ITEMS; i++) {
       const id = nockFormatPlus({ domain: REMOTE_HOST, username: REMOTE_COLLECTION_USER, type: 'note', num: i })
@@ -114,7 +120,7 @@ describe('ActivityPubClient', async () => {
   })
 
   it('can initialize', () => {
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
     assert.ok(client)
   })
 

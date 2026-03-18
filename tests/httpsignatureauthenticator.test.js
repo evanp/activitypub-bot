@@ -11,6 +11,7 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
+import { RateLimiter } from '../lib/ratelimiter.js'
 
 describe('HTTPSignatureAuthenticator', async () => {
   const LOCAL_HOST = 'local.httpsignatureauthenticator.test'
@@ -71,7 +72,8 @@ describe('HTTPSignatureAuthenticator', async () => {
     digester = new Digester(logger)
     const formatter = new UrlFormatter(origin)
     const keyStorage = new KeyStorage(connection, logger)
-    const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+    const limiter = new RateLimiter(connection, logger)
+    const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
     remoteKeyStorage = new RemoteKeyStorage(client, connection, logger)
     nockSetup(REMOTE_HOST)
   })

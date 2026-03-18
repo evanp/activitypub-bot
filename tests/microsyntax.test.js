@@ -9,6 +9,7 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
 import { createMigratedTestConnection } from './utils/db.js'
+import { RateLimiter } from '../lib/ratelimiter.js'
 
 const AS2 = 'https://www.w3.org/ns/activitystreams#'
 
@@ -26,7 +27,8 @@ describe('microsyntax', async () => {
   const keyStorage = new KeyStorage(connection, logger)
   const formatter = new UrlFormatter(origin)
   const signer = new HTTPSignature(logger)
-  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger)
+  const limiter = new RateLimiter(connection, logger)
+  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
   const transformer = new Transformer(tagNamespace, client)
 
   it('has transformer', () => {
