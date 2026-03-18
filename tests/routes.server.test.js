@@ -36,7 +36,7 @@ describe('server routes', async () => {
   describe('GET server actor', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/').set('Accept', AS2_TYPES.join(','))
+      response = await request(app).get('/actor').set('Accept', AS2_TYPES.join(','))
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -50,8 +50,8 @@ describe('server routes', async () => {
     it('should return an object with an id', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
     })
-    it('should return an object with an id matching the origin', async () => {
-      assert.strictEqual(response.body.id, `${origin}/`)
+    it('should return an object with the server actor id', async () => {
+      assert.strictEqual(response.body.id, `${origin}/actor`)
     })
     it('should return an object with a publicKey', async () => {
       assert.strictEqual(typeof response.body.publicKey, 'string')
@@ -61,7 +61,7 @@ describe('server routes', async () => {
   describe('GET server actor with application/activity+json', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/').set('Accept', 'application/activity+json')
+      response = await request(app).get('/actor').set('Accept', 'application/activity+json')
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -74,7 +74,7 @@ describe('server routes', async () => {
   describe('GET server actor with application/ld+json', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/').set('Accept', 'application/ld+json')
+      response = await request(app).get('/actor').set('Accept', 'application/ld+json')
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -87,7 +87,7 @@ describe('server routes', async () => {
   describe('GET server actor with application/json', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/').set('Accept', 'application/json')
+      response = await request(app).get('/actor').set('Accept', 'application/json')
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -121,7 +121,7 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.owner, 'string')
     })
     it('should return an object with the origin as owner', async () => {
-      assert.strictEqual(response.body.owner, `${origin}/`)
+      assert.strictEqual(response.body.owner, `${origin}/actor`)
     })
     it('should return an object with a publicKeyPem', async () => {
       assert.strictEqual(typeof response.body.publicKeyPem, 'string')

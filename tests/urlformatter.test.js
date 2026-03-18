@@ -67,7 +67,7 @@ describe('UrlFormatter', () => {
     const url = formatter.format({
       server: true
     })
-    assert.equal(url, 'https://local.urlformatter.test/')
+    assert.equal(url, 'https://local.urlformatter.test/actor')
   })
   it('can format a server public key URL', () => {
     const url = formatter.format({
@@ -153,7 +153,7 @@ describe('UrlFormatter', () => {
     assert.equal(parts.page, 4)
   })
   it('can unformat a server URL', () => {
-    const parts = formatter.unformat('https://local.urlformatter.test/')
+    const parts = formatter.unformat('https://local.urlformatter.test/actor')
     assert.ok(parts.server)
   })
   it('can unformat a server public key URL', () => {
