@@ -24,7 +24,7 @@ function escapeRegex (str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-const EPSILON = 250
+const EPSILON = 100
 
 describe('ActivityPubClient', async () => {
   const LOCAL_HOST = 'local.activitypubclient.test'

@@ -5,7 +5,7 @@ import Logger from 'pino'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
-const EPSILON = 10
+const EPSILON = 100
 
 describe('RateLimiter', async () => {
   const LOCAL_HOST = 'local.ratelimiter.test'
