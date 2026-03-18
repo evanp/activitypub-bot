@@ -53,8 +53,17 @@ describe('server routes', async () => {
     it('should return an object with the server actor id', async () => {
       assert.strictEqual(response.body.id, `${origin}/actor`)
     })
+    it('should return an object with a public addressee', async () => {
+      assert.strictEqual(response.body.to, 'as:Public')
+    })
     it('should return an object with a publicKey', async () => {
-      assert.strictEqual(typeof response.body.publicKey, 'string')
+      assert.strictEqual(typeof response.body.publicKey, 'object')
+      assert.strictEqual(typeof response.body.publicKey.id, 'string')
+      assert.strictEqual(typeof response.body.publicKey.owner, 'string')
+      assert.strictEqual(typeof response.body.publicKey.type, 'string')
+      assert.strictEqual(response.body.publicKey.type, 'CryptographicKey')
+      assert.strictEqual(typeof response.body.publicKey.to, 'string')
+      assert.strictEqual(response.body.publicKey.to, 'as:Public')
     })
   })
 
