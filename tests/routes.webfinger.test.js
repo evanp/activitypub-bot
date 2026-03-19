@@ -92,8 +92,29 @@ describe('webfinger routes', async () => {
         `/.well-known/webfinger?resource=${encodeURIComponent(`${origin}/user/${BOT_USERNAME}`)}`
       )
     })
-    it('should return 400 Bad Request', async () => {
-      assert.strictEqual(response.status, 400)
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200, response.body)
+    })
+    it('should return JRD', async () => {
+      assert.strictEqual(response.type, 'application/jrd+json')
+    })
+    it('should return an object with a subject', async () => {
+      assert.strictEqual(typeof response.body.subject, 'string')
+    })
+    it('should return an object with an subject matching the request', async () => {
+      assert.strictEqual(response.body.subject, `acct:${BOT_USERNAME}@${LOCAL_HOST}`)
+    })
+    it('should return an object with a links array', async () => {
+      assert.strictEqual(Array.isArray(response.body.links), true)
+    })
+    it('should return an object with a links array containing the actor id', async () => {
+      assert.strictEqual(response.body.links.length, 1)
+      assert.strictEqual(typeof response.body.links[0].rel, 'string')
+      assert.strictEqual(response.body.links[0].rel, 'self')
+      assert.strictEqual(typeof response.body.links[0].type, 'string')
+      assert.strictEqual(response.body.links[0].type, 'application/activity+json')
+      assert.strictEqual(typeof response.body.links[0].href, 'string')
+      assert.strictEqual(response.body.links[0].href, `${origin}/user/${BOT_USERNAME}`)
     })
   })
 })
