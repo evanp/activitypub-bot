@@ -167,4 +167,8 @@ describe('UrlFormatter', () => {
     const uri = formatter.acct(username)
     assert.strictEqual(uri, `acct:${username}@${hostname}`)
   })
+  it('can format a server acct: URI', () => {
+    const uri = formatter.acct()
+    assert.strictEqual(uri, `acct:${hostname}@${hostname}`)
+  })
 })
