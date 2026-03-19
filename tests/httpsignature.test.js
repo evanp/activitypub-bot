@@ -245,4 +245,10 @@ describe('HTTPSignature', async () => {
     const result = await httpSignature.validate(publicKeyPem, signature, method, path, headers)
     assert.ok(result)
   })
+
+  it('can handle a keyId with arguments', async () => {
+    const header = 'keyId="https://guiatributario.net/?author=0#main-key",algorithm="rsa-sha256",headers="(request-target) host date digest",signature="uYwm1svAGp+Njb6663o4YywQaAfXhnyvK3ASg0f+FFddFG9ZrlJI4+WYVe+ELcQD/bGEri+TuvZ8bbFsDB2Y+XXx13pcwlBWyG6Lry67+nmqp8U0WykVXlOpI/GkdPtMRY3QSzCMXcKsAWqF3Uljw0wlNRLYeyQ2YrFlKMnT1Vm7u3/4qQVqJAO2Aqu18hUBzYYFe6LyQ9nFh2fCUhbQz0wlYciSEyzdvYRb0YExJhh2a6UvhD1qE0ctImaI1wTsKTgcgXGOGO92iNyvPbotsqHykHZ0cu1YIpOZkhNs3YwYcqxxXypFzh2MEDzoK2b7hrXBAmNpq4MTczEAGLOKlA=="'
+    const keyId = httpSignature.keyId(header)
+    assert.strictEqual(keyId, 'https://guiatributario.net/?author=0#main-key')
+  })
 })
