@@ -3,7 +3,8 @@ import assert from 'node:assert'
 import { UrlFormatter } from '../lib/urlformatter.js'
 
 describe('UrlFormatter', () => {
-  const origin = 'https://local.urlformatter.test'
+  const hostname = 'local.urlformatter.test'
+  const origin = `https://${hostname}`
   let formatter = null
   it('can initialize', () => {
     formatter = new UrlFormatter(origin)
@@ -160,5 +161,10 @@ describe('UrlFormatter', () => {
     const parts = formatter.unformat('https://local.urlformatter.test/publickey')
     assert.ok(parts.server)
     assert.equal(parts.type, 'publickey')
+  })
+  it('can format a bot acct: URI', () => {
+    const username = 'test13'
+    const uri = formatter.acct(username)
+    assert.strictEqual(uri, `acct:${username}@${hostname}`)
   })
 })
