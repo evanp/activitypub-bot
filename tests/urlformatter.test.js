@@ -156,6 +156,7 @@ describe('UrlFormatter', () => {
   it('can unformat a server URL', () => {
     const parts = formatter.unformat('https://local.urlformatter.test/actor')
     assert.ok(parts.server)
+    assert.ok(!parts.type)
   })
   it('can unformat a server public key URL', () => {
     const parts = formatter.unformat('https://local.urlformatter.test/publickey')

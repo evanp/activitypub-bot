@@ -65,6 +65,14 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.publicKey.to, 'string')
       assert.strictEqual(response.body.publicKey.to, 'as:Public')
     })
+    it('should include webfinger', async () => {
+      assert.strictEqual(typeof response.body.webfinger, 'string')
+      assert.strictEqual(response.body.webfinger, `${LOCAL_HOST}@${LOCAL_HOST}`)
+    })
+    it('should include alsoKnownAs', async () => {
+      assert.strictEqual(typeof response.body.alsoKnownAs, 'string')
+      assert.strictEqual(response.body.alsoKnownAs, `acct:${LOCAL_HOST}@${LOCAL_HOST}`)
+    })
   })
 
   describe('GET server actor with application/activity+json', async () => {

@@ -133,6 +133,14 @@ describe('actor routes', async () => {
     it('should include a sharedInbox endpoint', async () => {
       assert.strictEqual(typeof response.body.endpoints.sharedInbox, 'string')
     })
+    it('should include webfinger', async () => {
+      assert.strictEqual(typeof response.body.webfinger, 'string')
+      assert.strictEqual(response.body.webfinger, `${BOT_USERNAME}@${LOCAL_HOST}`)
+    })
+    it('should include alsoKnownAs', async () => {
+      assert.strictEqual(typeof response.body.alsoKnownAs, 'string')
+      assert.strictEqual(response.body.alsoKnownAs, `acct:${BOT_USERNAME}@${LOCAL_HOST}`)
+    })
   })
 
   describe('GET non-existent user', async () => {
