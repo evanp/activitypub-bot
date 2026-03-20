@@ -10,6 +10,7 @@ const EPSILON = 100
 describe('RateLimiter', async () => {
   const LOCAL_HOST = 'local.ratelimiter.test'
   const REMOTE_HOST = 'remote.ratelimiter.test'
+
   let logger
   let connection
   let RateLimiter
