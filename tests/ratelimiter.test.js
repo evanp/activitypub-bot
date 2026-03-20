@@ -58,15 +58,18 @@ describe('RateLimiter', async () => {
     assert.ok(limiter)
     const headers = new Headers()
     headers.set('x-ratelimit-limit', 1000)
-    headers.set('x-ratelimit-remaining', 10)
-    headers.set('x-ratelimit-reset', 10)
+    headers.set('x-ratelimit-remaining', 3)
+    headers.set('x-ratelimit-reset', 1)
     await limiter.update(REMOTE_HOST, headers)
     assert.ok(true)
   })
 
-  it('waits about a second for the next request', async () => {
+  it('spaces out the next requests', async () => {
     assert.ok(limiter)
     const startTime = new Date()
+    await limiter.limit(REMOTE_HOST)
+    await limiter.limit(REMOTE_HOST)
+    await limiter.limit(REMOTE_HOST)
     await limiter.limit(REMOTE_HOST)
     const endTime = new Date()
     assert.ok(endTime - startTime > 500)
