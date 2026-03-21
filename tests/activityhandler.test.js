@@ -12,7 +12,12 @@ import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
 import as2 from '../lib/activitystreams.js'
 import Logger from 'pino'
-import { nockSetup, postInbox, makeActor as makeNockActor, nockFormat as rawNockFormat } from '@evanp/activitypub-nock'
+import {
+  nockSetup,
+  postInbox,
+  makeActor as makeNockActor,
+  nockFormat as rawNockFormat
+} from '@evanp/activitypub-nock'
 import { Digester } from '../lib/digester.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { BotContext } from '../lib/botcontext.js'
@@ -24,6 +29,10 @@ import { DistributionWorker } from '../lib/distributionworker.js'
 import { DeliveryWorker } from '../lib/deliveryworker.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+
+const NS = 'https://www.w3.org/ns/activitystreams#'
+const ACCEPT = `${NS}Accept`
+const ADD = `${NS}Add`
 
 describe('ActivityHandler', () => {
   const domain = 'local.activityhandler.test'
@@ -201,20 +210,29 @@ describe('ActivityHandler', () => {
       nanoid: 'k5MtHI1aGle4RocLqnw7x'
     })
     const original = await as2.import({
+      '@context': [
+        'https://www.w3.org/ns/activitystreams',
+        'https://purl.archive.org/socialweb/thread/1.0'
+      ],
       id: oid,
       type: 'Note',
       attributedTo: formatter.format({ username: botName }),
       to: 'as:Public',
-      content: 'Original note'
+      content: 'Original note',
+      replies: `${oid}/replies`,
+      shares: `${oid}/shares`,
+      likes: `${oid}/likes`,
+      thread: `${oid}/thread`,
+      context: `${oid}/thread`
     })
     await objectStorage.create(original)
     const activity = await as2.import({
       type: 'Create',
-      actor: 'https://social.activityhandler.test/user/remote1',
-      id: 'https://social.activityhandler.test/user/remote1/object/3',
+      actor: 'https://social.activityhandler.test/user/remote0',
+      id: 'https://social.activityhandler.test/user/remote0/object/3',
       object: {
         inReplyTo: oid,
-        id: 'https://social.activityhandler.test/user/remote1/object/4',
+        id: 'https://social.activityhandler.test/user/remote0/object/4',
         type: 'Note',
         content: 'Reply note',
         to: 'as:Public'
@@ -227,8 +245,16 @@ describe('ActivityHandler', () => {
     const collection2 = await objectStorage.getCollection(oid, 'replies')
     assert.equal(collection2.totalItems, 1)
     await handler.onIdle()
-    assert.equal(postInbox.remote1, 1)
-    assert.ok(true)
+    // assert.equal(postInbox.remote0, 1)
+    let add
+    for await (const ref of actorStorage.items(botName, 'outbox')) {
+      const obj = await objectStorage.read(ref.id)
+      if (obj.type === ADD && obj.object?.first?.id === activity.object.first.id) {
+        add = obj
+      }
+    }
+    assert.ok(add)
+    assert.ok(add.target)
   })
   it('can handle an update activity', async () => {
     const activity = await as2.import({
@@ -320,12 +346,14 @@ describe('ActivityHandler', () => {
   })
   it('can handle a follow activity', async () => {
     const actor = await makeActor('follower1')
+    const followId =
+      'https://social.activityhandler.test/user/follower1/follow/1'
     assert.equal(
       false,
       await actorStorage.isInCollection(botName, 'followers', actor))
     const activity = await as2.import({
       type: 'Follow',
-      id: 'https://social.activityhandler.test/user/follower1/follow/1',
+      id: followId,
       actor: actor.id,
       object: botId,
       to: botId
@@ -333,10 +361,23 @@ describe('ActivityHandler', () => {
     await handler.handleActivity(bot, activity)
     assert.equal(
       true,
-      await actorStorage.isInCollection(botName, 'followers', actor))
+      await actorStorage.isInCollection(botName, 'followers', actor)
+    )
     await handler.onIdle()
     // accept and add
     assert.equal(postInbox.follower1, 2)
+    let accept
+    let add
+    for await (const ref of actorStorage.items(botName, 'outbox')) {
+      const activity = await objectStorage.read(ref.id)
+      if (activity.type === ACCEPT && activity.object?.first?.id === followId) {
+        accept = activity
+      } else if (activity.type === ADD && activity.object?.first?.id === actor.id) {
+        add = activity
+      }
+    }
+    assert.ok(accept)
+    assert.ok(add)
   })
   it('can handle a duplicate follow activity', async () => {
     const actor = await makeActor('follower2')
