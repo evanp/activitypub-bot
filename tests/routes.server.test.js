@@ -77,6 +77,10 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.preferredUsername, 'string')
       assert.strictEqual(response.body.preferredUsername, LOCAL_HOST)
     })
+    it('should include name', async () => {
+      assert.strictEqual(typeof response.body.name, 'string')
+      assert.strictEqual(response.body.name, LOCAL_HOST)
+    })
   })
 
   describe('GET server actor with application/activity+json', async () => {
