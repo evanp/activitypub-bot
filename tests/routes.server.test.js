@@ -81,6 +81,15 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.name, 'string')
       assert.strictEqual(response.body.name, LOCAL_HOST)
     })
+    it('should include the homepage URL', async () => {
+      assert.strictEqual(typeof response.body.url, 'object')
+      assert.strictEqual(typeof response.body.url.type, 'string')
+      assert.strictEqual(response.body.url.type, 'Link')
+      assert.strictEqual(typeof response.body.url.mediaType, 'string')
+      assert.strictEqual(response.body.url.mediaType, 'text/html')
+      assert.strictEqual(typeof response.body.url.href, 'string')
+      assert.strictEqual(response.body.url.href, `${origin}/`)
+    })
   })
 
   describe('GET server actor with application/activity+json', async () => {
