@@ -73,6 +73,10 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.alsoKnownAs, 'string')
       assert.strictEqual(response.body.alsoKnownAs, `acct:${LOCAL_HOST}@${LOCAL_HOST}`)
     })
+    it('should include preferredUsername', async () => {
+      assert.strictEqual(typeof response.body.preferredUsername, 'string')
+      assert.strictEqual(response.body.preferredUsername, LOCAL_HOST)
+    })
   })
 
   describe('GET server actor with application/activity+json', async () => {
