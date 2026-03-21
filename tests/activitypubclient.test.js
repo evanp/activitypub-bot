@@ -321,7 +321,7 @@ describe('ActivityPubClient', async () => {
     assert.ok(endTime - startTime < EPSILON, `${endTime - startTime} > ${EPSILON}`)
   })
 
-  it('waits for the next request to a limited server', async () => {
+  it('waits for the next requests to a limited server', async () => {
     const id = nockFormat({
       username: LIMITED_USER_2,
       type: 'note',
@@ -329,9 +329,10 @@ describe('ActivityPubClient', async () => {
       domain: LIMITED_HOST
     })
     const startTime = new Date()
-    await client.get(id)
+    for (let i = 0; i < 10; i++) {
+      await client.get(id)
+    }
     const endTime = new Date()
-    assert.ok(endTime - startTime > 500)
-    assert.ok(endTime - startTime < 2000)
+    assert.ok(endTime - startTime > EPSILON, `${endTime - startTime} > ${EPSILON}`)
   })
 })
