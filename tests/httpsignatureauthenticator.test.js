@@ -42,6 +42,7 @@ describe('HTTPSignatureAuthenticator', async () => {
   let logger = null
   let signer = null
   let digester = null
+  let formatter = null
   let remoteKeyStorage = null
   let connection = null
   const next = (err) => {
@@ -70,7 +71,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     })
     signer = new HTTPSignature(logger)
     digester = new Digester(logger)
-    const formatter = new UrlFormatter(origin)
+    formatter = new UrlFormatter(origin)
     const keyStorage = new KeyStorage(connection, logger)
     const limiter = new RateLimiter(connection, logger)
     const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
@@ -87,6 +88,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     await connection.close()
     authenticator = null
     digester = null
+    formatter = null
     signer = null
     remoteKeyStorage = null
   })
@@ -114,16 +116,15 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {
-
-    }
+    const res = {}
     const req = {
       headers,
       originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
-      }
+      },
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -144,16 +145,15 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = `/.well-known/webfinger?resource=acct:${lname}@${LOCAL_HOST}`
-    const res = {
-
-    }
+    const res = {}
     const req = {
       headers,
       originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
-      }
+      },
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -173,16 +173,15 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {
-
-    }
+    const res = {}
     const req = {
       headers,
       originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
-      }
+      },
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, next)
     await nockKeyRotateDefault(username)
@@ -203,7 +202,8 @@ describe('HTTPSignatureAuthenticator', async () => {
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
-      }
+      },
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req2, res, next)
   })
@@ -233,9 +233,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host,
       digest
     }
-    const res = {
-
-    }
+    const res = {}
     const req = {
       headers,
       originalUrl,
@@ -243,7 +241,8 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      rawBodyText
+      rawBodyText,
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -256,16 +255,15 @@ describe('HTTPSignatureAuthenticator', async () => {
       date,
       host: URL.parse(origin).host
     }
-    const res = {
-
-    }
+    const res = {}
     const req = {
       headers,
       originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
-      }
+      },
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -285,16 +283,15 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {
-
-    }
+    const res = {}
     const req = {
       headers,
       originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
-      }
+      },
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -324,9 +321,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host,
       digest
     }
-    const res = {
-
-    }
+    const res = {}
     const req = {
       headers,
       originalUrl,
@@ -334,7 +329,8 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      rawBodyText
+      rawBodyText,
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, failNext)
   })
@@ -361,9 +357,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       signature,
       host: URL.parse(origin).host
     }
-    const res = {
-
-    }
+    const res = {}
     const req = {
       headers,
       originalUrl,
@@ -371,7 +365,8 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      rawBodyText
+      rawBodyText,
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, failNext)
   })
@@ -390,16 +385,15 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {
-
-    }
+    const res = {}
     const req = {
       headers,
       originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
-      }
+      },
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, failNext)
   })
@@ -418,16 +412,15 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {
-
-    }
+    const res = {}
     const req = {
       headers,
       originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
-      }
+      },
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, failNext)
   })
@@ -448,8 +441,27 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {
+    const res = {}
+    const req = {
+      headers,
+      originalUrl,
+      method,
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: { locals: { formatter, origin, bots: {} } }
+    }
+    await authenticator.authenticate(req, res, failNext)
+  })
 
+  it('skips signature check for a bot with checkSignature false', async () => {
+    const username = 'no-check-bot'
+    const originalUrl = `/user/${username}/outbox`
+    const method = 'GET'
+    const headers = {
+      date: new Date().toUTCString(),
+      signature: 'NOT_A_SIGNATURE',
+      host: URL.parse(origin).host
     }
     const req = {
       headers,
@@ -457,14 +469,24 @@ describe('HTTPSignatureAuthenticator', async () => {
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
+      },
+      app: {
+        locals: {
+          formatter,
+          origin,
+          bots: {
+            [username]: { checkSignature: false }
+          }
+        }
       }
     }
-    await authenticator.authenticate(req, res, failNext)
+    const res = {}
+    await authenticator.authenticate(req, res, next)
   })
 
   it('can refuse a request with a future date outside of the skew window', async () => {
     const username = REMOTE_USER_1
-    // 10 days ago
+    // 10 days from now
     const date = (new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)).toUTCString()
     logger.debug(date)
     const signature = await nockSignatureDefault({
@@ -478,16 +500,15 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {
-
-    }
+    const res = {}
     const req = {
       headers,
       originalUrl,
       method,
       get: function (name) {
         return this.headers[name.toLowerCase()]
-      }
+      },
+      app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, failNext)
   })
