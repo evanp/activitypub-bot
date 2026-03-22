@@ -144,7 +144,7 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
     })
     it('should return an object with an id matching the origin', async () => {
-      assert.strictEqual(response.body.id, `${origin}${publicKeyPath}`)
+      assert.strictEqual(response.body.id, publicKeyId)
     })
     it('should return an object with an owner', async () => {
       assert.strictEqual(typeof response.body.owner, 'string')
