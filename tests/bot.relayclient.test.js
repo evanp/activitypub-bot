@@ -160,7 +160,7 @@ describe('RelayClientBot', () => {
   })
 
   it('can be constructed', async () => {
-    bot = new RelayClientBot(botName, relay)
+    bot = new RelayClientBot(botName, { relay })
     assert.ok(bot)
     bots[botName] = bot
   })
@@ -262,7 +262,8 @@ describe('RelayClientBot', () => {
   })
 
   it('unsubscribes from a remote relay on initialize', async () => {
-    bot = new RelayClientBot(botName, relay, 'unsubscribe')
+    const unsubscribe = true
+    bot = new RelayClientBot(botName, { relay, unsubscribe })
     assert.ok(bot)
     bots[botName] = bot
     await bot.initialize(context)
