@@ -126,6 +126,20 @@ describe('server routes', async () => {
     })
   })
 
+  describe('GET server actor with bad signature', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(serverActorPath)
+        .set('Signature', 'NOT A VALID SIGNATURE')
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return AS2', async () => {
+      assert.strictEqual(response.type, 'application/activity+json')
+    })
+  })
+
   describe('GET server publickey', async () => {
     let response = null
     it('should work without an error', async () => {
