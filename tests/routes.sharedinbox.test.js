@@ -46,6 +46,7 @@ describe('routes.sharedinbox', async () => {
   const REMOTE_ACTOR_6 = 'routesharedinboxtestactor6'
   const REMOTE_ACTOR_7 = 'routesharedinboxtestactor7'
   const REMOTE_ACTOR_8 = 'routesharedinboxtestactor8'
+  const REMOTE_ACTOR_9 = 'routesharedinboxtestactor9'
   const BOT_NAMES_FOLLOWERS_ONLY = [BOT_FOLLOWERS_ONLY_1, BOT_FOLLOWERS_ONLY_2]
   const BOT_NAMES_LOCAL_FOLLOWERS = [BOT_LOCAL_FOLLOWERS_1, BOT_LOCAL_FOLLOWERS_2, BOT_LOCAL_FOLLOWERS_3]
   const BOT_NAMES_LOCAL_FOLLOWING = [BOT_LOCAL_FOLLOWING_1, BOT_LOCAL_FOLLOWING_2]
@@ -562,6 +563,47 @@ describe('routes.sharedinbox', async () => {
           )
         )
       }
+    })
+  })
+
+  describe('rejects an activity with no id', async () => {
+    const username = REMOTE_ACTOR_9
+    const path = '/shared/inbox'
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    let response = null
+    let body
+    let digest
+    let signature
+    before(async () => {
+      const activity = await as2.import({
+        type: 'Activity',
+        actor: nockFormatDefault({ username })
+      })
+      body = await activity.write()
+      digest = makeDigest(body)
+      signature = await nockSignatureDefault({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date
+      })
+    })
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 400 status', async () => {
+      assert.strictEqual(response.status, 400)
     })
   })
 
