@@ -68,14 +68,14 @@ describe('UrlFormatter', () => {
     const url = formatter.format({
       server: true
     })
-    assert.equal(url, `${origin}/actor`)
+    assert.equal(url, `${origin}/user/${hostname}`)
   })
   it('can format a server public key URL', () => {
     const url = formatter.format({
       server: true,
       type: 'publickey'
     })
-    assert.equal(url, `${origin}/publickey`)
+    assert.equal(url, `${origin}/user/${hostname}/publickey`)
   })
   it('can tell if an URL is local', () => {
     assert.ok(formatter.isLocal(`${origin}/user/megabot`))
@@ -154,12 +154,12 @@ describe('UrlFormatter', () => {
     assert.equal(parts.page, 4)
   })
   it('can unformat a server URL', () => {
-    const parts = formatter.unformat(`${origin}/actor`)
+    const parts = formatter.unformat(`${origin}/user/${hostname}`)
     assert.ok(parts.server)
     assert.ok(!parts.type)
   })
   it('can unformat a server public key URL', () => {
-    const parts = formatter.unformat(`${origin}/publickey`)
+    const parts = formatter.unformat(`${origin}/user/${hostname}/publickey`)
     assert.ok(parts.server)
     assert.equal(parts.type, 'publickey')
   })
