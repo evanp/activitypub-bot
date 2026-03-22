@@ -148,13 +148,13 @@ describe('webfinger routes', async () => {
       assert.strictEqual(typeof response.body.links[0].type, 'string')
       assert.strictEqual(response.body.links[0].type, 'application/activity+json')
       assert.strictEqual(typeof response.body.links[0].href, 'string')
-      assert.strictEqual(response.body.links[0].href, `${origin}/actor`)
+      assert.strictEqual(response.body.links[0].href, `${origin}/user/${LOCAL_HOST}`)
     })
   })
   describe('Webfinger discovery for HTTPS server actor', async () => {
     let response = null
     const acct = `acct:${LOCAL_HOST}@${LOCAL_HOST}`
-    const actorId = `${origin}/actor`
+    const actorId = `${origin}/user/${LOCAL_HOST}`
 
     it('should work without an error', async () => {
       response = await request(app).get(
