@@ -18,12 +18,14 @@ describe('routes.inbox', async () => {
   const INBOX_BOT_3 = 'routesinboxtest3'
   const INBOX_BOT_4 = 'routesinboxtest4'
   const INBOX_BOT_5 = 'routesinboxtest5'
+  const INBOX_BOT_6 = 'routesinboxtest6'
   const LOGGING_BOT = 'routesinboxtestlogging1'
   const REMOTE_ACTOR_1 = 'routesinboxtestactor1'
   const REMOTE_ACTOR_2 = 'routesinboxtestactor2'
   const REMOTE_ACTOR_3 = 'routesinboxtestactor3'
   const REMOTE_ACTOR_4 = 'routesinboxtestactor4'
-  const TEST_USERNAMES = [BOT_USERNAME, INBOX_BOT_1, INBOX_BOT_2, INBOX_BOT_3, INBOX_BOT_4, INBOX_BOT_5, LOGGING_BOT]
+  const REMOTE_ACTOR_5 = 'routesinboxtestactor5'
+  const TEST_USERNAMES = [BOT_USERNAME, INBOX_BOT_1, INBOX_BOT_2, INBOX_BOT_3, INBOX_BOT_4, INBOX_BOT_5, INBOX_BOT_6, LOGGING_BOT]
   const host = LOCAL_HOST
   const origin = `https://${host}`
   const databaseUrl = getTestDatabaseUrl()
@@ -35,6 +37,7 @@ describe('routes.inbox', async () => {
     [INBOX_BOT_3]: new DoNothingBot(INBOX_BOT_3),
     [INBOX_BOT_4]: new DoNothingBot(INBOX_BOT_4),
     [INBOX_BOT_5]: new DoNothingBot(INBOX_BOT_5),
+    [INBOX_BOT_6]: new DoNothingBot(INBOX_BOT_6),
     [LOGGING_BOT]: lb
   }
 
@@ -390,6 +393,43 @@ describe('routes.inbox', async () => {
     })
     it('should not be delivered to onPublic() a second time', async () => {
       assert.ok(!lb.dupes.has(activity.id))
+    })
+  })
+
+  describe('rejects an activity with no id', async () => {
+    const username = REMOTE_ACTOR_5
+    const botName = INBOX_BOT_6
+    const path = `/user/${botName}/inbox`
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    const activity = await as2.import({
+      type: 'Activity',
+      actor: nockFormatDefault({ username })
+    })
+    const body = await activity.write()
+    const digest = makeDigest(body)
+    const signature = await nockSignatureDefault({
+      method: 'POST',
+      username,
+      url,
+      digest,
+      date
+    })
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 400 status', async () => {
+      assert.strictEqual(response.status, 400)
     })
   })
 })
