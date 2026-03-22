@@ -172,4 +172,7 @@ describe('UrlFormatter', () => {
     const uri = formatter.acct()
     assert.strictEqual(uri, `acct:${hostname}@${hostname}`)
   })
+  it('can return its hostname', () => {
+    assert.strictEqual(formatter.hostname, hostname)
+  })
 })
