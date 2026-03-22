@@ -10,6 +10,7 @@ const SYSTEM_BOT = ''
 const TEST_BOTS = [BOT1, BOT2, SYSTEM_BOT]
 
 describe('KeyStorage', async () => {
+  const hostname = 'local.keystorage.test'
   let connection = null
   let storage = null
   let logger = null
@@ -98,14 +99,14 @@ describe('KeyStorage', async () => {
     assert.notEqual(privateKey, privateKey2)
   })
   it('can get a system public key', async () => {
-    firstSystemPublicKey = await storage.getPublicKey(null)
+    firstSystemPublicKey = await storage.getPublicKey(hostname)
     assert.ok(firstSystemPublicKey)
     assert.equal(typeof firstSystemPublicKey, 'string')
     assert.match(firstSystemPublicKey, /^-----BEGIN PUBLIC KEY-----\n/)
     assert.match(firstSystemPublicKey, /-----END PUBLIC KEY-----\n$/)
   })
   it('can get a system public key again', async () => {
-    secondSystemPublicKey = await storage.getPublicKey(null)
+    secondSystemPublicKey = await storage.getPublicKey(hostname)
     assert.ok(secondSystemPublicKey)
     assert.equal(typeof secondSystemPublicKey, 'string')
     assert.match(secondSystemPublicKey, /^-----BEGIN PUBLIC KEY-----\n/)
@@ -113,14 +114,14 @@ describe('KeyStorage', async () => {
     assert.equal(firstSystemPublicKey, secondSystemPublicKey)
   })
   it('can get a system private key', async () => {
-    firstSystemPrivateKey = await storage.getPrivateKey(null)
+    firstSystemPrivateKey = await storage.getPrivateKey(hostname)
     assert.ok(firstSystemPrivateKey)
     assert.equal(typeof firstSystemPrivateKey, 'string')
     assert.match(firstSystemPrivateKey, /^-----BEGIN PRIVATE KEY-----\n/)
     assert.match(firstSystemPrivateKey, /-----END PRIVATE KEY-----\n$/)
   })
   it('can get a system private key again', async () => {
-    secondSystemPrivateKey = await storage.getPrivateKey(null)
+    secondSystemPrivateKey = await storage.getPrivateKey(hostname)
     assert.ok(secondSystemPrivateKey)
     assert.equal(typeof secondSystemPrivateKey, 'string')
     assert.match(secondSystemPrivateKey, /^-----BEGIN PRIVATE KEY-----\n/)
