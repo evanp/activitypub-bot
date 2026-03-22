@@ -175,6 +175,20 @@ describe('server routes', async () => {
     })
   })
 
+  describe('GET server public key with bad signature', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(publicKeyPath)
+        .set('Signature', 'NOT A VALID SIGNATURE')
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return AS2', async () => {
+      assert.strictEqual(response.type, 'application/activity+json')
+    })
+  })
+
   describe('GET home page', async () => {
     let response = null
     it('should work without an error', async () => {
