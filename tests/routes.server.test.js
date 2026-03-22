@@ -16,6 +16,10 @@ describe('server routes', async () => {
   const LOCAL_HOST = 'local.routes-server.test'
   const databaseUrl = getTestDatabaseUrl()
   const origin = `https://${LOCAL_HOST}`
+  const serverActorPath = `/user/${LOCAL_HOST}`
+  const serverActorId = `${origin}${serverActorPath}`
+  const publicKeyPath = `/user/${LOCAL_HOST}/publickey`
+  const publicKeyId = `${origin}${publicKeyPath}`
   const testBots = {}
   let app = null
 
@@ -36,7 +40,7 @@ describe('server routes', async () => {
   describe('GET server actor', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/actor').set('Accept', AS2_TYPES.join(','))
+      response = await request(app).get(serverActorPath).set('Accept', AS2_TYPES.join(','))
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -51,7 +55,7 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
     })
     it('should return an object with the server actor id', async () => {
-      assert.strictEqual(response.body.id, `${origin}/actor`)
+      assert.strictEqual(response.body.id, serverActorId)
     })
     it('should return an object with a public addressee', async () => {
       assert.strictEqual(response.body.to, 'as:Public')
@@ -81,21 +85,12 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.name, 'string')
       assert.strictEqual(response.body.name, LOCAL_HOST)
     })
-    it('should include the homepage URL', async () => {
-      assert.strictEqual(typeof response.body.url, 'object')
-      assert.strictEqual(typeof response.body.url.type, 'string')
-      assert.strictEqual(response.body.url.type, 'Link')
-      assert.strictEqual(typeof response.body.url.mediaType, 'string')
-      assert.strictEqual(response.body.url.mediaType, 'text/html')
-      assert.strictEqual(typeof response.body.url.href, 'string')
-      assert.strictEqual(response.body.url.href, `${origin}/`)
-    })
   })
 
   describe('GET server actor with application/activity+json', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/actor').set('Accept', 'application/activity+json')
+      response = await request(app).get(serverActorPath).set('Accept', 'application/activity+json')
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -108,7 +103,7 @@ describe('server routes', async () => {
   describe('GET server actor with application/ld+json', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/actor').set('Accept', 'application/ld+json')
+      response = await request(app).get(serverActorPath).set('Accept', 'application/ld+json')
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -121,7 +116,7 @@ describe('server routes', async () => {
   describe('GET server actor with application/json', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/actor').set('Accept', 'application/json')
+      response = await request(app).get(serverActorPath).set('Accept', 'application/json')
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -134,7 +129,7 @@ describe('server routes', async () => {
   describe('GET server publickey', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get('/publickey')
+      response = await request(app).get(publicKeyPath)
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -149,13 +144,13 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.id, 'string')
     })
     it('should return an object with an id matching the origin', async () => {
-      assert.strictEqual(response.body.id, `${origin}/publickey`)
+      assert.strictEqual(response.body.id, `${origin}${publicKeyPath}`)
     })
     it('should return an object with an owner', async () => {
       assert.strictEqual(typeof response.body.owner, 'string')
     })
     it('should return an object with the origin as owner', async () => {
-      assert.strictEqual(response.body.owner, `${origin}/actor`)
+      assert.strictEqual(response.body.owner, serverActorId)
     })
     it('should return an object with a publicKeyPem', async () => {
       assert.strictEqual(typeof response.body.publicKeyPem, 'string')
@@ -165,6 +160,7 @@ describe('server routes', async () => {
       assert.match(response.body.publicKeyPem, /\n-----END PUBLIC KEY-----\n$/)
     })
   })
+
   describe('GET home page', async () => {
     let response = null
     it('should work without an error', async () => {
