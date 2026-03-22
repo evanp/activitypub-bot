@@ -145,6 +145,8 @@ export default {
 }
 ```
 
+The bot name that matches the domain of the server is reserved for server activities (usually fetching remote objects that require a signature). If you use the domain name in the bot config, it will be silently overwritten. The domain name will also not be provided to the wildcard bot factory, if defined.
+
 ### Pre-installed bot classes
 
 The following bot classes are pre-installed with the server.
