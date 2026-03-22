@@ -11,15 +11,15 @@ describe('UrlFormatter', () => {
   })
   it('can format a user URL', () => {
     const url = formatter.format({ username: 'megabot' })
-    assert.equal(url, 'https://local.urlformatter.test/user/megabot')
+    assert.equal(url, `${origin}/user/megabot`)
   })
   it('can format a public key URL', () => {
     const url = formatter.format({ username: 'megabot', type: 'publickey' })
-    assert.equal(url, 'https://local.urlformatter.test/user/megabot/publickey')
+    assert.equal(url, `${origin}/user/megabot/publickey`)
   })
   it('can format an inbox URL', () => {
     const url = formatter.format({ username: 'megabot', collection: 'inbox' })
-    assert.equal(url, 'https://local.urlformatter.test/user/megabot/inbox')
+    assert.equal(url, `${origin}/user/megabot/inbox`)
   })
   it('can format an inbox URL page', () => {
     const url = formatter.format({
@@ -27,7 +27,7 @@ describe('UrlFormatter', () => {
       collection: 'inbox',
       page: 3
     })
-    assert.equal(url, 'https://local.urlformatter.test/user/megabot/inbox/3')
+    assert.equal(url, `${origin}/user/megabot/inbox/3`)
   })
   it('can format an activity URL', () => {
     const url = formatter.format({
@@ -35,7 +35,7 @@ describe('UrlFormatter', () => {
       type: 'like',
       nanoid: 'LNPUlv9kmvhAdr4eoqkil'
     })
-    assert.equal(url, 'https://local.urlformatter.test/user/megabot/like/LNPUlv9kmvhAdr4eoqkil')
+    assert.equal(url, `${origin}/user/megabot/like/LNPUlv9kmvhAdr4eoqkil`)
   })
   it('can format a note URL', () => {
     const url = formatter.format({
@@ -43,7 +43,7 @@ describe('UrlFormatter', () => {
       type: 'note',
       nanoid: 'LNPUlv9kmvhAdr4eoqkil'
     })
-    assert.equal(url, 'https://local.urlformatter.test/user/megabot/note/LNPUlv9kmvhAdr4eoqkil')
+    assert.equal(url, `${origin}/user/megabot/note/LNPUlv9kmvhAdr4eoqkil`)
   })
   it('can format a note replies URL', () => {
     const url = formatter.format({
@@ -52,7 +52,7 @@ describe('UrlFormatter', () => {
       nanoid: 'LNPUlv9kmvhAdr4eoqkil',
       collection: 'replies'
     })
-    assert.equal(url, 'https://local.urlformatter.test/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies')
+    assert.equal(url, `${origin}/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies`)
   })
   it('can format a note replies page URL', () => {
     const url = formatter.format({
@@ -62,27 +62,27 @@ describe('UrlFormatter', () => {
       collection: 'replies',
       page: 4
     })
-    assert.equal(url, 'https://local.urlformatter.test/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies/4')
+    assert.equal(url, `${origin}/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies/4`)
   })
   it('can format a server URL', () => {
     const url = formatter.format({
       server: true
     })
-    assert.equal(url, 'https://local.urlformatter.test/actor')
+    assert.equal(url, `${origin}/actor`)
   })
   it('can format a server public key URL', () => {
     const url = formatter.format({
       server: true,
       type: 'publickey'
     })
-    assert.equal(url, 'https://local.urlformatter.test/publickey')
+    assert.equal(url, `${origin}/publickey`)
   })
   it('can tell if an URL is local', () => {
-    assert.ok(formatter.isLocal('https://local.urlformatter.test/user/megabot'))
+    assert.ok(formatter.isLocal(`${origin}/user/megabot`))
     assert.ok(!formatter.isLocal('https://social.urlformatter.test/user/megabot'))
   })
   it('can get a username from a user URL', () => {
-    const username = formatter.getUserName('https://local.urlformatter.test/user/megabot')
+    const username = formatter.getUserName(`${origin}/user/megabot`)
     assert.equal(username, 'megabot')
   })
   it('refuses to unformat a remote URL', () => {
@@ -92,27 +92,27 @@ describe('UrlFormatter', () => {
   })
   it('can unformat a user URL', () => {
     const parts = formatter.unformat(
-      'https://local.urlformatter.test/user/megabot'
+      `${origin}/user/megabot`
     )
     assert.equal(parts.username, 'megabot')
   })
   it('can unformat a public key URL', () => {
     const parts = formatter.unformat(
-      'https://local.urlformatter.test/user/megabot/publickey'
+      `${origin}/user/megabot/publickey`
     )
     assert.equal(parts.username, 'megabot')
     assert.equal(parts.type, 'publickey')
   })
   it('can unformat an inbox URL', () => {
     const parts = formatter.unformat(
-      'https://local.urlformatter.test/user/megabot/inbox'
+      `${origin}/user/megabot/inbox`
     )
     assert.equal(parts.username, 'megabot')
     assert.equal(parts.collection, 'inbox')
   })
   it('can unformat an inbox page URL', () => {
     const parts = formatter.unformat(
-      'https://local.urlformatter.test/user/megabot/inbox/3'
+      `${origin}/user/megabot/inbox/3`
     )
     assert.equal(parts.username, 'megabot')
     assert.equal(parts.collection, 'inbox')
@@ -120,7 +120,7 @@ describe('UrlFormatter', () => {
   })
   it('can unformat an activity URL', () => {
     const parts = formatter.unformat(
-      'https://local.urlformatter.test/user/megabot/like/LNPUlv9kmvhAdr4eoqkil'
+      `${origin}/user/megabot/like/LNPUlv9kmvhAdr4eoqkil`
     )
     assert.equal(parts.username, 'megabot')
     assert.equal(parts.type, 'like')
@@ -128,7 +128,7 @@ describe('UrlFormatter', () => {
   })
   it('can unformat a note URL', () => {
     const parts = formatter.unformat(
-      'https://local.urlformatter.test/user/megabot/note/LNPUlv9kmvhAdr4eoqkil'
+      `${origin}/user/megabot/note/LNPUlv9kmvhAdr4eoqkil`
     )
     assert.equal(parts.username, 'megabot')
     assert.equal(parts.type, 'note')
@@ -136,7 +136,7 @@ describe('UrlFormatter', () => {
   })
   it('can unformat a note replies URL', () => {
     const parts = formatter.unformat(
-      'https://local.urlformatter.test/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies'
+      `${origin}/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies`
     )
     assert.equal(parts.username, 'megabot')
     assert.equal(parts.type, 'note')
@@ -145,7 +145,7 @@ describe('UrlFormatter', () => {
   })
   it('can unformat a note replies page URL', () => {
     const parts = formatter.unformat(
-      'https://local.urlformatter.test/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies/4'
+      `${origin}/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies/4`
     )
     assert.equal(parts.username, 'megabot')
     assert.equal(parts.type, 'note')
@@ -154,12 +154,12 @@ describe('UrlFormatter', () => {
     assert.equal(parts.page, 4)
   })
   it('can unformat a server URL', () => {
-    const parts = formatter.unformat('https://local.urlformatter.test/actor')
+    const parts = formatter.unformat(`${origin}/actor`)
     assert.ok(parts.server)
     assert.ok(!parts.type)
   })
   it('can unformat a server public key URL', () => {
-    const parts = formatter.unformat('https://local.urlformatter.test/publickey')
+    const parts = formatter.unformat(`${origin}/publickey`)
     assert.ok(parts.server)
     assert.equal(parts.type, 'publickey')
   })
