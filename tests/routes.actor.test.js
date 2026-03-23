@@ -4,16 +4,29 @@ import { makeApp } from '../lib/app.js'
 import request from 'supertest'
 import OKBot from '../lib/bots/ok.js'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+import DoNothingBot from '../lib/bots/donothing.js'
 
 describe('actor routes', async () => {
   const LOCAL_HOST = 'local.routes-actor.test'
   const databaseUrl = getTestDatabaseUrl()
   const origin = `https://${LOCAL_HOST}`
   const BOT_USERNAME = 'routesactortestok'
+  const BOT_IMAGE = 'https://site.example/images/ok.jpg'
+  const BOT_USERNAME_2 = 'routesactortestok2'
+  const BOT_ICON_2 = 'https://site.example/images/ok.jpg'
+  const BOT_USERNAME_3 = 'routesactortestok3'
   const DNE_USERNAME = 'routesactortestdne'
-  const TEST_USERNAMES = [BOT_USERNAME]
+  const TEST_USERNAMES = [BOT_USERNAME, BOT_USERNAME_2, BOT_USERNAME_3]
   const testBots = {
-    [BOT_USERNAME]: new OKBot(BOT_USERNAME)
+    [BOT_USERNAME]: new OKBot(BOT_USERNAME, {
+      icon: new URL('./fixtures/icon.png', import.meta.url),
+      image: new URL(BOT_IMAGE)
+    }),
+    [BOT_USERNAME_2]: new DoNothingBot(BOT_USERNAME_2, {
+      icon: new URL(BOT_ICON_2),
+      image: new URL('./fixtures/image.jpg', import.meta.url)
+    }),
+    [BOT_USERNAME_3]: new DoNothingBot(BOT_USERNAME_3)
   }
   let app = null
 
@@ -247,6 +260,78 @@ describe('actor routes', async () => {
     })
     it('should return an object with a to matching the request', async () => {
       assert.strictEqual(response.body.to, 'as:Public')
+    })
+  })
+
+  describe('GET /user/{botid}/icon with file', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${BOT_USERNAME}/icon`)
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return image/png', async () => {
+      assert.strictEqual(response.type, 'image/png')
+    })
+  })
+
+  describe('GET /user/{botid}/icon with URL', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${BOT_USERNAME_2}/icon`)
+    })
+    it('should return 307 Temporary Redirect', async () => {
+      assert.strictEqual(response.status, 307)
+    })
+    it('should return the right Location header', async () => {
+      assert.strictEqual(response.headers.location, BOT_IMAGE)
+    })
+  })
+
+  describe('GET /user/{botid}/icon with none', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${BOT_USERNAME_3}/icon`)
+    })
+    it('should return 404 Not Found', async () => {
+      assert.strictEqual(response.status, 404)
+    })
+  })
+
+  describe('GET /user/{botid}/image with file', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${BOT_USERNAME_2}/image`)
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return image/jpeg', async () => {
+      assert.strictEqual(response.type, 'image/jpeg')
+    })
+  })
+
+  describe('GET /user/{botid}/image with URL', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${BOT_USERNAME}/image`)
+    })
+    it('should return 307 Temporary Redirect', async () => {
+      assert.strictEqual(response.status, 307)
+    })
+    it('should return the right Location header', async () => {
+      assert.strictEqual(response.headers.location, BOT_IMAGE)
+    })
+  })
+
+  describe('GET /user/{botid}/image with none', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${BOT_USERNAME_3}/image`)
+    })
+    it('should return 404 Not Found', async () => {
+      assert.strictEqual(response.status, 404)
     })
   })
 })
