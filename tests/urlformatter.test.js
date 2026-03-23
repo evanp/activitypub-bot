@@ -189,12 +189,23 @@ describe('UrlFormatter', () => {
   })
   it('can unformat an icon url', () => {
     const parts = formatter.unformat(`${origin}/user/megabot/icon`)
-    assert.ok(parts.username)
+    assert.strictEqual(parts.username, 'megabot')
     assert.strictEqual(parts.type, 'icon')
   })
   it('can unformat an image url', () => {
     const parts = formatter.unformat(`${origin}/user/megabot/image`)
-    assert.ok(parts.username)
+    assert.strictEqual(parts.username, 'megabot')
     assert.strictEqual(parts.type, 'image')
+  })
+  it('can format a profile url', () => {
+    assert.strictEqual(
+      formatter.format({ username: 'megabot', type: 'profile' }),
+      `${origin}/profile/megabot`
+    )
+  })
+  it('can unformat a profile url', () => {
+    const parts = formatter.unformat(`${origin}/profile/megabot`)
+    assert.strictEqual(parts.username, 'megabot')
+    assert.strictEqual(parts.type, 'profile')
   })
 })
