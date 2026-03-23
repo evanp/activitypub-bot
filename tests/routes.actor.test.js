@@ -334,4 +334,17 @@ describe('actor routes', async () => {
       assert.strictEqual(response.status, 404)
     })
   })
+
+  describe('GET /profile/{botid}', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(`/profile/${BOT_USERNAME}`)
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should return HTML', async () => {
+      assert.strictEqual(response.type, 'text/html')
+    })
+  })
 })

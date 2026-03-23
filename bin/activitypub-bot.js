@@ -32,6 +32,7 @@ Options:
   --delivery <number>        Number of background delivery workers
   --distribution <number>    Number of background distribution workers
   --index-file <path>        HTML page to show at root path
+  --profile-file <path>      HTML page to show for bot profiles
   -h, --help                 Show this help
 `)
   process.exit(0)
@@ -47,6 +48,7 @@ const parseNumber = (value) => {
 const baseDir = dirname(fileURLToPath(import.meta.url))
 const DEFAULT_BOTS_CONFIG_FILE = resolve(baseDir, '..', 'bots', 'index.js')
 const DEFAULT_INDEX_FILE = resolve(baseDir, '..', 'web', 'index.html')
+const DEFAULT_PROFILE_FILE = resolve(baseDir, '..', 'web', 'profile.html')
 
 const DATABASE_URL = normalize(values['database-url']) || process.env.DATABASE_URL || 'sqlite::memory:'
 const ORIGIN = normalize(values.origin) || process.env.ORIGIN || 'https://activitypubbot.test'
@@ -60,6 +62,7 @@ const LOG_LEVEL =
 const DELIVERY = parseNumber(values.delivery) || parseNumber(process.env.DELIVERY) || 2
 const DISTRIBUTION = parseNumber(values.distribution) || parseNumber(process.env.DISTRIBUTION) || 8
 const INDEX_FILE = values['index-file'] || process.env.INDEX_FILE || DEFAULT_INDEX_FILE
+const PROFILE_FILE = values['profile-file'] || process.env.PROFILE_FILE || DEFAULT_PROFILE_FILE
 
 const bots = (await import(BOTS_CONFIG_FILE)).default
 
@@ -70,7 +73,8 @@ const app = await makeApp({
   logLevel: LOG_LEVEL,
   deliveryWorkerCount: DELIVERY,
   distributionWorkerCount: DISTRIBUTION,
-  indexFileName: INDEX_FILE
+  indexFileName: INDEX_FILE,
+  profileFileName: PROFILE_FILE
 })
 
 const server = app.listen(parseInt(PORT), () => {
