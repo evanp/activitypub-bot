@@ -154,6 +154,15 @@ describe('actor routes', async () => {
       assert.strictEqual(typeof response.body.alsoKnownAs, 'string')
       assert.strictEqual(response.body.alsoKnownAs, `acct:${BOT_USERNAME}@${LOCAL_HOST}`)
     })
+    it('should include url', async () => {
+      assert.strictEqual(typeof response.body.url, 'object')
+      assert.strictEqual(typeof response.body.url.href, 'string')
+      assert.strictEqual(response.body.url.href, `${origin}/profile/${BOT_USERNAME}`)
+      assert.strictEqual(typeof response.body.url.type, 'string')
+      assert.strictEqual(response.body.url.type, 'Link')
+      assert.strictEqual(typeof response.body.url.mediaType, 'string')
+      assert.strictEqual(response.body.url.mediaType, 'text/html')
+    })
   })
 
   describe('GET non-existent user', async () => {
