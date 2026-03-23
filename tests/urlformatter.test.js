@@ -183,8 +183,18 @@ describe('UrlFormatter', () => {
   })
   it('can format an image url', () => {
     assert.strictEqual(
-      formatter.format({ username: 'megabot', type: 'icon' }),
-      `${origin}/user/megabot/icon`
+      formatter.format({ username: 'megabot', type: 'image' }),
+      `${origin}/user/megabot/image`
     )
+  })
+  it('can unformat an icon url', () => {
+    const parts = formatter.unformat(`${origin}/user/megabot/icon`)
+    assert.ok(parts.username)
+    assert.strictEqual(parts.type, 'icon')
+  })
+  it('can unformat an image url', () => {
+    const parts = formatter.unformat(`${origin}/user/megabot/image`)
+    assert.ok(parts.username)
+    assert.strictEqual(parts.type, 'image')
   })
 })
