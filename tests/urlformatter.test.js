@@ -175,4 +175,16 @@ describe('UrlFormatter', () => {
   it('can return its hostname', () => {
     assert.strictEqual(formatter.hostname, hostname)
   })
+  it('can format an icon url', () => {
+    assert.strictEqual(
+      formatter.format({ username: 'megabot', type: 'icon' }),
+      `${origin}/user/megabot/icon`
+    )
+  })
+  it('can format an image url', () => {
+    assert.strictEqual(
+      formatter.format({ username: 'megabot', type: 'icon' }),
+      `${origin}/user/megabot/icon`
+    )
+  })
 })

@@ -13,6 +13,8 @@ describe('DoNothing bot', async () => {
   const BOT_USERNAME_2 = 'botdonothingtest2'
   const BOT_USERNAME_2_FULLNAME = 'A custom test bot full name'
   const BOT_USERNAME_2_DESCRIPTION = 'A custom test bot description'
+  const BOT_USERNAME_2_IMAGE_URL =
+    'https://site.example/images/123.jpg'
   const TEST_USERNAMES = [BOT_USERNAME_1, BOT_USERNAME_2]
   const testBots = {
     [BOT_USERNAME_1]: new DoNothingBot(BOT_USERNAME_1),
@@ -20,7 +22,9 @@ describe('DoNothing bot', async () => {
       BOT_USERNAME_2,
       {
         fullname: BOT_USERNAME_2_FULLNAME,
-        description: BOT_USERNAME_2_DESCRIPTION
+        description: BOT_USERNAME_2_DESCRIPTION,
+        icon: new URL('../web/icon.png', import.meta.url),
+        image: new URL(BOT_USERNAME_2_IMAGE_URL)
       })
   }
   const host = LOCAL_HOST
@@ -31,7 +35,7 @@ describe('DoNothing bot', async () => {
   before(async () => {
     nockSetup(REMOTE_HOST)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+      databaseUrl, origin, bots: testBots, logLevel: 'debug'
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
@@ -90,6 +94,22 @@ describe('DoNothing bot', async () => {
       assert.strictEqual(typeof response.body, 'object')
       assert.strictEqual(typeof response.body.summary, 'string')
       assert.strictEqual(response.body.summary, BOT_USERNAME_2_DESCRIPTION)
+    })
+    it('should have a custom avatar', async () => {
+      assert.strictEqual(typeof response.body, 'object')
+      assert.strictEqual(typeof response.body.icon, 'object')
+      assert.strictEqual(typeof response.body.icon.href, 'string')
+      assert.strictEqual(response.body.icon.href, `${origin}/user/${BOT_USERNAME_2}/icon`)
+      assert.strictEqual(typeof response.body.icon.type, 'string')
+      assert.strictEqual(response.body.icon.type, 'Link')
+    })
+    it('should have a custom image', async () => {
+      assert.strictEqual(typeof response.body, 'object')
+      assert.strictEqual(typeof response.body.image, 'object')
+      assert.strictEqual(typeof response.body.image.href, 'string')
+      assert.strictEqual(response.body.image.href, BOT_USERNAME_2_IMAGE_URL)
+      assert.strictEqual(typeof response.body.image.type, 'string')
+      assert.strictEqual(response.body.image.type, 'Link')
     })
   })
 })
