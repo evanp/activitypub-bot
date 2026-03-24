@@ -5,11 +5,58 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>activitypub.bot</title>
+  <script type="module" src="https://unpkg.com/@socialwebfoundation/ap-components"></script>
 </head>
 
 <body>
   <h1>activitypub.bot</h1>
-  <p>This is an activitypub.bot bot page.</p>
-</body>
+  <main>
+    <section id="account"></section>
+  </main>
 
+
+    <script type="module">
+      import { ActivityPubElement } from "https://unpkg.com/@socialwebfoundation/ap-components";
+
+      const cache = new Map();
+
+      function wrap(json) {
+        return {
+          ok: true,
+          async json() {
+            return json
+          }
+        }
+      }
+
+      function addObjectIdLink (objectId) {
+        const link = document.createElement('link')
+        link.rel = 'alternate'
+        link.type = 'application/activity+json'
+        link.href = objectId
+        document.head.appendChild(link)
+      }
+
+      window.onload = () => {
+        const page = document.location
+        ActivityPubElement.fetchFunction = async (url, options) => {
+          const u = new URL(url)
+          if (u.origin == page.origin) {
+            return await fetch(u)
+          } else {
+            return wrap({})
+          }
+        }
+
+        const username = page.pathname.split('/')[2]
+        const objectId = `${page.origin}/user/${username}`
+        addObjectIdLink(objectId)
+        const account = document.getElementById("account");
+        customElements.whenDefined('ap-actor-page').then(() => {
+          account.innerHTML = `<ap-actor-page object-id="${objectId}"></ap-actor-page>`;
+        });
+      };
+    </script>
+  </script>
+</body>
 </html>
