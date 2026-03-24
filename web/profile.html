@@ -12,7 +12,7 @@
 </head>
 
 <body>
-  <h1>activitypub.bot</h1>
+  <p id="breadcrumb"></p>
   <main>
     <section id="account"></section>
   </main>
@@ -44,11 +44,19 @@
       ActivityPubElement.fetchFunction = async (url, options) => {
         const u = new URL(url)
         if (u.origin == page.origin) {
-          return await fetch(u)
+          return await fetch(u, options)
         } else {
-          return wrap({})
+          return await fetch('/shared/proxy', {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+              },
+              body: new URLSearchParams({ id: url }),
+            });
         }
       }
+
+      document.getElementById('breadcrumb').innerHTML = `&larr; <a href="${page.origin}/">${page.host}</a>`
 
       const username = page.pathname.split('/')[2]
       const objectId = `${page.origin}/user/${username}`
