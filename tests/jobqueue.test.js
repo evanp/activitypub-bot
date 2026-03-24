@@ -8,7 +8,7 @@ import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 const JOB_RUNNER_ID = 'jobqueue.test.js'
 
 describe('JobQueue', async () => {
-  const testQueues = [...Array(8).keys()].map(i => `jobqueue.test.js:${i}`)
+  const testQueues = [...Array(9).keys()].map(i => `jobqueue.test.js:${i}`)
   let connection = null
   let logger = null
   let JobQueue = null
@@ -128,6 +128,14 @@ describe('JobQueue', async () => {
       await queue.dequeue(queueId, JOB_RUNNER_ID)
     } catch (err) {
     }
+    assert.ok(true)
+  })
+
+  it('can fail a job', async () => {
+    const queueId = 'jobqueue.test.js:8'
+    await queue.enqueue(queueId, { addends: [2, 2] })
+    const { jobId } = await queue.dequeue(queueId, JOB_RUNNER_ID)
+    await queue.fail(jobId, JOB_RUNNER_ID)
     assert.ok(true)
   })
 })
