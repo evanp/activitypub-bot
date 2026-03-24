@@ -178,6 +178,31 @@ describe('webfinger routes', async () => {
       assert.strictEqual(response.body.links[1].href, `${origin}/profile/${LOCAL_HOST}`)
     })
   })
+  describe('Webfinger discovery for HTTPS profile page', async () => {
+    let response = null
+    const profileUrl = `${origin}/profile/${BOT_USERNAME}`
+
+    it('should work without an error', async () => {
+      response = await request(app).get(
+        `/.well-known/webfinger?resource=${encodeURIComponent(profileUrl)}`
+      )
+    })
+    it('should return 200 OK', async () => {
+      assert.strictEqual(response.status, 200, response.body)
+    })
+    it('should return JRD', async () => {
+      assert.strictEqual(response.type, 'application/jrd+json')
+    })
+    it('should return the profile URL as subject', async () => {
+      assert.strictEqual(response.body.subject, profileUrl)
+    })
+    it('should return a single alternate link to the actor', async () => {
+      assert.strictEqual(response.body.links.length, 1)
+      assert.strictEqual(response.body.links[0].rel, 'alternate')
+      assert.strictEqual(response.body.links[0].type, 'application/activity+json')
+      assert.strictEqual(response.body.links[0].href, `${origin}/user/${BOT_USERNAME}`)
+    })
+  })
   describe('Webfinger discovery for HTTPS server actor', async () => {
     let response = null
     const acct = `acct:${LOCAL_HOST}@${LOCAL_HOST}`
