@@ -90,7 +90,7 @@ describe('ProvinceBotFactory', async () => {
       assert.strictEqual(Array.isArray(response.body.links), true)
     })
     it('should return an object with a links array containing the actor id', async () => {
-      assert.strictEqual(response.body.links.length, 1)
+      assert.strictEqual(response.body.links.length, 2)
       assert.strictEqual(typeof response.body.links[0].rel, 'string')
       assert.strictEqual(response.body.links[0].rel, 'self')
       assert.strictEqual(typeof response.body.links[0].type, 'string')
