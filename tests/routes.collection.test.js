@@ -1,11 +1,14 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
-import { makeApp } from '../lib/app.js'
+
 import request from 'supertest'
+import { nanoid } from 'nanoid'
+
+import { makeApp } from '../lib/app.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import OKBot from '../lib/bots/ok.js'
 import as2 from '../lib/activitystreams.js'
-import { nanoid } from 'nanoid'
+
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/

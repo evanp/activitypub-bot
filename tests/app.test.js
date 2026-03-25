@@ -1,7 +1,9 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+
 import { makeApp } from '../lib/app.js'
 import DoNothingBot from '../lib/bots/donothing.js'
+
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('app', async () => {

@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test'
-import { ObjectCache } from '../lib/objectcache.js'
 import assert from 'node:assert/strict'
+
+import { ObjectCache } from '../lib/objectcache.js'
 import as2 from '../lib/activitystreams.js'
 
 describe('ObjectCache', async () => {

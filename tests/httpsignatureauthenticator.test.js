@@ -1,17 +1,20 @@
 import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
-import { KeyStorage } from '../lib/keystorage.js'
+
 import { nockSetup, nockSignature, nockKeyRotate, nockFormat } from '@evanp/activitypub-nock'
+import Logger from 'pino'
+
+import { KeyStorage } from '../lib/keystorage.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { HTTPSignatureAuthenticator } from '../lib/httpsignatureauthenticator.js'
-import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
 import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
-import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 describe('HTTPSignatureAuthenticator', async () => {
   const LOCAL_HOST = 'local.httpsignatureauthenticator.test'

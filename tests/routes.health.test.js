@@ -1,7 +1,10 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
-import { makeApp } from '../lib/app.js'
+
 import request from 'supertest'
+
+import { makeApp } from '../lib/app.js'
+
 import { getTestDatabaseUrl } from './utils/db.js'
 
 describe('health check routes', async () => {

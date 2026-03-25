@@ -1,9 +1,12 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+
 import request from 'supertest'
+import { nockSetup } from '@evanp/activitypub-nock'
+
 import { makeApp } from '../lib/app.js'
 import DoNothingBot from '../lib/bots/donothing.js'
-import { nockSetup } from '@evanp/activitypub-nock'
+
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 describe('DoNothing bot', async () => {

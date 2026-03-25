@@ -1,8 +1,10 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+
 import { ActorStorage } from '../lib/actorstorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
+
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'

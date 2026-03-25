@@ -1,11 +1,14 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+
 import request from 'supertest'
-import { makeApp } from '../lib/app.js'
 import { nockSetup, nockFormat, nockSignature, postInbox } from '@evanp/activitypub-nock'
-import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+
+import { makeApp } from '../lib/app.js'
 import as2 from '../lib/activitystreams.js'
+
 import { makeDigest } from './utils/digest.js'
+import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 const AS = 'https://www.w3.org/ns/activitystreams#'
 

@@ -20,7 +20,6 @@ import Logger from 'pino'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
-import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
@@ -35,6 +34,8 @@ import { Authorizer } from '../lib/authorizer.js'
 import { ActivityHandler } from '../lib/activityhandler.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const LOCAL_HOST = 'local.activitydistributor.test'
 const ORIGIN = `https://${LOCAL_HOST}`

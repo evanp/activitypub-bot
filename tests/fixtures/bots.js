@@ -1,8 +1,9 @@
 import DoNothingBot from '../../lib/bots/donothing.js'
 import OKBot from '../../lib/bots/ok.js'
+import RelayServerBot from '../../lib/bots/relayserver.js'
+
 import EventLoggingBot from './eventloggingbot.js'
 import ProvinceBotFactory from './provincebotfactory.js'
-import RelayServerBot from '../../lib/bots/relayserver.js'
 
 export default {
   ok: new OKBot('ok'),

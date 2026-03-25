@@ -1,6 +1,8 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+
 import Logger from 'pino'
+
 import { Digester } from '../lib/digester.js'
 
 describe('Digester', () => {

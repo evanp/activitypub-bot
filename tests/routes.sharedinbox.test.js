@@ -1,9 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
-import as2 from '../lib/activitystreams.js'
+
 import request from 'supertest'
-import { makeApp } from '../lib/app.js'
-import DoNothingBot from '../lib/bots/donothing.js'
 import {
   nockSetup,
   nockSignature,
@@ -13,6 +11,11 @@ import {
   addFollowing,
   addToCollection
 } from '@evanp/activitypub-nock'
+
+import as2 from '../lib/activitystreams.js'
+import { makeApp } from '../lib/app.js'
+import DoNothingBot from '../lib/bots/donothing.js'
+
 import { makeDigest } from './utils/digest.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'

@@ -1,7 +1,9 @@
 import { describe, it, before, after } from 'node:test'
-import as2 from '../lib/activitystreams.js'
 import assert from 'node:assert'
+
 import { ObjectStorage, NoSuchObjectError } from '../lib/objectstorage.js'
+import as2 from '../lib/activitystreams.js'
+
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const LOCAL_HOST = 'local.objectstorage.test'

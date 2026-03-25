@@ -1,4 +1,5 @@
 import { Sequelize } from 'sequelize'
+
 import { runMigrations } from '../../lib/migrations/index.js'
 
 const SQLITE_MEMORY_URL = 'sqlite::memory:'

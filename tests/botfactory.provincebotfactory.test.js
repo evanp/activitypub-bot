@@ -1,14 +1,14 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
-import request from 'supertest'
-import as2 from '../lib/activitystreams.js'
-import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
+import request from 'supertest'
+import { nockSetup, nockSignature, nockFormat } from '@evanp/activitypub-nock'
+
+import as2 from '../lib/activitystreams.js'
 import { makeApp } from '../lib/app.js'
 
-import { nockSetup, nockSignature, nockFormat } from '@evanp/activitypub-nock'
 import { makeDigest } from './utils/digest.js'
-
+import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 import ProvinceBotFactory from './fixtures/provincebotfactory.js'
 
 async function asyncSome (array, asyncPredicate) {

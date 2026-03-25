@@ -1,6 +1,5 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
-import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 import Logger from 'pino'
 
@@ -19,6 +18,8 @@ import { ObjectCache } from '../lib/objectcache.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 describe('DeliveryWorker', async () => {
   const localHost = 'local.deliveryworker.test'

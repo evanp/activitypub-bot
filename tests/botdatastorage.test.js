@@ -1,6 +1,8 @@
 import { describe, before, after, it } from 'node:test'
-import { BotDataStorage, NoSuchValueError } from '../lib/botdatastorage.js'
 import assert from 'node:assert'
+
+import { BotDataStorage, NoSuchValueError } from '../lib/botdatastorage.js'
+
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const BOT1 = 'botdatastoragetest1'

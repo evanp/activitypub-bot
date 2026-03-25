@@ -1,7 +1,10 @@
 import { describe, before, after, it } from 'node:test'
-import { KeyStorage } from '../lib/keystorage.js'
 import assert from 'node:assert'
+
 import Logger from 'pino'
+
+import { KeyStorage } from '../lib/keystorage.js'
+
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const BOT1 = 'keystoragetest1'

@@ -1,6 +1,5 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
-import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 import Logger from 'pino'
 
@@ -12,6 +11,8 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 describe('ActivityDeliverer', async () => {
   const localHost = 'local.activitydeliverer.test'

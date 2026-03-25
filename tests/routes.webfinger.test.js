@@ -1,8 +1,11 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
-import { makeApp } from '../lib/app.js'
+
 import request from 'supertest'
+
+import { makeApp } from '../lib/app.js'
 import OKBot from '../lib/bots/ok.js'
+
 import { getTestDatabaseUrl } from './utils/db.js'
 
 describe('webfinger routes', async () => {

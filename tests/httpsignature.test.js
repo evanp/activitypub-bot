@@ -1,9 +1,12 @@
 import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
-import { nockSetup, nockSignature, nockKeyRotate, getPublicKey, getPrivateKey, nockFormat } from '@evanp/activitypub-nock'
-import { HTTPSignature } from '../lib/httpsignature.js'
+
 import Logger from 'pino'
+import { nockSetup, nockSignature, nockKeyRotate, getPublicKey, getPrivateKey, nockFormat } from '@evanp/activitypub-nock'
+
+import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
+
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 function escapeRegex (str) {

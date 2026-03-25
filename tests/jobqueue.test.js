@@ -5,6 +5,7 @@ import Logger from 'pino'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
+
 const JOB_RUNNER_ID = 'jobqueue.test.js'
 
 describe('JobQueue', async () => {

@@ -17,8 +17,9 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
-import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 function escapeRegex (str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

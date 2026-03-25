@@ -1,10 +1,13 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+
 import request from 'supertest'
 import { nockSetup, nockSignature, nockFormat, makeActor, resetInbox, postInbox } from '@evanp/activitypub-nock'
+
 import { makeApp } from '../lib/app.js'
 import RelayServerBot from '../lib/bots/relayserver.js'
 import as2 from '../lib/activitystreams.js'
+
 import { makeDigest } from './utils/digest.js'
 import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 

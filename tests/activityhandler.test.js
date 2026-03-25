@@ -1,5 +1,14 @@
 import { describe, it, before, after, beforeEach } from 'node:test'
 import assert from 'node:assert'
+
+import Logger from 'pino'
+import {
+  nockSetup,
+  postInbox,
+  makeActor as makeNockActor,
+  nockFormat as rawNockFormat
+} from '@evanp/activitypub-nock'
+
 import { ActivityHandler } from '../lib/activityhandler.js'
 import { BotDataStorage } from '../lib/botdatastorage.js'
 import { ObjectStorage } from '../lib/objectstorage.js'
@@ -11,24 +20,18 @@ import { ActorStorage } from '../lib/actorstorage.js'
 import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
 import as2 from '../lib/activitystreams.js'
-import Logger from 'pino'
-import {
-  nockSetup,
-  postInbox,
-  makeActor as makeNockActor,
-  nockFormat as rawNockFormat
-} from '@evanp/activitypub-nock'
 import { Digester } from '../lib/digester.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { BotContext } from '../lib/botcontext.js'
 import { Transformer } from '../lib/microsyntax.js'
-import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import OKBot from '../lib/bots/ok.js'
-import EventLoggingBot from './fixtures/eventloggingbot.js'
 import { DistributionWorker } from '../lib/distributionworker.js'
 import { DeliveryWorker } from '../lib/deliveryworker.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
+import EventLoggingBot from './fixtures/eventloggingbot.js'
 
 const NS = 'https://www.w3.org/ns/activitystreams#'
 const ACCEPT = `${NS}Accept`

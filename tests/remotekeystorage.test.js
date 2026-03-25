@@ -1,15 +1,18 @@
 import { describe, before, after, it } from 'node:test'
-import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
 import assert from 'node:assert'
+
+import Logger from 'pino'
+import { nockSetup, nockFormat, getPublicKey, nockKeyRotate } from '@evanp/activitypub-nock'
+
+import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
-import { nockSetup, nockFormat, getPublicKey, nockKeyRotate } from '@evanp/activitypub-nock'
 import { HTTPSignature } from '../lib/httpsignature.js'
-import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
-import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const LOCAL_HOST = 'local.remotekeystorage.test'
 const REMOTE_HOST = 'remote.remotekeystorage.test'

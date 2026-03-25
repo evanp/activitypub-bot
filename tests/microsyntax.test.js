@@ -1,15 +1,18 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
+
+import Logger from 'pino'
+import { nockSetup } from '@evanp/activitypub-nock'
+
 import { Transformer } from '../lib/microsyntax.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
-import { nockSetup } from '@evanp/activitypub-nock'
 import { HTTPSignature } from '../lib/httpsignature.js'
-import Logger from 'pino'
 import { Digester } from '../lib/digester.js'
-import { createMigratedTestConnection } from './utils/db.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+
+import { createMigratedTestConnection } from './utils/db.js'
 
 const AS2 = 'https://www.w3.org/ns/activitystreams#'
 
