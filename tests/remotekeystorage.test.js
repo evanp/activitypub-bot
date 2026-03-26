@@ -22,6 +22,8 @@ const REMOTE_USER_2 = 'remotekeystoragetest2'
 const REMOTE_USER_3 = 'remotekeystoragetest3'
 const MISMATCH_HOST = 'mismatch.remotekeystorage.test'
 const MISMATCH_USER = 'remotekeystoragemismatch1'
+const NOSEC_HOST = 'nosec.remotekeystorage.test'
+const NOSEC_USER = 'remotekeystoragenosec1'
 
 describe('RemoteKeyStorage', async () => {
   const origin = `https://${LOCAL_HOST}`
@@ -38,7 +40,7 @@ describe('RemoteKeyStorage', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, MISMATCH_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST]
     })
     const keyStorage = new KeyStorage(connection, logger)
     const formatter = new UrlFormatter(origin)
@@ -52,7 +54,7 @@ describe('RemoteKeyStorage', async () => {
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, MISMATCH_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST]
     })
     await connection.close()
     connection = null
@@ -136,5 +138,40 @@ describe('RemoteKeyStorage', async () => {
 
     const result = await remoteKeyStorage.getPublicKey(keyId)
     assert.equal(result, null)
+  })
+
+  it('can get a remote public key when actor omits security context', async () => {
+    const domain = NOSEC_HOST
+    const username = NOSEC_USER
+    const keyId = `https://${domain}/user/${username}/publickey`
+    const actorId = `https://${domain}/user/${username}`
+    const publicKeyPem = await getPublicKey(REMOTE_USER_1, REMOTE_HOST)
+
+    nock(`https://${domain}`)
+      .get(`/user/${username}/publickey`)
+      .reply(200, JSON.stringify({
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        id: keyId,
+        type: 'CryptographicKey',
+        owner: actorId,
+        publicKeyPem
+      }), { 'Content-Type': 'application/activity+json' })
+      .get(`/user/${username}`)
+      .reply(200, JSON.stringify({
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        id: actorId,
+        type: 'Person',
+        publicKey: {
+          id: keyId,
+          type: 'CryptographicKey',
+          owner: actorId,
+          publicKeyPem
+        }
+      }), { 'Content-Type': 'application/activity+json' })
+
+    const remote = await remoteKeyStorage.getPublicKey(keyId)
+    assert.ok(remote)
+    assert.equal(remote.publicKeyPem, publicKeyPem)
+    assert.equal(remote.owner, actorId)
   })
 })
