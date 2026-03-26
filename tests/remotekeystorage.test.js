@@ -2,6 +2,7 @@ import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
 
 import Logger from 'pino'
+import nock from 'nock'
 import { nockSetup, nockFormat, getPublicKey, nockKeyRotate } from '@evanp/activitypub-nock'
 
 import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
@@ -19,6 +20,8 @@ const REMOTE_HOST = 'remote.remotekeystorage.test'
 const REMOTE_USER_1 = 'remotekeystoragetest1'
 const REMOTE_USER_2 = 'remotekeystoragetest2'
 const REMOTE_USER_3 = 'remotekeystoragetest3'
+const MISMATCH_HOST = 'mismatch.remotekeystorage.test'
+const MISMATCH_USER = 'remotekeystoragemismatch1'
 
 describe('RemoteKeyStorage', async () => {
   const origin = `https://${LOCAL_HOST}`
@@ -35,7 +38,7 @@ describe('RemoteKeyStorage', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST]
     })
     const keyStorage = new KeyStorage(connection, logger)
     const formatter = new UrlFormatter(origin)
@@ -49,7 +52,7 @@ describe('RemoteKeyStorage', async () => {
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST]
     })
     await connection.close()
     connection = null
@@ -93,5 +96,45 @@ describe('RemoteKeyStorage', async () => {
     const publicKey2 = await getPublicKey(username, domain)
     const remote2 = await remoteKeyStorage.getPublicKey(id, false)
     assert.equal(remote2.publicKeyPem, publicKey2)
+  })
+
+  it('returns null when owner actor publicKey does not match key id', async () => {
+    const domain = MISMATCH_HOST
+    const username = MISMATCH_USER
+    const keyId = `https://${domain}/user/${username}/publickey`
+    const actorId = `https://${domain}/user/${username}`
+    const otherKeyId = `https://${domain}/user/${username}/otherkey`
+    const publicKeyPem = await getPublicKey(REMOTE_USER_1, REMOTE_HOST)
+
+    nock(`https://${domain}`)
+      .get(`/user/${username}/publickey`)
+      .reply(200, JSON.stringify({
+        '@context': [
+          'https://www.w3.org/ns/activitystreams',
+          'https://w3id.org/security/v1'
+        ],
+        id: keyId,
+        type: 'CryptographicKey',
+        owner: actorId,
+        publicKeyPem
+      }), { 'Content-Type': 'application/activity+json' })
+      .get(`/user/${username}`)
+      .reply(200, JSON.stringify({
+        '@context': [
+          'https://www.w3.org/ns/activitystreams',
+          'https://w3id.org/security/v1'
+        ],
+        id: actorId,
+        type: 'Person',
+        publicKey: {
+          id: otherKeyId,
+          type: 'CryptographicKey',
+          owner: actorId,
+          publicKeyPem
+        }
+      }), { 'Content-Type': 'application/activity+json' })
+
+    const result = await remoteKeyStorage.getPublicKey(keyId)
+    assert.equal(result, null)
   })
 })
