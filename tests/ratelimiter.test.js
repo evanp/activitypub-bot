@@ -11,6 +11,7 @@ describe('RateLimiter', async () => {
   const LOCAL_HOST = 'local.ratelimiter.test'
   const REMOTE_HOST = 'remote.ratelimiter.test'
   const THIRD_HOST = 'third.ratelimiter.test'
+  const MASTODON_HOST = 'mastodon.ratelimiter.test'
 
   let logger
   let connection
@@ -24,14 +25,14 @@ describe('RateLimiter', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, THIRD_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST]
     })
   })
 
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, THIRD_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST]
     })
     await connection.close()
   })
@@ -119,5 +120,41 @@ describe('RateLimiter', async () => {
     assert.strictEqual(typeof limits[0].reset, 'object')
     assert.ok(limits[0].reset instanceof Date)
     assert.ok(Math.abs((limits[0].reset - Date.now()) - 900000) < 5000)
+  })
+
+  it('guesses at Mastodon rate limits', async () => {
+    assert.ok(limiter)
+    const headers = new Headers()
+    headers.set('server', 'Mastodon')
+    await limiter.update(MASTODON_HOST, headers)
+    let limits = await limiter.peek(MASTODON_HOST)
+    assert.ok(limits)
+    assert.ok(Array.isArray(limits))
+    assert.ok(limits.length > 0)
+    assert.strictEqual(typeof limits[0], 'object')
+    assert.strictEqual(typeof limits[0].policy, 'string')
+    assert.strictEqual(limits[0].policy, 'default')
+    assert.strictEqual(typeof limits[0].remaining, 'number')
+    assert.strictEqual(limits[0].remaining, 299)
+    assert.strictEqual(typeof limits[0].reset, 'object')
+    assert.ok(limits[0].reset instanceof Date)
+    assert.ok(limits[0].reset - Date.now() <= 300000)
+
+    await limiter.limit(MASTODON_HOST)
+
+    await limiter.update(MASTODON_HOST, headers)
+    limits = await limiter.peek(MASTODON_HOST)
+
+    assert.ok(limits)
+    assert.ok(Array.isArray(limits))
+    assert.ok(limits.length > 0)
+    assert.strictEqual(typeof limits[0], 'object')
+    assert.strictEqual(typeof limits[0].policy, 'string')
+    assert.strictEqual(limits[0].policy, 'default')
+    assert.strictEqual(typeof limits[0].remaining, 'number')
+    assert.strictEqual(limits[0].remaining, 298)
+    assert.strictEqual(typeof limits[0].reset, 'object')
+    assert.ok(limits[0].reset instanceof Date)
+    assert.ok(limits[0].reset - Date.now() <= 300000)
   })
 })

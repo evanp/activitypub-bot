@@ -124,6 +124,14 @@ export async function cleanupTestData (connection, {
   addLikeClauses(objectClauses, objectReplacements, 'id', allPatterns, 'objectIdPattern')
   await deleteWhere(connection, 'objects', objectClauses, objectReplacements)
 
+  const rateLimitClauses = []
+  const rateLimitReplacements = {}
+  if (remoteDomains.length > 0) {
+    rateLimitClauses.push('host IN (:rateLimitHosts)')
+    rateLimitReplacements.rateLimitHosts = remoteDomains
+  }
+  await deleteWhere(connection, 'rate_limit', rateLimitClauses, rateLimitReplacements)
+
   if (queues.length > 0) {
     await connection.query(
       'DELETE FROM job WHERE queue_id in (?);',
