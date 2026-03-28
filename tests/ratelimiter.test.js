@@ -10,6 +10,7 @@ const EPSILON = 100
 describe('RateLimiter', async () => {
   const LOCAL_HOST = 'local.ratelimiter.test'
   const REMOTE_HOST = 'remote.ratelimiter.test'
+  const THIRD_HOST = 'third.ratelimiter.test'
 
   let logger
   let connection
@@ -23,14 +24,14 @@ describe('RateLimiter', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST]
     })
   })
 
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST]
     })
     await connection.close()
   })
@@ -97,5 +98,26 @@ describe('RateLimiter', async () => {
     const endTime = new Date()
     assert.ok(endTime - startTime > 500)
     assert.ok(endTime - startTime < 2000)
+  })
+
+  it('lets us peek at the rate limit values', async () => {
+    assert.ok(limiter)
+    const headers = new Headers()
+    headers.set('x-ratelimit-limit', 1000)
+    headers.set('x-ratelimit-remaining', 300)
+    headers.set('x-ratelimit-reset', 900)
+    await limiter.update(THIRD_HOST, headers)
+    const limits = await limiter.peek(THIRD_HOST)
+    assert.ok(limits)
+    assert.ok(Array.isArray(limits))
+    assert.strictEqual(limits.length, 1)
+    assert.strictEqual(typeof limits[0], 'object')
+    assert.strictEqual(typeof limits[0].policy, 'string')
+    assert.strictEqual(limits[0].policy, 'default')
+    assert.strictEqual(typeof limits[0].remaining, 'number')
+    assert.strictEqual(limits[0].remaining, 300)
+    assert.strictEqual(typeof limits[0].reset, 'object')
+    assert.ok(limits[0].reset instanceof Date)
+    assert.ok(Math.abs((limits[0].reset - Date.now()) - 900000) < 5000)
   })
 })
