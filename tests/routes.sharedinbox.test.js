@@ -50,6 +50,8 @@ describe('routes.sharedinbox', async () => {
   const REMOTE_ACTOR_7 = 'routesharedinboxtestactor7'
   const REMOTE_ACTOR_8 = 'routesharedinboxtestactor8'
   const REMOTE_ACTOR_9 = 'routesharedinboxtestactor9'
+  const REMOTE_ACTOR_10 = 'routesharedinboxtestactor10'
+  const BOT_FOLLOW_NO_RECIPIENTS = 'routesharedinboxtestfnr'
   const BOT_NAMES_FOLLOWERS_ONLY = [BOT_FOLLOWERS_ONLY_1, BOT_FOLLOWERS_ONLY_2]
   const BOT_NAMES_LOCAL_FOLLOWERS = [BOT_LOCAL_FOLLOWERS_1, BOT_LOCAL_FOLLOWERS_2, BOT_LOCAL_FOLLOWERS_3]
   const BOT_NAMES_LOCAL_FOLLOWING = [BOT_LOCAL_FOLLOWING_1, BOT_LOCAL_FOLLOWING_2]
@@ -64,7 +66,8 @@ describe('routes.sharedinbox', async () => {
     ...BOT_NAMES_LOCAL_FOLLOWING,
     FOLLOWING_BOT,
     ...BOT_NAMES_REMOTE_FOLLOWING,
-    ...BOT_NAMES_REMOTE_COLLECTION
+    ...BOT_NAMES_REMOTE_COLLECTION,
+    BOT_FOLLOW_NO_RECIPIENTS
   ]
   const TEST_USERNAMES = [...doNothingBotUsernames, LOGGING_BOT]
   const loggingBot = new EventLoggingBot(LOGGING_BOT)
@@ -79,6 +82,7 @@ describe('routes.sharedinbox', async () => {
   let app = null
   let formatter = null
   let actorStorage = null
+  let objectStorage = null
 
   function nockFormatDefault (params) {
     return nockFormat({ ...params, domain: params.domain ?? REMOTE_HOST })
@@ -111,6 +115,7 @@ describe('routes.sharedinbox', async () => {
     })
     formatter = app.locals.formatter
     actorStorage = app.locals.actorStorage
+    objectStorage = app.locals.objectStorage
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
@@ -607,6 +612,81 @@ describe('routes.sharedinbox', async () => {
     })
     it('should return a 400 status', async () => {
       assert.strictEqual(response.status, 400)
+    })
+  })
+
+  describe('can handle a Follow activity with no recipients', async () => {
+    const username = REMOTE_ACTOR_10
+    const botName = BOT_FOLLOW_NO_RECIPIENTS
+    const path = '/shared/inbox'
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    let response = null
+    let signature = null
+    let body = null
+    let digest = null
+    let activity = null
+    let actor = null
+    before(async () => {
+      actor = await makeActorDefault(username)
+      activity = await as2.import({
+        type: 'Follow',
+        id: nockFormatDefault({ username, type: 'follow', num: 1 }),
+        actor: actor.id,
+        object: formatter.format({ username: botName })
+      })
+      body = await activity.write()
+      digest = makeDigest(body)
+      signature = await nockSignatureDefault({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date
+      })
+    })
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
+    })
+    it('should add the actor to followers', async () => {
+      assert.strictEqual(
+        true,
+        await actorStorage.isInCollection(botName, 'followers', actor)
+      )
+    })
+    it('should have an Add in the outbox', async () => {
+      let found = false
+      for await (const item of actorStorage.items(botName, 'outbox')) {
+        const full = await objectStorage.read(item.id)
+        if (full.type === 'https://www.w3.org/ns/activitystreams#Add') {
+          found = true
+          break
+        }
+      }
+      assert.ok(found)
+    })
+    it('should have an Accept in the outbox', async () => {
+      let found = false
+      for await (const item of actorStorage.items(botName, 'outbox')) {
+        const full = await objectStorage.read(item.id)
+        if (full.type === 'https://www.w3.org/ns/activitystreams#Accept') {
+          found = true
+          break
+        }
+      }
+      assert.ok(found)
     })
   })
 
