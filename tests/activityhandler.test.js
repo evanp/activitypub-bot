@@ -1232,7 +1232,16 @@ describe('ActivityHandler', () => {
   })
   it('can handle a block activity for a pending user', async () => {
     const actor = await makeActor('blocker2')
-    await actorStorage.addToCollection(botName, 'pendingFollowing', actor)
+    const followActivity = await as2.import({
+      type: 'Follow',
+      id: 'https://local.activityhandler.test/user/activityhandlertestok/follow/blocker2',
+      actor: botId,
+      object: actor.id,
+      to: actor.id
+    })
+    await objectStorage.create(followActivity)
+    await actorStorage.addToCollection(botName, 'pendingFollowing', followActivity)
+    await actorStorage.setLastActivity(botName, followActivity)
     const activity = await as2.import({
       type: 'Block',
       id: 'https://social.activityhandler.test/user/blocker2/block/1',
@@ -1243,7 +1252,7 @@ describe('ActivityHandler', () => {
     await handler.handleActivity(bot, activity)
     assert.equal(
       false,
-      await actorStorage.isInCollection(botName, 'pendingFollowing', actor))
+      await actorStorage.isInCollection(botName, 'pendingFollowing', followActivity))
   })
   it('can handle a flag activity for an actor', async () => {
     const actor = await makeActor('flagger1')
