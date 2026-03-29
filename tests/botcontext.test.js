@@ -910,4 +910,16 @@ describe('BotContext', () => {
       assert.fail(`Could not double-follow: ${err.message}`)
     }
   })
+
+  it('removes follow activity (not actor) from pendingFollowing when blocking', async () => {
+    const REMOTE_ACTOR_12 = 'botcontextactor12'
+    const actor12 = await makeActorDefault(REMOTE_ACTOR_12)
+    const followActivity = await context.followActor(actor12)
+    await context.onIdle()
+    assert.ok(await actorStorage.isInCollection(botName, 'pendingFollowing', followActivity))
+    await context.blockActor(actor12)
+    await context.onIdle()
+    assert.ok(!await actorStorage.isInCollection(botName, 'pendingFollowing', followActivity))
+    assert.ok(!await actorStorage.isInCollection(botName, 'pendingFollowing', actor12))
+  })
 })
