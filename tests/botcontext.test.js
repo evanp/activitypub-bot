@@ -295,7 +295,7 @@ describe('BotContext', () => {
   })
   it('can follow an actor', async () => {
     actor3 = await makeActorDefault(REMOTE_USER_3)
-    await context.followActor(actor3)
+    const followActivity = await context.followActor(actor3)
     await context.onIdle()
     assert.strictEqual(postInbox[REMOTE_USER_3], 1)
     const outbox = await actorStorage.getCollection(botName, 'outbox')
@@ -307,6 +307,8 @@ describe('BotContext', () => {
       'pendingFollowing'
     )
     assert.strictEqual(pendingFollowing.totalItems, 1)
+    assert.ok(await actorStorage.isInCollection(botName, 'pendingFollowing', followActivity))
+    assert.ok(!await actorStorage.isInCollection(botName, 'pendingFollowing', actor3))
   })
   it('can unfollow a pending actor', async () => {
     await context.unfollowActor(actor3)
