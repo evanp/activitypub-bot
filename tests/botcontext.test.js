@@ -326,9 +326,9 @@ describe('BotContext', () => {
   })
   it('can unfollow a followed actor', async () => {
     const actor4 = await makeActorDefault(REMOTE_USER_4)
-    await context.followActor(actor4)
+    const followActivity4 = await context.followActor(actor4)
     await context.onIdle()
-    await actorStorage.removeFromCollection(botName, 'pendingFollowing', actor4)
+    await actorStorage.removeFromCollection(botName, 'pendingFollowing', followActivity4)
     await actorStorage.addToCollection(botName, 'following', actor4)
     let following = await actorStorage.getCollection(botName, 'following')
     assert.strictEqual(following.totalItems, 1)
