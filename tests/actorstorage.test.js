@@ -7,6 +7,7 @@ import as2 from '../lib/activitystreams.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
+const MAX_PAGE_SIZE = 256
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 const LOCAL_USER = 'actorstoragetest1'
 const FOLLOWERS_USER = 'actorstoragetest3'
@@ -134,7 +135,7 @@ describe('ActorStorage', () => {
     assert.ok(!page.items)
   })
   it('can add a lot of items a collection', async () => {
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 3 * MAX_PAGE_SIZE; i++) {
       const other = await as2.import({
         id: `https://social.actorstorage.test/user/foo/note/${i}`,
         type: 'Note',
@@ -147,10 +148,10 @@ describe('ActorStorage', () => {
       )
     }
     const collection = await storage.getCollection(LIKED_USER_A, 'liked')
-    assert.strictEqual(collection.totalItems, 100)
-    const page = await storage.getCollectionPage(LIKED_USER_A, 'liked', 3)
-    assert.strictEqual(page.items.length, 20)
-    assert.strictEqual(page.next.id, `https://local.actorstorage.test/user/${LIKED_USER_A}/liked/2`)
+    assert.strictEqual(collection.totalItems, 3 * MAX_PAGE_SIZE)
+    const page = await storage.getCollectionPage(LIKED_USER_A, 'liked', 2)
+    assert.strictEqual(page.items.length, MAX_PAGE_SIZE)
+    assert.ok(page.next)
   })
   it('can iterate over a collection', async () => {
     const seen = new Set()
@@ -158,7 +159,7 @@ describe('ActorStorage', () => {
       assert.ok(!(item.id in seen))
       seen.add(item.id)
     }
-    assert.strictEqual(seen.size, 100)
+    assert.strictEqual(seen.size, 3 * MAX_PAGE_SIZE)
   })
   it('can add twice and remove once from a collection', async () => {
     const other = await as2.import({

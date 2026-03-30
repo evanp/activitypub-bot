@@ -6,6 +6,7 @@ import as2 from '../lib/activitystreams.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
+const MAX_PAGE_SIZE = 256
 const LOCAL_HOST = 'local.objectstorage.test'
 const TEST_NOTE_BASE = `https://${LOCAL_HOST}/users/objectstoragetest/note`
 const DOC1_ID = `${TEST_NOTE_BASE}/1`
@@ -116,7 +117,7 @@ describe('ObjectStorage', async () => {
     assert.ok(!page.items)
   })
   it('can add many items to a collection', async () => {
-    for (let i = 3; i < 103; i++) {
+    for (let i = 3; i < 3 + (3 * MAX_PAGE_SIZE); i++) {
       const reply = await as2.import({
         '@context': 'https://www.w3.org/ns/activitystreams',
         id: `${TEST_NOTE_BASE}/${i}`,
@@ -128,15 +129,14 @@ describe('ObjectStorage', async () => {
       await storage.addToCollection(doc.id, 'replies', reply)
     }
     const collection = await storage.getCollection(doc.id, 'replies')
-    assert.equal(collection.totalItems, 100)
-    assert.equal(collection.first.id, `${doc.id}/replies/5`)
+    assert.equal(collection.totalItems, 3 * MAX_PAGE_SIZE)
+    assert.equal(collection.first.id, `${doc.id}/replies/3`)
     assert.equal(collection.last.id, `${doc.id}/replies/1`)
-    const page = await storage.getCollectionPage(doc.id, 'replies', 3)
+    const page = await storage.getCollectionPage(doc.id, 'replies', 2)
     assert.ok(page.next)
-    // assert.ok(page.prev)
     assert.ok(page.items)
     const items = Array.from(page.items)
-    assert.equal(items.length, 20)
+    assert.equal(items.length, MAX_PAGE_SIZE)
     for (let i = 0; i < items.length; i++) {
       assert.ok(items[i])
       for (let j = i + 1; j < items.length; j++) {
@@ -154,6 +154,6 @@ describe('ObjectStorage', async () => {
       assert.ok(!(item.id in seen))
       seen.add(item.id)
     }
-    assert.strictEqual(seen.size, 100)
+    assert.strictEqual(seen.size, 3 * MAX_PAGE_SIZE)
   })
 })
