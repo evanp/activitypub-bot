@@ -80,7 +80,7 @@ describe('IntakeWorker', async () => {
       client
     )
     deliverer = new ActivityDeliverer(actorStorage, formatter, logger, client, queue)
-    deliveryWorker = new DeliveryWorker(queue, actorStorage, handler, logger, testBots)
+    deliveryWorker = new DeliveryWorker(queue, logger, { actorStorage, activityHandler: handler, bots: testBots })
     nockSetup(remoteHost)
   })
 

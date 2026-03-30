@@ -193,9 +193,7 @@ describe('ActivityDistributor', () => {
     )
     fanoutWorker = new FanoutWorker(jobQueue, logger, { distributor })
     fanoutWorkerRun = fanoutWorker.run()
-    deliveryWorker = new DeliveryWorker(
-      jobQueue, actorStorage, handler, logger, testBots
-    )
+    deliveryWorker = new DeliveryWorker(jobQueue, logger, { actorStorage, activityHandler: handler, bots: testBots })
     deliveryWorkerRun = deliveryWorker.run()
   })
   it('can distribute an activity to a single recipient', async () => {

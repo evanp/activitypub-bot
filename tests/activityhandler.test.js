@@ -192,7 +192,7 @@ describe('ActivityHandler', () => {
       client
     )
     assert.ok(handler)
-    deliveryWorker = new DeliveryWorker(jobQueue, actorStorage, handler, logger, testBots)
+    deliveryWorker = new DeliveryWorker(jobQueue, logger, { actorStorage, activityHandler: handler, bots: testBots })
     deliveryWorkerRun = deliveryWorker.run()
   })
   it('can handle a create activity', async () => {

@@ -95,7 +95,7 @@ describe('DeliveryWorker', async () => {
   })
 
   it('can initialize', async () => {
-    worker = new DeliveryWorker(queue, actorStorage, handler, logger, testBots)
+    worker = new DeliveryWorker(queue, logger, { actorStorage, activityHandler: handler, bots: testBots })
     assert.ok(worker)
   })
 

@@ -118,7 +118,7 @@ describe('RelayClientBot', () => {
       logger,
       client
     )
-    deliveryWorker = new DeliveryWorker(jobQueue, actorStorage, handler, logger, bots)
+    deliveryWorker = new DeliveryWorker(jobQueue, logger, { actorStorage, activityHandler: handler, bots })
     deliveryWorkerRun = deliveryWorker.run()
     context = new BotContext(
       botName,

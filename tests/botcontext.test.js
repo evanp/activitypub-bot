@@ -137,7 +137,7 @@ describe('BotContext', () => {
       logger,
       client
     )
-    deliveryWorker = new DeliveryWorker(jobQueue, actorStorage, handler, logger, bots)
+    deliveryWorker = new DeliveryWorker(jobQueue, logger, { actorStorage, activityHandler: handler, bots })
     deliveryWorkerRun = deliveryWorker.run()
     transformer = new Transformer(`${LOCAL_ORIGIN}/tag/`, client)
     await objectStorage.create(
