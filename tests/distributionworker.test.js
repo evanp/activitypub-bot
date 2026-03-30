@@ -78,7 +78,7 @@ describe('DistributionWorker', async () => {
   })
 
   it('can initialize', async () => {
-    worker = new DistributionWorker(queue, client, logger)
+    worker = new DistributionWorker(queue, logger, { client })
     assert.ok(worker)
   })
 

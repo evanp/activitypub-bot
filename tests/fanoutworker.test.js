@@ -97,7 +97,7 @@ describe('FanoutWorker', async () => {
   })
 
   it('can initialize a distribution worker', async () => {
-    distributionWorker = new DistributionWorker(queue, client, logger)
+    distributionWorker = new DistributionWorker(queue, logger, { client })
     assert.ok(distributionWorker)
   })
 
