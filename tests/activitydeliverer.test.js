@@ -3,6 +3,7 @@ import assert from 'node:assert'
 
 import Logger from 'pino'
 
+import as2 from '../lib/activitystreams.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
@@ -71,5 +72,20 @@ describe('ActivityDeliverer', async () => {
   it('can initialize', async () => {
     deliverer = new ActivityDeliverer(actorStorage, formatter, logger, client, jobQueue)
     assert.ok(deliverer)
+  })
+
+  it('can intake an activity', async () => {
+    const subject = `https://${remoteHost}/users/intaketest1`
+    const activity = await as2.import({
+      id: `https://${remoteHost}/activity/intaketest1`,
+      type: 'Activity',
+      actor: { id: subject },
+      to: [formatter.format({ username: testUsernames[0] })]
+    })
+    await deliverer.intake(activity, subject)
+    const { jobId, payload } = await jobQueue.dequeue('intake', 'activitydeliverer.test')
+    assert.ok(payload.activity)
+    assert.strictEqual(payload.subject, subject)
+    await jobQueue.complete(jobId, 'activitydeliverer.test')
   })
 })
