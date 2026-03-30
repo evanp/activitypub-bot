@@ -191,9 +191,7 @@ describe('ActivityDistributor', () => {
       logger,
       client
     )
-    fanoutWorker = new FanoutWorker(
-      jobQueue, distributor, logger
-    )
+    fanoutWorker = new FanoutWorker(jobQueue, logger, { distributor })
     fanoutWorkerRun = fanoutWorker.run()
     deliveryWorker = new DeliveryWorker(
       jobQueue, actorStorage, handler, logger, testBots

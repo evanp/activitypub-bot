@@ -92,7 +92,7 @@ describe('FanoutWorker', async () => {
   })
 
   it('can initialize', async () => {
-    fanoutWorker = new FanoutWorker(queue, distributor, logger)
+    fanoutWorker = new FanoutWorker(queue, logger, { distributor })
     assert.ok(fanoutWorker)
   })
 
