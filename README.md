@@ -58,6 +58,12 @@ Options:
   --port <number>            Port to listen on
   --bots-config-file <path>  Path to bots config module
   --log-level <level>        Log level (e.g., info, debug)
+  --delivery <number>        Number of background delivery workers
+  --distribution <number>    Number of background distribution workers
+  --fanout <number>          Number of background fanout workers
+  --intake <number>          Number of background intake workers
+  --index-file <path>        HTML page to show at root path
+  --profile-file <path>      HTML page to show for bot profiles
   -h, --help                 Show this help
 ```
 
@@ -109,11 +115,29 @@ The number of background distribution workers to run for this server.  These wor
 
 Falls back to the `DISTRIBUTION` environment variable. Default is 8.
 
+#### --fanout
+
+The number of background fanout workers to run for this server. These workers resolve the recipients for bot activities — expanding follower collections and other addressing — and enqueue individual delivery jobs. If activities are slow to reach recipients, increase this number.
+
+Falls back to the `FANOUT` environment variable. Default is 4.
+
+#### --intake
+
+The number of background intake workers to run for this server. These workers accept activities arriving at the shared inbox and route them to the appropriate local bots. If shared-inbox processing is a bottleneck, increase this number.
+
+Falls back to the `INTAKE` environment variable. Default is 2.
+
 #### --index-file
 
 Path to the HTML file to show for the home page of your server. The activitypub.bot server doesn't support any other files, so any images or CSS stylesheets or JavaScript in this page have to be hosted elsewhere. Or just skip them!
 
-Falls back to the 'INDEX_FILE' environment variable. The default index file is in `web/index.html` and just says that this is an activitypub.bot server with a link to the GitHub repo.
+Falls back to the `INDEX_FILE` environment variable. The default index file is in `web/index.html` and just says that this is an activitypub.bot server with a link to the GitHub repo.
+
+#### --profile-file
+
+Path to the HTML file to show for bot profile pages. Like `--index-file`, any external assets must be hosted elsewhere.
+
+Falls back to the `PROFILE_FILE` environment variable. The default profile file is in `web/profile.html`.
 
 ### Config file
 
@@ -184,9 +208,15 @@ Bots will receive a [BotContext](#botcontext) object at initialization. The BotC
 
 The Bot interface has the following methods.
 
-#### constructor (username)
+#### constructor (username, options)
 
-The constructor; receives the `username` by default. Initialization should probably be deferred to the initialize() method. The default implementation stores the username.
+The constructor; receives the `username` and an optional `options` object. Initialization should probably be deferred to the `initialize()` method. The default implementation stores the username and the following options:
+
+- `fullname` — display name for the bot. Default: `'Bot'`.
+- `description` — bio text for the bot. Default: `'Default bot'`.
+- `icon` — URL string for the bot's avatar image. Default: `null`.
+- `image` — URL string for the bot's header/banner image. Default: `null`.
+- `checkSignature` — whether to require valid HTTP signatures on incoming activities. Default: `true`.
 
 #### async initialize (context)
 
@@ -199,6 +229,18 @@ A [getter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Fun
 #### get description ()
 
 A [getter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get) for the bio of the bot.
+
+#### get icon ()
+
+A [getter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get) for the avatar image URL of the bot. Returns `null` if not set.
+
+#### get image ()
+
+A [getter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get) for the header/banner image URL of the bot. Returns `null` if not set.
+
+#### get checkSignature ()
+
+A [getter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get) for whether the bot requires valid HTTP signatures on incoming activities.
 
 #### get username ()
 

@@ -14,6 +14,8 @@ const { values } = parseArgs({
     'log-level': { type: 'string' },
     delivery: { type: 'string' },
     distribution: { type: 'string' },
+    fanout: { type: 'string' },
+    intake: { type: 'string' },
     'index-file': { type: 'string' },
     help: { type: 'boolean', short: 'h' }
   },
@@ -31,6 +33,8 @@ Options:
   --log-level <level>        Log level (e.g., info, debug)
   --delivery <number>        Number of background delivery workers
   --distribution <number>    Number of background distribution workers
+  --fanout <number>          Number of background fanout workers
+  --intake <number>          Number of background intake workers
   --index-file <path>        HTML page to show at root path
   --profile-file <path>      HTML page to show for bot profiles
   -h, --help                 Show this help
@@ -61,6 +65,8 @@ const LOG_LEVEL =
   (process.env.NODE_ENV === 'test' ? 'silent' : 'info')
 const DELIVERY = parseNumber(values.delivery) || parseNumber(process.env.DELIVERY) || 2
 const DISTRIBUTION = parseNumber(values.distribution) || parseNumber(process.env.DISTRIBUTION) || 8
+const FANOUT = parseNumber(values.fanout) || parseNumber(process.env.FANOUT) || 4
+const INTAKE = parseNumber(values.intake) || parseNumber(process.env.INTAKE) || 2
 const INDEX_FILE = values['index-file'] || process.env.INDEX_FILE || DEFAULT_INDEX_FILE
 const PROFILE_FILE = values['profile-file'] || process.env.PROFILE_FILE || DEFAULT_PROFILE_FILE
 
@@ -73,6 +79,8 @@ const app = await makeApp({
   logLevel: LOG_LEVEL,
   deliveryWorkerCount: DELIVERY,
   distributionWorkerCount: DISTRIBUTION,
+  fanoutWorkerCount: FANOUT,
+  intakeWorkerCount: INTAKE,
   indexFileName: INDEX_FILE,
   profileFileName: PROFILE_FILE
 })
