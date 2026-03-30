@@ -26,6 +26,7 @@ import { Digester } from '../lib/digester.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { DistributionWorker } from '../lib/distributionworker.js'
 import { DeliveryWorker } from '../lib/deliveryworker.js'
+import { FanoutWorker } from '../lib/fanoutworker.js'
 import { ActivityHandler } from '../lib/activityhandler.js'
 import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
@@ -89,6 +90,8 @@ describe('BotContext', () => {
   let jobQueue
   let distributionWorker
   let distributionWorkerRun
+  let fanoutWorker
+  let fanoutWorkerRun
   let deliveryWorker
   let deliveryWorkerRun
   const bots = {
@@ -120,6 +123,8 @@ describe('BotContext', () => {
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
     distributionWorker = new DistributionWorker(jobQueue, client, logger)
     distributionWorkerRun = distributionWorker.run()
+    fanoutWorker = new FanoutWorker(jobQueue, distributor, logger)
+    fanoutWorkerRun = fanoutWorker.run()
     const authz = new Authorizer(actorStorage, formatter, client)
     const cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
     const handler = new ActivityHandler(
@@ -151,9 +156,10 @@ describe('BotContext', () => {
   })
   after(async () => {
     jobQueue.abort()
+    fanoutWorker.stop()
     distributionWorker.stop()
     deliveryWorker.stop()
-    await Promise.allSettled([distributionWorkerRun, deliveryWorkerRun])
+    await Promise.allSettled([fanoutWorkerRun, distributionWorkerRun, deliveryWorkerRun])
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,

@@ -24,6 +24,7 @@ import { Digester } from '../lib/digester.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { DistributionWorker } from '../lib/distributionworker.js'
 import { DeliveryWorker } from '../lib/deliveryworker.js'
+import { FanoutWorker } from '../lib/fanoutworker.js'
 import { ActivityHandler } from '../lib/activityhandler.js'
 import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
@@ -70,6 +71,8 @@ describe('RelayClientBot', () => {
   let jobQueue
   let distributionWorker
   let distributionWorkerRun
+  let fanoutWorker
+  let fanoutWorkerRun
   let deliveryWorker
   let deliveryWorkerRun
   const bots = {}
@@ -100,6 +103,8 @@ describe('RelayClientBot', () => {
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
     distributionWorker = new DistributionWorker(jobQueue, client, logger)
     distributionWorkerRun = distributionWorker.run()
+    fanoutWorker = new FanoutWorker(jobQueue, distributor, logger)
+    fanoutWorkerRun = fanoutWorker.run()
     transformer = new Transformer(`${LOCAL_ORIGIN}/tag/`, client)
     authz = new Authorizer(actorStorage, formatter, client)
     cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
@@ -131,9 +136,10 @@ describe('RelayClientBot', () => {
   })
   after(async () => {
     jobQueue.abort()
+    fanoutWorker.stop()
     deliveryWorker.stop()
     distributionWorker.stop()
-    await Promise.allSettled([distributionWorkerRun, deliveryWorkerRun])
+    await Promise.allSettled([fanoutWorkerRun, distributionWorkerRun, deliveryWorkerRun])
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,

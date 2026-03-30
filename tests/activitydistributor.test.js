@@ -34,6 +34,7 @@ import { Authorizer } from '../lib/authorizer.js'
 import { ActivityHandler } from '../lib/activityhandler.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+import { FanoutWorker } from '../lib/fanoutworker.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
@@ -90,6 +91,8 @@ describe('ActivityDistributor', () => {
   let cache
   let deliveryWorker
   let deliveryWorkerRun
+  let fanoutWorker
+  let fanoutWorkerRun
   let objectStorage
   const testBots = Object.fromEntries(
     LOCAL_USERNAMES.map(n => [n, new DoNothingBot(n)])
@@ -153,9 +156,12 @@ describe('ActivityDistributor', () => {
   })
   after(async () => {
     jobQueue.abort()
+    fanoutWorker.stop()
     distributionWorker.stop()
     deliveryWorker.stop()
-    await Promise.allSettled([distributionWorkerRun, deliveryWorkerRun])
+    await Promise.allSettled(
+      [fanoutWorkerRun, distributionWorkerRun, deliveryWorkerRun]
+    )
     await cleanup()
     await connection.close()
     distributor = null
@@ -185,6 +191,10 @@ describe('ActivityDistributor', () => {
       logger,
       client
     )
+    fanoutWorker = new FanoutWorker(
+      jobQueue, distributor, logger
+    )
+    fanoutWorkerRun = fanoutWorker.run()
     deliveryWorker = new DeliveryWorker(
       jobQueue, actorStorage, handler, logger, testBots
     )
