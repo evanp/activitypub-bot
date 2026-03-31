@@ -30,6 +30,7 @@ import { DeliveryWorker } from '../lib/deliveryworker.js'
 import { FanoutWorker } from '../lib/fanoutworker.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
@@ -99,7 +100,8 @@ describe('ActivityHandler', () => {
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     const limiter = new RateLimiter(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
+    const remoteObjectCache = new RemoteObjectCache(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache)
     jobQueue = new JobQueue(connection, logger)
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
     distributionWorker = new DistributionWorker(jobQueue, logger, { client })

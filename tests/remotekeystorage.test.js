@@ -12,6 +12,7 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
@@ -47,7 +48,8 @@ describe('RemoteKeyStorage', async () => {
     const digester = new Digester(logger)
     const signer = new HTTPSignature(logger)
     limiter = new RateLimiter(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
+    const remoteObjectCache = new RemoteObjectCache(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache)
     nockSetup(REMOTE_HOST)
   })
 

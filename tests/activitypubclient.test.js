@@ -128,7 +128,8 @@ describe('ActivityPubClient', async () => {
   })
 
   it('can initialize', () => {
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
+    const remoteObjectCache = new RemoteObjectCache(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache)
     assert.ok(client)
   })
 
@@ -324,14 +325,14 @@ describe('ActivityPubClient', async () => {
   })
 
   it('waits for the next requests to a limited server', async () => {
-    const id = nockFormat({
-      username: LIMITED_USER_2,
-      type: 'note',
-      num: 1,
-      domain: LIMITED_HOST
-    })
     const startTime = new Date()
     for (let i = 0; i < 10; i++) {
+      const id = nockFormat({
+        username: LIMITED_USER_2,
+        type: 'note',
+        num: i,
+        domain: LIMITED_HOST
+      })
       await client.get(id)
     }
     const endTime = new Date()

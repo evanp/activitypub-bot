@@ -11,6 +11,7 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 
 import { createMigratedTestConnection } from './utils/db.js'
 
@@ -31,7 +32,8 @@ describe('microsyntax', async () => {
   const formatter = new UrlFormatter(origin)
   const signer = new HTTPSignature(logger)
   const limiter = new RateLimiter(connection, logger)
-  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
+  const remoteObjectCache = new RemoteObjectCache(connection, logger)
+  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache)
   const transformer = new Transformer(tagNamespace, client)
 
   it('has transformer', () => {

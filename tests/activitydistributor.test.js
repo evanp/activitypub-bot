@@ -35,6 +35,7 @@ import { ActivityHandler } from '../lib/activityhandler.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
 import { FanoutWorker } from '../lib/fanoutworker.js'
+import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
@@ -117,7 +118,8 @@ describe('ActivityDistributor', () => {
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     const limiter = new RateLimiter(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
+    const remoteObjectCache = new RemoteObjectCache(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache)
     jobQueue = new JobQueue(connection, logger)
     distributionWorker = new DistributionWorker(jobQueue, logger, { client })
     distributionWorkerRun = distributionWorker.run()

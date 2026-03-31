@@ -12,6 +12,7 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
@@ -43,7 +44,8 @@ describe('ActivityDeliverer', async () => {
     const signer = new HTTPSignature(logger)
     const digester = new Digester(logger)
     const limiter = new RateLimiter(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter)
+    const remoteObjectCache = new RemoteObjectCache(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache)
     jobQueue = new JobQueue(connection, logger)
   })
   after(async () => {
