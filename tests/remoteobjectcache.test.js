@@ -96,7 +96,7 @@ describe('RemoteObjectCache', async () => {
     assert.ok(Math.abs(result.expiry.getTime() - expectedExpiry) < 1000)
   })
 
-  it('set with no cache headers and type CryptographicKey uses key default expiry (1 day)', async () => {
+  it('set with no cache headers and type CryptographicKey expires immediately', async () => {
     const id = `https://${REMOTE_HOST}/user/testuser/publickey`
     const keyObject = { id, type: 'https://w3id.org/security#CryptographicKey', owner: REMOTE_ACTOR_ID }
     await cache.set(id, TEST_USERNAME, keyObject, new Headers())
@@ -105,8 +105,7 @@ describe('RemoteObjectCache', async () => {
     assert.ok(result)
     assert.deepEqual(result.object, keyObject)
     assert.ok(result.expiry instanceof Date)
-    const expectedExpiry = Date.now() + 24 * 60 * 60 * 1000 // 1 day
-    assert.ok(Math.abs(result.expiry.getTime() - expectedExpiry) < 1000)
+    assert.ok(result.expiry.getTime() < Date.now())
   })
 
   it('set with no cache headers and type CollectionPage expires immediately', async () => {

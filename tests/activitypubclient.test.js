@@ -18,6 +18,7 @@ import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
+import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
@@ -335,5 +336,53 @@ describe('ActivityPubClient', async () => {
     }
     const endTime = new Date()
     assert.ok(endTime - startTime > EPSILON, `${endTime - startTime} > ${EPSILON}`)
+  })
+
+  describe('with a cache', async () => {
+    const CACHED_NOTE = `https://${REMOTE_HOST}/user/${REMOTE_PROFILE_USER}/note/100`
+    let cache = null
+    let cachedClient = null
+
+    before(async () => {
+      cache = new RemoteObjectCache(connection, logger)
+      cachedClient = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, cache)
+    })
+
+    after(async () => {
+      cache = null
+      cachedClient = null
+    })
+
+    it('no cache record: hits the remote server', async () => {
+      await cachedClient.get(CACHED_NOTE, LOCAL_SIGNING_USER)
+      const h = getRequestHeaders(CACHED_NOTE)
+      assert.ok(h)
+    })
+
+    it('unexpired cache record: does not hit the server', async () => {
+      const cachedObject = { id: CACHED_NOTE, type: 'Note', content: 'cached' }
+      await cache.set(CACHED_NOTE, LOCAL_SIGNING_USER, cachedObject, new Headers({ 'cache-control': 'max-age=3600' }))
+      const result = await cachedClient.get(CACHED_NOTE, LOCAL_SIGNING_USER)
+      assert.ok(result)
+      assert.equal(result.id, CACHED_NOTE)
+      const h = getRequestHeaders(CACHED_NOTE)
+      assert.equal(h, undefined)
+    })
+
+    it('expired cache record: hits server with If-None-Match and If-Modified-Since', async () => {
+      const cachedObject = { id: CACHED_NOTE, type: 'Note', content: 'cached' }
+      const etag = '"abc123"'
+      const lastModified = new Date(Date.now() - 24 * 60 * 60 * 1000).toUTCString()
+      await cache.set(CACHED_NOTE, LOCAL_SIGNING_USER, cachedObject, new Headers({
+        'cache-control': 'no-cache',
+        etag,
+        'last-modified': lastModified
+      }))
+      await cachedClient.get(CACHED_NOTE, LOCAL_SIGNING_USER)
+      const h = getRequestHeaders(CACHED_NOTE)
+      assert.ok(h)
+      assert.equal(h['if-none-match'], etag)
+      assert.equal(h['if-modified-since'], lastModified)
+    })
   })
 })
