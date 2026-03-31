@@ -132,6 +132,15 @@ export async function cleanupTestData (connection, {
   }
   await deleteWhere(connection, 'rate_limit', rateLimitClauses, rateLimitReplacements)
 
+  const remoteCacheClauses = []
+  const remoteCacheReplacements = {}
+  if (usernames.length > 0) {
+    remoteCacheClauses.push('username IN (:usernames)')
+    remoteCacheReplacements.usernames = usernames
+  }
+  addLikeClauses(remoteCacheClauses, remoteCacheReplacements, 'id', allPatterns, 'remoteCacheIdPattern')
+  await deleteWhere(connection, 'remote_object_cache', remoteCacheClauses, remoteCacheReplacements)
+
   if (queues.length > 0) {
     await connection.query(
       'DELETE FROM job WHERE queue_id in (?);',
