@@ -385,5 +385,17 @@ describe('ActivityPubClient', async () => {
       assert.equal(h['if-none-match'], etag)
       assert.equal(h['if-modified-since'], lastModified)
     })
+
+    it('expired cache record with no etag or last-modified: does not send conditional headers', async () => {
+      const cachedObject = { id: CACHED_NOTE, type: 'Note', content: 'cached' }
+      await cache.set(CACHED_NOTE, LOCAL_SIGNING_USER, cachedObject, new Headers({
+        'cache-control': 'no-cache'
+      }))
+      await cachedClient.get(CACHED_NOTE, LOCAL_SIGNING_USER)
+      const h = getRequestHeaders(CACHED_NOTE)
+      assert.ok(h)
+      assert.equal(h['if-none-match'], undefined)
+      assert.equal(h['if-modified-since'], undefined)
+    })
   })
 })
