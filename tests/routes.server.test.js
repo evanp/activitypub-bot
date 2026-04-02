@@ -76,9 +76,8 @@ describe('server routes', async () => {
       assert.strictEqual(typeof response.body.webfinger, 'string')
       assert.strictEqual(response.body.webfinger, `${LOCAL_HOST}@${LOCAL_HOST}`)
     })
-    it('should include alsoKnownAs', async () => {
-      assert.strictEqual(typeof response.body.alsoKnownAs, 'string')
-      assert.strictEqual(response.body.alsoKnownAs, `acct:${LOCAL_HOST}@${LOCAL_HOST}`)
+    it('should not include alsoKnownAs', async () => {
+      assert.ok(!response.body.alsoKnownAs)
     })
     it('should include preferredUsername', async () => {
       assert.strictEqual(typeof response.body.preferredUsername, 'string')

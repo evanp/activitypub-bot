@@ -153,9 +153,8 @@ describe('actor routes', async () => {
       assert.strictEqual(typeof response.body.webfinger, 'string')
       assert.strictEqual(response.body.webfinger, `${BOT_USERNAME}@${LOCAL_HOST}`)
     })
-    it('should include alsoKnownAs', async () => {
-      assert.strictEqual(typeof response.body.alsoKnownAs, 'string')
-      assert.strictEqual(response.body.alsoKnownAs, `acct:${BOT_USERNAME}@${LOCAL_HOST}`)
+    it('should not include alsoKnownAs', async () => {
+      assert.ok(!response.body.alsoKnownAs)
     })
     it('should include url', async () => {
       assert.strictEqual(typeof response.body.url, 'object')
