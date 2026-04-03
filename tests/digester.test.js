@@ -55,4 +55,11 @@ describe('Digester', () => {
     const result = await digester.equals(digest1, digest2)
     assert.ok(result)
   })
+
+  it('can produce a content-digest in RFC 9530 format', async () => {
+    const text = 'Hello, world!'
+    const contentDigest = await digester.contentDigest(text)
+    assert.ok(contentDigest)
+    assert.equal(contentDigest, 'sha-256=:MV9b23bQeMQ7isAGTkoBZGErH853yGk0W/yUx1iU7dM=:')
+  })
 })
