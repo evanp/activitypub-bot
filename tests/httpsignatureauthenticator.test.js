@@ -29,6 +29,8 @@ describe('HTTPSignatureAuthenticator', async () => {
   const REMOTE_USER_3 = 'httpsignatureauthremote3'
   const REMOTE_USER_4 = 'httpsignatureauthremote4'
   const REMOTE_USER_6 = 'httpsignatureauthremote6'
+  const REMOTE_USER_7 = 'httpsignatureauthremote7'
+  const REMOTE_USER_8 = 'httpsignatureauthremote8'
   const TEST_USERNAMES = [LOCAL_USER]
   const OUTBOX_PATH = `/user/${LOCAL_USER}/outbox`
   const OUTBOX_URL = `${origin}${OUTBOX_PATH}`
@@ -566,6 +568,100 @@ describe('HTTPSignatureAuthenticator', async () => {
       app: { locals: { formatter, origin, bots: {} } }
     }
     await authenticator.authenticate(req, res, next)
+  })
+
+  it('can authenticate a valid draft-cavage GET request after key rotation', async () => {
+    const username = REMOTE_USER_7
+    const date = new Date().toUTCString()
+    const signature = await nockSignatureDefault({ url: OUTBOX_URL, date, username })
+    const headers = {
+      date,
+      signature,
+      host: URL.parse(origin).host
+    }
+    const method = 'GET'
+    const originalUrl = OUTBOX_PATH
+    const res = {}
+    const req = {
+      headers,
+      originalUrl,
+      method,
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: { locals: { formatter, origin, bots: {} } }
+    }
+    await authenticator.authenticate(req, res, next)
+    await nockKeyRotateDefault(username)
+    const date2 = new Date().toUTCString()
+    const signature2 = await nockSignatureDefault({ url: OUTBOX_URL, date: date2, username })
+    const headers2 = {
+      date: date2,
+      signature: signature2,
+      host: URL.parse(origin).host
+    }
+    const req2 = {
+      headers: headers2,
+      originalUrl,
+      method,
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: { locals: { formatter, origin, bots: {} } }
+    }
+    await authenticator.authenticate(req2, res, next)
+  })
+
+  it('can authenticate a valid RFC 9421 GET request after key rotation', async () => {
+    const username = REMOTE_USER_8
+    const keyId = nockFormatDefault({ username, key: true })
+    const url = OUTBOX_URL
+    const { 'signature-input': signatureInput, signature } = await nockMessageSignature({
+      url,
+      username,
+      keyId,
+      domain: REMOTE_HOST
+    })
+    const headers = {
+      'signature-input': signatureInput,
+      signature,
+      host: URL.parse(origin).host
+    }
+    const method = 'GET'
+    const originalUrl = OUTBOX_PATH
+    const res = {}
+    const req = {
+      headers,
+      originalUrl,
+      method,
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: { locals: { formatter, origin, bots: {} } }
+    }
+    await authenticator.authenticate(req, res, next)
+    await nockKeyRotateDefault(username)
+    const { 'signature-input': signatureInput2, signature: signature2 } = await nockMessageSignature({
+      url,
+      username,
+      keyId,
+      domain: REMOTE_HOST
+    })
+    const headers2 = {
+      'signature-input': signatureInput2,
+      signature: signature2,
+      host: URL.parse(origin).host
+    }
+    const req2 = {
+      headers: headers2,
+      originalUrl,
+      method,
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: { locals: { formatter, origin, bots: {} } }
+    }
+    await authenticator.authenticate(req2, res, next)
   })
 
   it('can refuse a request with a future date outside of the skew window', async () => {
