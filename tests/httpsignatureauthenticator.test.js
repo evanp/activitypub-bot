@@ -1,11 +1,13 @@
 import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
 
-import { nockSetup, nockSignature, nockKeyRotate, nockFormat } from '@evanp/activitypub-nock'
+import { nockSetup, nockSignature, nockKeyRotate, nockFormat, nockMessageSignature } from '@evanp/activitypub-nock'
+import crypto from 'node:crypto'
 import Logger from 'pino'
 
 import { KeyStorage } from '../lib/keystorage.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
+import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { HTTPSignatureAuthenticator } from '../lib/httpsignatureauthenticator.js'
 import { Digester } from '../lib/digester.js'
 import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
@@ -25,6 +27,8 @@ describe('HTTPSignatureAuthenticator', async () => {
   const REMOTE_USER_1 = 'httpsignatureauthremote1'
   const REMOTE_USER_2 = 'httpsignatureauthremote2'
   const REMOTE_USER_3 = 'httpsignatureauthremote3'
+  const REMOTE_USER_4 = 'httpsignatureauthremote4'
+  const REMOTE_USER_6 = 'httpsignatureauthremote6'
   const TEST_USERNAMES = [LOCAL_USER]
   const OUTBOX_PATH = `/user/${LOCAL_USER}/outbox`
   const OUTBOX_URL = `${origin}${OUTBOX_PATH}`
@@ -45,6 +49,7 @@ describe('HTTPSignatureAuthenticator', async () => {
   let authenticator = null
   let logger = null
   let signer = null
+  let messageSigner = null
   let digester = null
   let formatter = null
   let remoteKeyStorage = null
@@ -74,6 +79,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       remoteDomains: [REMOTE_HOST]
     })
     signer = new HTTPSignature(logger)
+    messageSigner = new HTTPMessageSignature(logger)
     digester = new Digester(logger)
     formatter = new UrlFormatter(origin)
     const keyStorage = new KeyStorage(connection, logger)
@@ -95,6 +101,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     digester = null
     formatter = null
     signer = null
+    messageSigner = null
     remoteKeyStorage = null
   })
 
@@ -102,6 +109,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     authenticator = new HTTPSignatureAuthenticator(
       remoteKeyStorage,
       signer,
+      messageSigner,
       digester,
       logger)
   })
@@ -486,6 +494,77 @@ describe('HTTPSignatureAuthenticator', async () => {
       }
     }
     const res = {}
+    await authenticator.authenticate(req, res, next)
+  })
+
+  it('can authenticate a valid RFC 9421 GET request with a full key URL', async () => {
+    const username = REMOTE_USER_4
+    const keyId = nockFormatDefault({ username, key: true })
+    const url = OUTBOX_URL
+    const { 'signature-input': signatureInput, signature } = await nockMessageSignature({
+      url,
+      username,
+      keyId,
+      domain: REMOTE_HOST
+    })
+    const headers = {
+      'signature-input': signatureInput,
+      signature,
+      host: URL.parse(origin).host
+    }
+    const method = 'GET'
+    const originalUrl = OUTBOX_PATH
+    const res = {}
+    const req = {
+      headers,
+      originalUrl,
+      method,
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: { locals: { formatter, origin, bots: {} } }
+    }
+    await authenticator.authenticate(req, res, next)
+  })
+
+  it('can authenticate a valid RFC 9421 POST request with a full key URL', async () => {
+    const username = REMOTE_USER_6
+    const type = 'Activity'
+    const activity = await as2.import({
+      id: nockFormatDefault({ username, type }),
+      type
+    })
+    const rawBodyText = await activity.write()
+    const hash = crypto.createHash('sha256').update(rawBodyText).digest('base64')
+    const contentDigest = `sha-256=:${hash}:`
+    const keyId = nockFormatDefault({ username, key: true })
+    const method = 'POST'
+    const originalUrl = INBOX_PATH
+    const { 'signature-input': signatureInput, signature } = await nockMessageSignature({
+      method,
+      url: `${origin}${originalUrl}`,
+      contentDigest,
+      username,
+      keyId,
+      domain: REMOTE_HOST
+    })
+    const headers = {
+      'signature-input': signatureInput,
+      signature,
+      'content-digest': contentDigest,
+      host: URL.parse(origin).host
+    }
+    const res = {}
+    const req = {
+      headers,
+      originalUrl,
+      method,
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      rawBodyText,
+      app: { locals: { formatter, origin, bots: {} } }
+    }
     await authenticator.authenticate(req, res, next)
   })
 
