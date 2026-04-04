@@ -185,6 +185,23 @@ describe('HTTPMessageSignature', async () => {
     assert.equal(result, keyId)
   })
 
+  it('can extract a created timestamp from a signature-input header', async () => {
+    const username = signerUser
+    const keyId = nockFormat({ username, key: true, domain: remoteDomain })
+    const url = `${origin}/user/${localUser}/outbox`
+    const before = Math.floor(Date.now() / 1000)
+    const { 'signature-input': signatureInput } = await nockMessageSignature({
+      url,
+      username,
+      keyId,
+      domain: remoteDomain
+    })
+    const after = Math.floor(Date.now() / 1000)
+    const result = httpMessageSignature.created(signatureInput)
+    assert.ok(result >= before)
+    assert.ok(result <= after)
+  })
+
   it('can sign a GET request', async () => {
     const headers = {}
     const privateKey = await getPrivateKey(signerUser, remoteDomain)
