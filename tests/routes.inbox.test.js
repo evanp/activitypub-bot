@@ -1,8 +1,9 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 
+import crypto from 'node:crypto'
 import request from 'supertest'
-import { nockSetup, nockSignature, nockFormat } from '@evanp/activitypub-nock'
+import { nockSetup, nockSignature, nockFormat, nockMessageSignature } from '@evanp/activitypub-nock'
 
 import as2 from '../lib/activitystreams.js'
 import { makeApp } from '../lib/app.js'
@@ -22,13 +23,15 @@ describe('routes.inbox', async () => {
   const INBOX_BOT_4 = 'routesinboxtest4'
   const INBOX_BOT_5 = 'routesinboxtest5'
   const INBOX_BOT_6 = 'routesinboxtest6'
+  const INBOX_BOT_7 = 'routesinboxtest7'
   const LOGGING_BOT = 'routesinboxtestlogging1'
   const REMOTE_ACTOR_1 = 'routesinboxtestactor1'
   const REMOTE_ACTOR_2 = 'routesinboxtestactor2'
   const REMOTE_ACTOR_3 = 'routesinboxtestactor3'
   const REMOTE_ACTOR_4 = 'routesinboxtestactor4'
   const REMOTE_ACTOR_5 = 'routesinboxtestactor5'
-  const TEST_USERNAMES = [BOT_USERNAME, INBOX_BOT_1, INBOX_BOT_2, INBOX_BOT_3, INBOX_BOT_4, INBOX_BOT_5, INBOX_BOT_6, LOGGING_BOT]
+  const REMOTE_ACTOR_6 = 'routesinboxtestactor6'
+  const TEST_USERNAMES = [BOT_USERNAME, INBOX_BOT_1, INBOX_BOT_2, INBOX_BOT_3, INBOX_BOT_4, INBOX_BOT_5, INBOX_BOT_6, INBOX_BOT_7, LOGGING_BOT]
   const host = LOCAL_HOST
   const origin = `https://${host}`
   const databaseUrl = getTestDatabaseUrl()
@@ -41,6 +44,7 @@ describe('routes.inbox', async () => {
     [INBOX_BOT_4]: new DoNothingBot(INBOX_BOT_4),
     [INBOX_BOT_5]: new DoNothingBot(INBOX_BOT_5),
     [INBOX_BOT_6]: new DoNothingBot(INBOX_BOT_6),
+    [INBOX_BOT_7]: new DoNothingBot(INBOX_BOT_7),
     [LOGGING_BOT]: lb
   }
 
@@ -433,6 +437,54 @@ describe('routes.inbox', async () => {
     })
     it('should return a 400 status', async () => {
       assert.strictEqual(response.status, 400)
+    })
+  })
+
+  describe('can handle an incoming activity with RFC 9421 signature', async () => {
+    const username = REMOTE_ACTOR_6
+    const botName = INBOX_BOT_7
+    const path = `/user/${botName}/inbox`
+    const url = `${origin}${path}`
+    const method = 'POST'
+    const activity = await as2.import({
+      type: 'Activity',
+      actor: nockFormatDefault({ username }),
+      id: nockFormatDefault({ username, type: 'activity', num: 1 })
+    })
+    const body = await activity.write()
+    const hash = crypto.createHash('sha256').update(body).digest('base64')
+    const contentDigest = `sha-256=:${hash}:`
+    const keyId = nockFormatDefault({ username, key: true })
+    const { 'signature-input': signatureInput, signature } = await nockMessageSignature({
+      method,
+      url,
+      contentDigest,
+      username,
+      keyId,
+      domain: REMOTE_HOST
+    })
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature-Input', signatureInput)
+        .set('Signature', signature)
+        .set('Host', host)
+        .set('Content-Digest', contentDigest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
+    })
+    it('should appear in the inbox', async () => {
+      const { actorStorage } = app.locals
+      assert.strictEqual(
+        true,
+        await actorStorage.isInCollection(botName, 'inbox', activity)
+      )
     })
   })
 })
