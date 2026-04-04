@@ -69,8 +69,7 @@ describe('HTTPMessageSignature', async () => {
     }
     const publicKeyPem = await getPublicKey(username, remoteDomain)
     const method = 'GET'
-    const path = `/user/${localUser}/outbox`
-    const result = await httpMessageSignature.validate(publicKeyPem, signatureInput, signature, method, path, null, headers)
+    const result = await httpMessageSignature.validate(publicKeyPem, signatureInput, signature, method, url, headers)
     assert.ok(result)
   })
 
@@ -92,9 +91,7 @@ describe('HTTPMessageSignature', async () => {
     }
     const publicKeyPem = await getPublicKey(username, remoteDomain)
     const method = 'GET'
-    const path = '/.well-known/webfinger'
-    const query = `?resource=acct:${lname}@${domain}`
-    const result = await httpMessageSignature.validate(publicKeyPem, signatureInput, signature, method, path, query, headers)
+    const result = await httpMessageSignature.validate(publicKeyPem, signatureInput, signature, method, url, headers)
     assert.ok(result)
   })
 
@@ -115,8 +112,7 @@ describe('HTTPMessageSignature', async () => {
     }
     const publicKeyPem = await getPublicKey(username, remoteDomain)
     const method = 'GET'
-    const path = `/user/${localUser}/outbox`
-    await httpMessageSignature.validate(publicKeyPem, signatureInput, signature, method, path, null, headers)
+    await httpMessageSignature.validate(publicKeyPem, signatureInput, signature, method, url, headers)
     await nockKeyRotate(username, remoteDomain)
     const { 'signature-input': signatureInput2, signature: signature2 } = await nockMessageSignature({
       url,
@@ -131,7 +127,7 @@ describe('HTTPMessageSignature', async () => {
     }
     const publicKeyPem2 = await getPublicKey(username, remoteDomain)
     assert.notStrictEqual(publicKeyPem, publicKeyPem2)
-    const result2 = await httpMessageSignature.validate(publicKeyPem2, signatureInput2, signature2, method, path, null, headers2)
+    const result2 = await httpMessageSignature.validate(publicKeyPem2, signatureInput2, signature2, method, url, headers2)
     assert.ok(result2)
   })
 
@@ -152,8 +148,7 @@ describe('HTTPMessageSignature', async () => {
     }
     const publicKeyPem = await getPublicKey(username, remoteDomain)
     const method = 'GET'
-    const path = `/user/${localUser}/outbox`
-    const result = await httpMessageSignature.validate(publicKeyPem, signatureInput, signature, method, path, null, headers)
+    const result = await httpMessageSignature.validate(publicKeyPem, signatureInput, signature, method, url, headers)
     assert.ok(result)
   })
 
