@@ -501,6 +501,7 @@ describe('routes.inbox', async () => {
     const activityId = nockFormatDefault({ username, type: 'activity', num: 1 })
     const body = JSON.stringify({
       '@context': [
+        'https://w3id.org/identity/v1',
         'https://www.w3.org/ns/activitystreams',
         'https://w3id.org/security/v1',
         'https://w3id.org/security/data-integrity/v1',
