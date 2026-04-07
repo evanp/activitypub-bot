@@ -365,13 +365,13 @@ describe('ProvinceBotFactory', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
     })
     it('should return an object with an type matching the request', async () => {
-      assert.strictEqual(response.body.type, 'about:blank')
+      assert.strictEqual(response.body.type, 'https://w3id.org/fep/c180#principal-not-authorized')
     })
     it('should return an object with a title', async () => {
       assert.strictEqual(typeof response.body.title, 'string')
     })
     it('should return an object with a title matching the request', async () => {
-      assert.strictEqual(response.body.title, 'Forbidden')
+      assert.strictEqual(response.body.title, 'Principal not authorized')
     })
     it('should return an object with a status', async () => {
       assert.strictEqual(typeof response.body.status, 'number')
@@ -405,13 +405,13 @@ describe('ProvinceBotFactory', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
     })
     it('should return an object with an type matching the request', async () => {
-      assert.strictEqual(response.body.type, 'about:blank')
+      assert.strictEqual(response.body.type, 'https://w3id.org/fep/c180#principal-not-authorized')
     })
     it('should return an object with a title', async () => {
       assert.strictEqual(typeof response.body.title, 'string')
     })
     it('should return an object with a title matching the request', async () => {
-      assert.strictEqual(response.body.title, 'Forbidden')
+      assert.strictEqual(response.body.title, 'Principal not authorized')
     })
     it('should return an object with a status', async () => {
       assert.strictEqual(typeof response.body.status, 'number')
