@@ -24,6 +24,7 @@ describe('routes.inbox', async () => {
   const INBOX_BOT_5 = 'routesinboxtest5'
   const INBOX_BOT_6 = 'routesinboxtest6'
   const INBOX_BOT_7 = 'routesinboxtest7'
+  const INBOX_BOT_8 = 'routesinboxtest8'
   const LOGGING_BOT = 'routesinboxtestlogging1'
   const REMOTE_ACTOR_1 = 'routesinboxtestactor1'
   const REMOTE_ACTOR_2 = 'routesinboxtestactor2'
@@ -31,7 +32,8 @@ describe('routes.inbox', async () => {
   const REMOTE_ACTOR_4 = 'routesinboxtestactor4'
   const REMOTE_ACTOR_5 = 'routesinboxtestactor5'
   const REMOTE_ACTOR_6 = 'routesinboxtestactor6'
-  const TEST_USERNAMES = [BOT_USERNAME, INBOX_BOT_1, INBOX_BOT_2, INBOX_BOT_3, INBOX_BOT_4, INBOX_BOT_5, INBOX_BOT_6, INBOX_BOT_7, LOGGING_BOT]
+  const REMOTE_ACTOR_7 = 'routesinboxtestactor7'
+  const TEST_USERNAMES = [BOT_USERNAME, INBOX_BOT_1, INBOX_BOT_2, INBOX_BOT_3, INBOX_BOT_4, INBOX_BOT_5, INBOX_BOT_6, INBOX_BOT_7, INBOX_BOT_8, LOGGING_BOT]
   const host = LOCAL_HOST
   const origin = `https://${host}`
   const databaseUrl = getTestDatabaseUrl()
@@ -45,6 +47,7 @@ describe('routes.inbox', async () => {
     [INBOX_BOT_5]: new DoNothingBot(INBOX_BOT_5),
     [INBOX_BOT_6]: new DoNothingBot(INBOX_BOT_6),
     [INBOX_BOT_7]: new DoNothingBot(INBOX_BOT_7),
+    [INBOX_BOT_8]: new DoNothingBot(INBOX_BOT_8),
     [LOGGING_BOT]: lb
   }
 
@@ -481,6 +484,64 @@ describe('routes.inbox', async () => {
     })
     it('should appear in the inbox', async () => {
       const { actorStorage } = app.locals
+      assert.strictEqual(
+        true,
+        await actorStorage.isInCollection(botName, 'inbox', activity)
+      )
+    })
+  })
+
+  describe('can handle an incoming activity with extended JSON-LD context URLs', async () => {
+    const username = REMOTE_ACTOR_7
+    const botName = INBOX_BOT_8
+    const path = `/user/${botName}/inbox`
+    const url = `${origin}${path}`
+    const method = 'POST'
+    const actorId = nockFormatDefault({ username })
+    const activityId = nockFormatDefault({ username, type: 'activity', num: 1 })
+    const body = JSON.stringify({
+      '@context': [
+        'https://www.w3.org/ns/activitystreams',
+        'https://w3id.org/security/v1',
+        'https://w3id.org/security/data-integrity/v1',
+        'https://www.w3.org/ns/did/v1',
+        'https://w3id.org/security/multikey/v1',
+        'https://gotosocial.org/ns'
+      ],
+      type: 'Activity',
+      id: activityId,
+      actor: actorId
+    })
+    const hash = crypto.createHash('sha256').update(body).digest('base64')
+    const contentDigest = `sha-256=:${hash}:`
+    const keyId = nockFormatDefault({ username, key: true })
+    const { 'signature-input': signatureInput, signature } = await nockMessageSignature({
+      method,
+      url,
+      contentDigest,
+      username,
+      keyId,
+      domain: REMOTE_HOST
+    })
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature-Input', signatureInput)
+        .set('Signature', signature)
+        .set('Host', host)
+        .set('Content-Digest', contentDigest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
+    })
+    it('should appear in the inbox', async () => {
+      const { actorStorage } = app.locals
+      const activity = await as2.import(JSON.parse(body))
       assert.strictEqual(
         true,
         await actorStorage.isInCollection(botName, 'inbox', activity)

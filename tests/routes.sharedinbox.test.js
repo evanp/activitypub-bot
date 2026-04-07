@@ -56,6 +56,8 @@ describe('routes.sharedinbox', async () => {
   const BOT_FOLLOW_NO_RECIPIENTS = 'routesharedinboxtestfnr'
   const BOT_RFC9421 = 'routesharedinboxtestrfc9421'
   const REMOTE_ACTOR_11 = 'routesharedinboxtestactor11'
+  const BOT_EXTENDED_CONTEXT = 'routesharedinboxtestextctx'
+  const REMOTE_ACTOR_12 = 'routesharedinboxtestactor12'
   const BOT_NAMES_FOLLOWERS_ONLY = [BOT_FOLLOWERS_ONLY_1, BOT_FOLLOWERS_ONLY_2]
   const BOT_NAMES_LOCAL_FOLLOWERS = [BOT_LOCAL_FOLLOWERS_1, BOT_LOCAL_FOLLOWERS_2, BOT_LOCAL_FOLLOWERS_3]
   const BOT_NAMES_LOCAL_FOLLOWING = [BOT_LOCAL_FOLLOWING_1, BOT_LOCAL_FOLLOWING_2]
@@ -72,7 +74,8 @@ describe('routes.sharedinbox', async () => {
     ...BOT_NAMES_REMOTE_FOLLOWING,
     ...BOT_NAMES_REMOTE_COLLECTION,
     BOT_FOLLOW_NO_RECIPIENTS,
-    BOT_RFC9421
+    BOT_RFC9421,
+    BOT_EXTENDED_CONTEXT
   ]
   const TEST_USERNAMES = [...doNothingBotUsernames, LOGGING_BOT]
   const loggingBot = new EventLoggingBot(LOGGING_BOT)
@@ -791,6 +794,71 @@ describe('routes.sharedinbox', async () => {
     })
     it('should return a 400 status', async () => {
       assert.strictEqual(response.status, 400)
+    })
+  })
+
+  describe('can handle an incoming activity with extended JSON-LD context URLs', async () => {
+    const username = REMOTE_ACTOR_12
+    const botName = BOT_EXTENDED_CONTEXT
+    const path = '/shared/inbox'
+    const url = `${origin}${path}`
+    const method = 'POST'
+    let response = null
+    let body = null
+    let contentDigest = null
+    let signatureInput = null
+    let signature = null
+    let activity = null
+    before(async () => {
+      const actorId = nockFormatDefault({ username })
+      const activityId = nockFormatDefault({ username, type: 'activity', num: 1 })
+      body = JSON.stringify({
+        '@context': [
+          'https://www.w3.org/ns/activitystreams',
+          'https://w3id.org/security/v1',
+          'https://w3id.org/security/data-integrity/v1',
+          'https://www.w3.org/ns/did/v1',
+          'https://w3id.org/security/multikey/v1',
+          'https://gotosocial.org/ns'
+        ],
+        type: 'Activity',
+        id: activityId,
+        actor: actorId,
+        to: formatter.format({ username: botName })
+      })
+      activity = await as2.import(JSON.parse(body))
+      const hash = crypto.createHash('sha256').update(body).digest('base64')
+      contentDigest = `sha-256=:${hash}:`
+      const keyId = nockFormatDefault({ username, key: true });
+      ({ 'signature-input': signatureInput, signature } = await nockMessageSignature({
+        method,
+        url,
+        contentDigest,
+        username,
+        keyId,
+        domain: REMOTE_HOST
+      }))
+    })
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature-Input', signatureInput)
+        .set('Signature', signature)
+        .set('Host', host)
+        .set('Content-Digest', contentDigest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
+    })
+    it('should appear in the inbox', async () => {
+      assert.strictEqual(
+        true,
+        await actorStorage.isInCollection(botName, 'inbox', activity)
+      )
     })
   })
 })
