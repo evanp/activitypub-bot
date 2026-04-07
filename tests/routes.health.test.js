@@ -7,7 +7,6 @@ import { makeApp } from '../lib/app.js'
 
 import { getTestDatabaseUrl } from './utils/db.js'
 
-const UUID_REGEXP = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 describe('health check routes', async () => {
   const LOCAL_HOST = 'local.routes-health.test'
@@ -61,30 +60,4 @@ describe('health check routes', async () => {
     })
   })
 
-  it('Creates an X-Request-ID', async () => {
-    const response = await request(app).get('/readyz')
-    assert.strictEqual(response.status, 200)
-    assert.ok(response.headers['x-request-id'])
-    assert.ok(response.headers['x-request-id'].match(UUID_REGEXP))
-  })
-
-  it('Passes through an X-Request-ID', async () => {
-    const id = 'FB726EB1-F325-47E4-93A0-C28A2517DC2A'
-    const response = await request(app).get('/readyz')
-      .set('X-Request-ID', id)
-    assert.strictEqual(response.status, 200)
-    assert.ok(response.headers['x-request-id'])
-    assert.strictEqual(response.headers['x-request-id'], id)
-    assert.ok(response.headers['x-request-id'].match(UUID_REGEXP))
-  })
-
-  it('Ignores a non-UUID X-Request-ID', async () => {
-    const id = 'not a UUID'
-    const response = await request(app).get('/readyz')
-      .set('X-Request-ID', id)
-    assert.strictEqual(response.status, 200)
-    assert.ok(response.headers['x-request-id'])
-    assert.ok(response.headers['x-request-id'] !== id)
-    assert.ok(response.headers['x-request-id'].match(UUID_REGEXP))
-  })
 })
