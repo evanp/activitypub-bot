@@ -25,6 +25,8 @@ const MISMATCH_HOST = 'mismatch.remotekeystorage.test'
 const MISMATCH_USER = 'remotekeystoragemismatch1'
 const NOSEC_HOST = 'nosec.remotekeystorage.test'
 const NOSEC_USER = 'remotekeystoragenosec1'
+const DUPLICATE_KEY_HOST = 'duplicatekey.remotekeystorage.test'
+const DUPLICATE_KEY_USER = 'remotekeystoragedupkey1'
 
 describe('RemoteKeyStorage', async () => {
   const origin = `https://${LOCAL_HOST}`
@@ -41,7 +43,7 @@ describe('RemoteKeyStorage', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST]
     })
     const keyStorage = new KeyStorage(connection, logger)
     const formatter = new UrlFormatter(origin)
@@ -56,7 +58,7 @@ describe('RemoteKeyStorage', async () => {
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST]
     })
     await connection.close()
     connection = null
@@ -170,6 +172,60 @@ describe('RemoteKeyStorage', async () => {
           publicKeyPem
         }
       }), { 'Content-Type': 'application/activity+json' })
+
+    const remote = await remoteKeyStorage.getPublicKey(keyId)
+    assert.ok(remote)
+    assert.equal(remote.publicKeyPem, publicKeyPem)
+    assert.equal(remote.owner, actorId)
+  })
+
+  it('can get a public key when actor has duplicate key ID in publicKey and assertionMethod', async () => {
+    const domain = DUPLICATE_KEY_HOST
+    const username = DUPLICATE_KEY_USER
+    const actorId = `https://${domain}/user/${username}`
+    const keyId = `${actorId}#main-key`
+    const publicKeyPem = await getPublicKey(REMOTE_USER_1, REMOTE_HOST)
+
+    const actorJson = {
+      '@context': [
+        'https://www.w3.org/ns/activitystreams',
+        'https://w3id.org/security/v1',
+        {
+          assertionMethod: {
+            '@id': 'https://w3id.org/security#assertionMethod',
+            '@type': '@id',
+            '@container': '@set'
+          },
+          Multikey: 'https://w3id.org/security#Multikey',
+          controller: {
+            '@id': 'https://w3id.org/security#controller',
+            '@type': '@id'
+          },
+          publicKeyMultibase: 'https://w3id.org/security#publicKeyMultibase'
+        }
+      ],
+      id: actorId,
+      type: 'Person',
+      assertionMethod: [
+        {
+          id: keyId,
+          type: 'Multikey',
+          controller: actorId,
+          publicKeyMultibase: 'z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK'
+        }
+      ],
+      publicKey: {
+        id: keyId,
+        type: 'CryptographicKey',
+        owner: actorId,
+        publicKeyPem
+      }
+    }
+
+    nock(`https://${domain}`)
+      .get(`/user/${username}`)
+      .twice()
+      .reply(200, JSON.stringify(actorJson), { 'Content-Type': 'application/activity+json' })
 
     const remote = await remoteKeyStorage.getPublicKey(keyId)
     assert.ok(remote)
