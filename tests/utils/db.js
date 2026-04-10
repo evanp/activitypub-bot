@@ -144,7 +144,7 @@ export async function cleanupTestData (connection, {
   const signaturePolicyClauses = []
   const signaturePolicyReplacements = {}
   if (remoteDomains.length > 0) {
-    signaturePolicyClauses.push('domain IN (:signaturePolicyDomains)')
+    signaturePolicyClauses.push('origin IN (:signaturePolicyDomains)')
     signaturePolicyReplacements.signaturePolicyDomains = remoteDomains
   }
   await deleteWhere(connection, 'signature_policy', signaturePolicyClauses, signaturePolicyReplacements)
