@@ -141,6 +141,14 @@ export async function cleanupTestData (connection, {
   addLikeClauses(remoteCacheClauses, remoteCacheReplacements, 'id', allPatterns, 'remoteCacheIdPattern')
   await deleteWhere(connection, 'remote_object_cache', remoteCacheClauses, remoteCacheReplacements)
 
+  const signaturePolicyClauses = []
+  const signaturePolicyReplacements = {}
+  if (remoteDomains.length > 0) {
+    signaturePolicyClauses.push('domain IN (:signaturePolicyDomains)')
+    signaturePolicyReplacements.signaturePolicyDomains = remoteDomains
+  }
+  await deleteWhere(connection, 'signature_policy', signaturePolicyClauses, signaturePolicyReplacements)
+
   if (queues.length > 0) {
     await connection.query(
       'DELETE FROM job WHERE queue_id in (?);',
