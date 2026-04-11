@@ -74,9 +74,6 @@ const LOCAL_USERNAMES = [
   LOCAL_USER6,
   LOCAL_USER7
 ]
-const SIGNATURE_RE = new RegExp(
-  `^keyId="https://${LOCAL_HOST.replace(/\./g, '\\.')}/user/${LOCAL_USER0}/publickey",headers="\\(request-target\\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$`
-)
 const MESSAGE_SIGNATURE_RE = /^sig1=:[0-9A-Za-z+/=]+:$/
 const SIGNATURE_INPUT_RE = new RegExp(
   `^sig1=\\("@method" "@authority" "@path" "date" "user-agent" "content-type" "digest"\\);keyid="https://${LOCAL_HOST.replace(/\./g, '\\.')}/user/${LOCAL_USER0}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
