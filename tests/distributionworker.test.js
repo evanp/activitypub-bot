@@ -65,12 +65,6 @@ describe('DistributionWorker', async () => {
       remoteDomains: [remoteHost]
     })
     await connection.close()
-    connection = null
-    formatter = null
-    logger = null
-    client = null
-    DistributionWorker = null
-    worker = null
   })
 
   beforeEach(() => {

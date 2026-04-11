@@ -152,7 +152,6 @@ describe('object collection routes', async () => {
       remoteDomains: [REMOTE_HOST]
     })
     await app.cleanup()
-    app = null
   })
 
   describe('GET /user/{username}/{type}/{nanoid}', async () => {

@@ -98,17 +98,6 @@ describe('IntakeWorker', async () => {
       queues: ['intake', 'delivery']
     })
     await connection.close()
-    connection = null
-    formatter = null
-    logger = null
-    client = null
-    actorStorage = null
-    objectStorage = null
-    deliverer = null
-    deliveryWorker = null
-    IntakeWorker = null
-    intakeWorker = null
-    queue = null
   })
 
   it('can import the library', async () => {

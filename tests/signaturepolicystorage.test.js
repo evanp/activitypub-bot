@@ -43,9 +43,6 @@ describe('SignaturePolicyStorage', async () => {
       ]
     })
     await connection.close()
-    connection = null
-    logger = null
-    storage = null
   })
 
   it('can initialize', async () => {

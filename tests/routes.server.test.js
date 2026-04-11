@@ -37,7 +37,6 @@ describe('server routes', async () => {
       return
     }
     await app.cleanup()
-    app = null
   })
 
   describe('GET server actor', async () => {

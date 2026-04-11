@@ -49,8 +49,6 @@ describe('ObjectStorage', async () => {
   after(async () => {
     await cleanupTestData(connection, { localDomain: LOCAL_HOST })
     await connection.close()
-    connection = null
-    storage = null
   })
   it('can initialize', async () => {
     storage = new ObjectStorage(connection)

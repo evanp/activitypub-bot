@@ -59,14 +59,6 @@ describe('ActivityDeliverer', async () => {
       remoteDomains: [remoteHost]
     })
     await connection.close()
-    connection = null
-    actorStorage = null
-    formatter = null
-    logger = null
-    client = null
-    jobQueue = null
-    ActivityDeliverer = null
-    deliverer = null
   })
 
   it('can import the library', async () => {

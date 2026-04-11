@@ -171,13 +171,6 @@ describe('ActivityDistributor', () => {
     )
     await cleanup()
     await connection.close()
-    distributor = null
-    client = null
-    connection = null
-    actorStorage = null
-    keyStorage = null
-    formatter = null
-    logger = null
   })
   beforeEach(async () => {
     resetInbox()

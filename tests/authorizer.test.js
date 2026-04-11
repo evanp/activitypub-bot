@@ -185,10 +185,6 @@ describe('Authorizer', () => {
       remoteDomains: [REMOTE_HOST]
     })
     await connection.close()
-    formatter = null
-    actorStorage = null
-    connection = null
-    authorizer = null
   })
 
   it('should be a class', async () => {

@@ -84,14 +84,6 @@ describe('DeliveryWorker', async () => {
       remoteDomains: [remoteHost]
     })
     await connection.close()
-    connection = null
-    actorStorage = null
-    handler = null
-    formatter = null
-    logger = null
-    client = null
-    DeliveryWorker = null
-    worker = null
   })
 
   it('can import the library', async () => {

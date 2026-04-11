@@ -43,7 +43,6 @@ describe('app', async () => {
       localDomain: LOCAL_HOST
     })
     await app.cleanup()
-    app = null
   })
 
   it('should be a function', async () => {

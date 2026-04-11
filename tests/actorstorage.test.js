@@ -53,8 +53,6 @@ describe('ActorStorage', () => {
   after(async () => {
     await cleanupTestData(connection, { usernames: TEST_USERNAMES })
     await connection.close()
-    connection = null
-    formatter = null
   })
   it('can create an instance', () => {
     storage = new ActorStorage(connection, formatter)

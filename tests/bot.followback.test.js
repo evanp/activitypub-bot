@@ -42,7 +42,6 @@ describe('FollowBack bot', async () => {
       })
       await app.cleanup()
     }
-    app = null
   })
 
   describe('Can import and initialize', async () => {

@@ -65,10 +65,6 @@ describe('RemoteKeyStorage', async () => {
       remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST]
     })
     await connection.close()
-    connection = null
-    remoteKeyStorage = null
-    client = null
-    logger = null
   })
 
   it('can initialize', async () => {

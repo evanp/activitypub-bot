@@ -48,7 +48,6 @@ describe('actor collection routes', async () => {
       localDomain: LOCAL_HOST
     })
     await app.cleanup()
-    app = null
   })
 
   for (const coll of ['outbox', 'liked', 'followers', 'following']) {

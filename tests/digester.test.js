@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test'
+import { describe, it, before } from 'node:test'
 import assert from 'node:assert'
 
 import Logger from 'pino'
@@ -13,10 +13,6 @@ describe('Digester', () => {
     logger = new Logger({
       level: 'silent'
     })
-  })
-
-  after(async () => {
-    logger = null
   })
 
   it('can initialize', async () => {

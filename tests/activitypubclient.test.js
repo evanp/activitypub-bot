@@ -223,16 +223,6 @@ describe('ActivityPubClient', async () => {
       ]
     })
     await connection.close()
-    keyStorage = null
-    connection = null
-    formatter = null
-    client = null
-    logger = null
-    digester = null
-    signer = null
-    messageSigner = null
-    policyStorage = null
-    remoteObjectCache = null
   })
 
   beforeEach(async () => {

@@ -36,9 +36,6 @@ describe('KeyStorage', async () => {
   after(async () => {
     await cleanupTestData(connection, { usernames: TEST_BOTS })
     await connection.close()
-    connection = null
-    storage = null
-    logger = null
   })
   it('can initialize', async () => {
     storage = new KeyStorage(connection, logger)

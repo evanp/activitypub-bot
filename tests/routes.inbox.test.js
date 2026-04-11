@@ -83,7 +83,6 @@ describe('routes.inbox', async () => {
       remoteDomains: [REMOTE_HOST]
     })
     await app.cleanup()
-    app = null
   })
 
   describe('GET /user/{botid}/inbox', async () => {

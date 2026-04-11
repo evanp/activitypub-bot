@@ -75,16 +75,6 @@ describe('FanoutWorker', async () => {
       queues: ['fanout', 'distribution']
     })
     await connection.close()
-    connection = null
-    formatter = null
-    logger = null
-    client = null
-    actorStorage = null
-    distributor = null
-    FanoutWorker = null
-    fanoutWorker = null
-    distributionWorker = null
-    queue = null
   })
 
   beforeEach(() => {

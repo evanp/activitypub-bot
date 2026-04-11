@@ -57,8 +57,6 @@ describe('RelayServerBot', async () => {
       remoteDomains: [REMOTE_HOST]
     })
     await app.cleanup()
-    app = null
-    formatter = null
   })
 
   it('can get the actor for the relay server', async () => {

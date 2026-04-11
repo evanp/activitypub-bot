@@ -101,12 +101,6 @@ describe('HTTPSignatureAuthenticator', async () => {
       remoteDomains: [REMOTE_HOST]
     })
     await connection.close()
-    authenticator = null
-    digester = null
-    formatter = null
-    signer = null
-    messageSigner = null
-    remoteKeyStorage = null
   })
 
   it('can initialize', async () => {

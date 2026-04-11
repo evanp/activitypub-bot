@@ -21,8 +21,6 @@ describe('BotDataStorage', async () => {
   after(async () => {
     await cleanupTestData(connection, { usernames: TEST_BOTS })
     await connection.close()
-    connection = null
-    storage = null
   })
   it('can initialize', async () => {
     storage = new BotDataStorage(connection)

@@ -171,17 +171,6 @@ describe('ActivityHandler', () => {
       remoteDomains: [socialDomain, thirdDomain]
     })
     await connection.close()
-    handler = null
-    cache = null
-    authz = null
-    distributor = null
-    client = null
-    formatter = null
-    actorStorage = null
-    keyStorage = null
-    botDataStorage = null
-    objectStorage = null
-    connection = null
   })
   beforeEach(async () => {
     Object.assign(postInbox, {})

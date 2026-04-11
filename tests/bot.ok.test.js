@@ -65,7 +65,6 @@ describe('OK bot', async () => {
       remoteDomains: [REMOTE_HOST]
     })
     await app.cleanup()
-    app = null
   })
 
   describe('responds to a mention', async () => {

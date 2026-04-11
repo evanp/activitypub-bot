@@ -52,7 +52,6 @@ describe('HTTPSignature', async () => {
       remoteDomains: [remoteDomain]
     })
     await connection.close()
-    digester = null
   })
 
   it('can initialize', async () => {

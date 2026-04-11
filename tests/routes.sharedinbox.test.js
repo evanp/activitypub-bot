@@ -141,7 +141,6 @@ describe('routes.sharedinbox', async () => {
       remoteDomains: [REMOTE_HOST]
     })
     await app.cleanup()
-    app = null
   })
 
   describe('can handle an directly addressed activity', async () => {

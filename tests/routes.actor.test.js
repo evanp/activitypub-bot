@@ -52,7 +52,6 @@ describe('actor routes', async () => {
       localDomain: LOCAL_HOST
     })
     await app.cleanup()
-    app = null
   })
 
   describe('GET /user/{botid}', async () => {

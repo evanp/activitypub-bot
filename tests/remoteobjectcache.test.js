@@ -33,9 +33,6 @@ describe('RemoteObjectCache', async () => {
       remoteDomains: [REMOTE_HOST]
     })
     await connection.close()
-    connection = null
-    logger = null
-    cache = null
   })
 
   it('get on a cold cache returns null', async () => {

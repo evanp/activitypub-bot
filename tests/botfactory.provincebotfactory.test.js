@@ -64,7 +64,6 @@ describe('ProvinceBotFactory', async () => {
       remoteDomains: [REMOTE_HOST]
     })
     await app.cleanup()
-    app = null
   })
 
   describe('Webfinger discovery for province', async () => {

@@ -31,7 +31,6 @@ describe('webfinger routes', async () => {
       return
     }
     await app.cleanup()
-    app = null
   })
 
   describe('GET /.well-known/webfinger', async () => {

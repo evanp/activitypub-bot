@@ -26,7 +26,6 @@ describe('health check routes', async () => {
       return
     }
     await app.cleanup()
-    app = null
   })
 
   describe('GET /livez', async () => {

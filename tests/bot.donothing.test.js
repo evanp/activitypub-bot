@@ -57,7 +57,6 @@ describe('DoNothing bot', async () => {
       remoteDomains: [REMOTE_HOST]
     })
     await app.cleanup()
-    app = null
   })
 
   describe('Bot exists', async () => {

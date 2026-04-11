@@ -172,17 +172,6 @@ describe('BotContext', () => {
       remoteDomains: [REMOTE_HOST]
     })
     await connection.close()
-    context = null
-    distributor = null
-    client = null
-    formatter = null
-    actorStorage = null
-    keyStorage = null
-    botDataStorage = null
-    objectStorage = null
-    connection = null
-    transformer = null
-    logger = null
   })
   beforeEach(async () => {
     resetInbox()
