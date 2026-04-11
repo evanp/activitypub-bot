@@ -91,7 +91,7 @@ describe('ActivityPubClient', async () => {
     assert.match(
       headers['signature-input'],
       new RegExp(
-        `^sig1=\\("@method" "@authority" "@path" "accept" "date" "user-agent"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
+        `^sig1=\\("@method" "@target-uri" "accept" "date" "user-agent"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
       )
     )
   }
@@ -116,7 +116,7 @@ describe('ActivityPubClient', async () => {
     assert.match(
       headers['signature-input'],
       new RegExp(
-        `^sig1=\\("@method" "@authority" "@path" "date" "user-agent" "content-type" "content-digest"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
+        `^sig1=\\("@method" "@target-uri" "date" "user-agent" "content-type" "content-digest"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
       )
     )
   }

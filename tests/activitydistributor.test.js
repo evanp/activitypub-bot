@@ -76,7 +76,7 @@ const LOCAL_USERNAMES = [
 ]
 const MESSAGE_SIGNATURE_RE = /^sig1=:[0-9A-Za-z+/=]+:$/
 const SIGNATURE_INPUT_RE = new RegExp(
-  `^sig1=\\("@method" "@authority" "@path" "date" "user-agent" "content-type" "content-digest"\\);keyid="https://${LOCAL_HOST.replace(/\./g, '\\.')}/user/${LOCAL_USER0}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
+  `^sig1=\\("@method" "@target-uri" "date" "user-agent" "content-type" "content-digest"\\);keyid="https://${LOCAL_HOST.replace(/\./g, '\\.')}/user/${LOCAL_USER0}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
 )
 
 describe('ActivityDistributor', () => {
