@@ -308,7 +308,7 @@ describe('ActivityPubClient', async () => {
       assert.fail('should have thrown')
     } catch (error) {
       assert.ok(error)
-      assert.equal(error.status, 500)
+      assert.equal(error.status, 403)
     }
   })
 
@@ -488,7 +488,7 @@ describe('ActivityPubClient', async () => {
       assert.fail('should have thrown')
     } catch (error) {
       assert.ok(error)
-      assert.equal(error.status, 500)
+      assert.equal(error.status, 404)
     }
 
     assert.strictEqual(requests.length, 1)
@@ -676,7 +676,7 @@ describe('ActivityPubClient', async () => {
       assert.fail('should have thrown')
     } catch (error) {
       assert.ok(error)
-      assert.equal(error.status, 500)
+      assert.equal(error.status, 404)
     }
 
     assert.strictEqual(requests.length, 1)
