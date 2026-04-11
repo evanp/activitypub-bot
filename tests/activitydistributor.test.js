@@ -77,6 +77,10 @@ const LOCAL_USERNAMES = [
 const SIGNATURE_RE = new RegExp(
   `^keyId="https://${LOCAL_HOST.replace(/\./g, '\\.')}/user/${LOCAL_USER0}/publickey",headers="\\(request-target\\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$`
 )
+const MESSAGE_SIGNATURE_RE = /^sig1=:[0-9A-Za-z+/=]+:$/
+const SIGNATURE_INPUT_RE = new RegExp(
+  `^sig1=\\("@method" "@authority" "@path" "date" "user-agent" "content-type" "digest"\\);keyid="https://${LOCAL_HOST.replace(/\./g, '\\.')}/user/${LOCAL_USER0}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
+)
 
 describe('ActivityDistributor', () => {
   let connection = null
@@ -213,12 +217,14 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.equal(postInbox.activitydistributortest1, 1)
     assert.ok(!postInbox.activitydistributortest2)
-    const { signature, digest, date } =
+    const { signature, 'signature-input': signatureInput, digest, date } =
       getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
+    assert.ok(signatureInput)
     assert.ok(digest)
     assert.ok(date)
-    assert.match(signature, SIGNATURE_RE)
+    assert.match(signature, MESSAGE_SIGNATURE_RE)
+    assert.match(signatureInput, SIGNATURE_INPUT_RE)
     assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
@@ -231,12 +237,14 @@ describe('ActivityDistributor', () => {
     })
     await distributor.distribute(activity, 'activitydistributortest0')
     await distributor.onIdle()
-    const { signature, digest, date } =
+    const { signature, 'signature-input': signatureInput, digest, date } =
       getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
+    assert.ok(signatureInput)
     assert.ok(digest)
     assert.ok(date)
-    assert.match(signature, SIGNATURE_RE)
+    assert.match(signature, MESSAGE_SIGNATURE_RE)
+    assert.match(signatureInput, SIGNATURE_INPUT_RE)
     assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
@@ -264,12 +272,14 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(postInbox.activitydistributortest1)
     assert.ok(postInbox.activitydistributortest2)
-    const { signature, digest, date } =
+    const { signature, 'signature-input': signatureInput, digest, date } =
       getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
+    assert.ok(signatureInput)
     assert.ok(digest)
     assert.ok(date)
-    assert.match(signature, SIGNATURE_RE)
+    assert.match(signature, MESSAGE_SIGNATURE_RE)
+    assert.match(signatureInput, SIGNATURE_INPUT_RE)
     assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
@@ -285,12 +295,14 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(postInbox.activitydistributortest1)
     assert.ok(!postInbox.activitydistributortest2)
-    const { signature, digest, date } =
+    const { signature, 'signature-input': signatureInput, digest, date } =
       getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
+    assert.ok(signatureInput)
     assert.ok(digest)
     assert.ok(date)
-    assert.match(signature, SIGNATURE_RE)
+    assert.match(signature, MESSAGE_SIGNATURE_RE)
+    assert.match(signatureInput, SIGNATURE_INPUT_RE)
     assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })

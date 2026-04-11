@@ -41,6 +41,11 @@ describe('ActivityPubClient', async () => {
   const CACHED_DRAFT_HOST = 'cacheddraft.activitypubclient.test'
   const EXPIRED_DRAFT_HOST = 'expireddraft.activitypubclient.test'
   const NO_FALLBACK_HOST = 'nofallback.activitypubclient.test'
+  const RFC9421_POST_HOST = 'rfc9421-post.activitypubclient.test'
+  const DOUBLE_KNOCK_POST_HOST = 'doubleknock-post.activitypubclient.test'
+  const CACHED_DRAFT_POST_HOST = 'cacheddraft-post.activitypubclient.test'
+  const EXPIRED_DRAFT_POST_HOST = 'expireddraft-post.activitypubclient.test'
+  const NO_FALLBACK_POST_HOST = 'nofallback-post.activitypubclient.test'
   const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
   const LOCAL_SIGNING_USER = 'activitypubclienttestfoobot'
   const REMOTE_PROFILE_USER = 'activitypubclientevan'
@@ -103,6 +108,26 @@ describe('ActivityPubClient', async () => {
     assert.equal(headers['signature-input'], undefined)
   }
 
+  function assertRfc9421PostHeaders (headers, username = LOCAL_SIGNING_USER) {
+    assert.ok(headers)
+    assert.ok(headers.signature)
+    assert.match(headers.signature, MESSAGE_SIGNATURE_RE)
+    assert.equal(typeof headers['signature-input'], 'string')
+    assert.match(
+      headers['signature-input'],
+      new RegExp(
+        `^sig1=\\("@method" "@authority" "@path" "date" "user-agent" "content-type" "digest"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
+      )
+    )
+  }
+
+  function assertDraftCavagePostHeaders (headers) {
+    assert.ok(headers)
+    assert.ok(headers.signature)
+    assert.match(headers.signature, SIGNATURE_POST_RE)
+    assert.equal(headers['signature-input'], undefined)
+  }
+
   let connection = null
   let keyStorage = null
   let formatter = null
@@ -133,7 +158,12 @@ describe('ActivityPubClient', async () => {
         DOUBLE_KNOCK_HOST,
         CACHED_DRAFT_HOST,
         EXPIRED_DRAFT_HOST,
-        NO_FALLBACK_HOST
+        NO_FALLBACK_HOST,
+        RFC9421_POST_HOST,
+        DOUBLE_KNOCK_POST_HOST,
+        CACHED_DRAFT_POST_HOST,
+        EXPIRED_DRAFT_POST_HOST,
+        NO_FALLBACK_POST_HOST
       ]
     })
     keyStorage = new KeyStorage(connection, logger)
@@ -184,7 +214,12 @@ describe('ActivityPubClient', async () => {
         DOUBLE_KNOCK_HOST,
         CACHED_DRAFT_HOST,
         EXPIRED_DRAFT_HOST,
-        NO_FALLBACK_HOST
+        NO_FALLBACK_HOST,
+        RFC9421_POST_HOST,
+        DOUBLE_KNOCK_POST_HOST,
+        CACHED_DRAFT_POST_HOST,
+        EXPIRED_DRAFT_POST_HOST,
+        NO_FALLBACK_POST_HOST
       ]
     })
     await connection.close()
@@ -266,9 +301,8 @@ describe('ActivityPubClient', async () => {
     const inbox = REMOTE_INBOX
     await client.post(inbox, obj, LOCAL_SIGNING_USER)
     const h = getRequestHeaders(inbox)
-    assert.ok(h.signature)
+    assertRfc9421PostHeaders(h, LOCAL_SIGNING_USER)
     assert.ok(h.digest)
-    assert.match(h.signature, SIGNATURE_POST_RE)
     assert.match(h.digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
     assert.equal(typeof h.date, 'string')
     assert.match(h.date, /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
@@ -286,6 +320,189 @@ describe('ActivityPubClient', async () => {
       assert.ok(error)
       assert.equal(error.status, 500)
     }
+  })
+
+  it('sends draft-cavage-12 if RFC 9421 fails on POST', async () => {
+    const inbox = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      collection: 'inbox',
+      domain: DOUBLE_KNOCK_POST_HOST
+    })
+    const obj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(`https://${DOUBLE_KNOCK_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .to(`https://${DOUBLE_KNOCK_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .publishedNow()
+      .get()
+    const requests = []
+    let requestNumber = 0
+
+    nock(`https://${DOUBLE_KNOCK_POST_HOST}`)
+      .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
+      .twice()
+      .reply(function () {
+        requestNumber += 1
+        requests.push(normalizeHeaders(this.req.headers))
+        return (requestNumber === 1)
+          ? [403, 'forbidden']
+          : [202, 'accepted']
+      })
+
+    await client.post(inbox, obj, LOCAL_SIGNING_USER)
+
+    assert.strictEqual(requests.length, 2)
+    assertRfc9421PostHeaders(requests[0], LOCAL_SIGNING_USER)
+    assertDraftCavagePostHeaders(requests[1])
+  })
+
+  it('does not send RFC 9421 after an RFC 9421 failure plus draft-cavage-12 success on POST', async () => {
+    const firstInbox = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      collection: 'inbox',
+      domain: CACHED_DRAFT_POST_HOST
+    })
+    const secondInbox = nockFormat({
+      username: REMOTE_RELAY_USER,
+      collection: 'inbox',
+      domain: CACHED_DRAFT_POST_HOST
+    })
+    const firstObj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(`https://${CACHED_DRAFT_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .to(`https://${CACHED_DRAFT_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .publishedNow()
+      .get()
+    const secondObj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(`https://${CACHED_DRAFT_POST_HOST}/user/${REMOTE_RELAY_USER}`)
+      .to(`https://${CACHED_DRAFT_POST_HOST}/user/${REMOTE_RELAY_USER}`)
+      .publishedNow()
+      .get()
+    const firstRequests = []
+    const secondRequests = []
+    let firstRequestNumber = 0
+
+    nock(`https://${CACHED_DRAFT_POST_HOST}`)
+      .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
+      .twice()
+      .reply(function () {
+        firstRequestNumber += 1
+        firstRequests.push(normalizeHeaders(this.req.headers))
+        return (firstRequestNumber === 1)
+          ? [403, 'forbidden']
+          : [202, 'accepted']
+      })
+      .post(`/user/${REMOTE_RELAY_USER}/inbox`)
+      .reply(function () {
+        secondRequests.push(normalizeHeaders(this.req.headers))
+        return [202, 'accepted']
+      })
+
+    await client.post(firstInbox, firstObj, LOCAL_SIGNING_USER)
+    await client.post(secondInbox, secondObj, LOCAL_SIGNING_USER)
+
+    assert.strictEqual(firstRequests.length, 2)
+    assertRfc9421PostHeaders(firstRequests[0], LOCAL_SIGNING_USER)
+    assertDraftCavagePostHeaders(firstRequests[1])
+    assert.strictEqual(secondRequests.length, 1)
+    assertDraftCavagePostHeaders(secondRequests[0])
+  })
+
+  it('sends RFC 9421 again after a cached draft-cavage-12 policy expires on POST', async () => {
+    const firstInbox = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      collection: 'inbox',
+      domain: EXPIRED_DRAFT_POST_HOST
+    })
+    const secondInbox = nockFormat({
+      username: REMOTE_RELAY_USER,
+      collection: 'inbox',
+      domain: EXPIRED_DRAFT_POST_HOST
+    })
+    const firstObj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(`https://${EXPIRED_DRAFT_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .to(`https://${EXPIRED_DRAFT_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .publishedNow()
+      .get()
+    const secondObj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(`https://${EXPIRED_DRAFT_POST_HOST}/user/${REMOTE_RELAY_USER}`)
+      .to(`https://${EXPIRED_DRAFT_POST_HOST}/user/${REMOTE_RELAY_USER}`)
+      .publishedNow()
+      .get()
+    const firstRequests = []
+    const secondRequests = []
+    let firstRequestNumber = 0
+    let secondRequestNumber = 0
+
+    nock(`https://${EXPIRED_DRAFT_POST_HOST}`)
+      .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
+      .twice()
+      .reply(function () {
+        firstRequestNumber += 1
+        firstRequests.push(normalizeHeaders(this.req.headers))
+        return (firstRequestNumber === 1)
+          ? [403, 'forbidden']
+          : [202, 'accepted']
+      })
+      .post(`/user/${REMOTE_RELAY_USER}/inbox`)
+      .twice()
+      .reply(function () {
+        secondRequestNumber += 1
+        secondRequests.push(normalizeHeaders(this.req.headers))
+        return (secondRequestNumber === 1)
+          ? [403, 'forbidden']
+          : [202, 'accepted']
+      })
+
+    await client.post(firstInbox, firstObj, LOCAL_SIGNING_USER)
+    await connection.query(
+      'UPDATE signature_policy SET expiry = ? WHERE origin = ?',
+      { replacements: [new Date(Date.now() - 1000), `https://${EXPIRED_DRAFT_POST_HOST}`] }
+    )
+
+    await client.post(secondInbox, secondObj, LOCAL_SIGNING_USER)
+
+    assert.strictEqual(firstRequests.length, 2)
+    assertRfc9421PostHeaders(firstRequests[0], LOCAL_SIGNING_USER)
+    assertDraftCavagePostHeaders(firstRequests[1])
+    assert.strictEqual(secondRequests.length, 2)
+    assertRfc9421PostHeaders(secondRequests[0], LOCAL_SIGNING_USER)
+    assertDraftCavagePostHeaders(secondRequests[1])
+  })
+
+  it('does not fall back on non-auth failures on POST', async () => {
+    const inbox = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      collection: 'inbox',
+      domain: NO_FALLBACK_POST_HOST
+    })
+    const obj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(`https://${NO_FALLBACK_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .to(`https://${NO_FALLBACK_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .publishedNow()
+      .get()
+    const requests = []
+
+    nock(`https://${NO_FALLBACK_POST_HOST}`)
+      .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
+      .reply(function () {
+        requests.push(normalizeHeaders(this.req.headers))
+        return [404, 'not found']
+      })
+
+    try {
+      await client.post(inbox, obj, LOCAL_SIGNING_USER)
+      assert.fail('should have thrown')
+    } catch (error) {
+      assert.ok(error)
+      assert.equal(error.status, 500)
+    }
+
+    assert.strictEqual(requests.length, 1)
+    assertRfc9421PostHeaders(requests[0], LOCAL_SIGNING_USER)
   })
 
   it('sends RFC 9421 signature first', async () => {
