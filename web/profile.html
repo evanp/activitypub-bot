@@ -45,14 +45,18 @@
         const u = new URL(url)
         if (u.origin == page.origin) {
           return await fetch(u, options)
-        } else {
+        }
+
+        try {
+          return await fetch(u, options)
+        } catch (err) {
           return await fetch('/shared/proxy', {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-              },
-              body: new URLSearchParams({ id: url }),
-            });
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({ id: url })
+          })
         }
       }
 
