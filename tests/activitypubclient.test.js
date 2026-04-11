@@ -1,6 +1,7 @@
 import { describe, before, after, it, beforeEach } from 'node:test'
 import assert from 'node:assert'
 
+import nock from 'nock'
 import Logger from 'pino'
 import {
   nockSetup,
@@ -8,7 +9,8 @@ import {
   resetRequestHeaders,
   addToCollection,
   nockFormat,
-  getBody
+  getBody,
+  makeObject
 } from '@evanp/activitypub-nock'
 
 import { KeyStorage } from '../lib/keystorage.js'
@@ -16,9 +18,11 @@ import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
+import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
+import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
@@ -32,6 +36,11 @@ describe('ActivityPubClient', async () => {
   const LOCAL_HOST = 'local.activitypubclient.test'
   const REMOTE_HOST = 'social.activitypubclient.test'
   const LIMITED_HOST = 'limited.activitypubclient.test'
+  const RFC9421_HOST = 'rfc9421.activitypubclient.test'
+  const DOUBLE_KNOCK_HOST = 'doubleknock.activitypubclient.test'
+  const CACHED_DRAFT_HOST = 'cacheddraft.activitypubclient.test'
+  const EXPIRED_DRAFT_HOST = 'expireddraft.activitypubclient.test'
+  const NO_FALLBACK_HOST = 'nofallback.activitypubclient.test'
   const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
   const LOCAL_SIGNING_USER = 'activitypubclienttestfoobot'
   const REMOTE_PROFILE_USER = 'activitypubclientevan'
@@ -48,18 +57,50 @@ describe('ActivityPubClient', async () => {
   const REMOTE_NOTE_1 = `https://${REMOTE_HOST}/user/${REMOTE_PROFILE_USER}/note/1`
   const REMOTE_PUBLIC_KEY = `https://${REMOTE_HOST}/user/${REMOTE_PROFILE_USER}/publickey`
   const REMOTE_INBOX = `https://${REMOTE_HOST}/user/${REMOTE_PROFILE_USER}/inbox`
-  const SIGNATURE_GET_WITH_USER_RE = new RegExp(
+  const DRAFT_SIGNATURE_GET_WITH_USER_RE = new RegExp(
     `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_SIGNING_USER)}/publickey",headers="\\(request-target\\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$`
   )
-  const SIGNATURE_GET_WITHOUT_USER_RE = new RegExp(
+  const DRAFT_SIGNATURE_GET_WITHOUT_USER_RE = new RegExp(
     `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_HOST)}/publickey",headers="\\(request-target\\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$`
   )
   const SIGNATURE_POST_RE = new RegExp(
     `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_SIGNING_USER)}/publickey",headers="\\(request-target\\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$`
   )
+  const MESSAGE_SIGNATURE_RE = /^sig1=:[0-9A-Za-z+/=]+:$/
 
   function nockFormatPlus (params) {
     return nockFormat(params.domain ? params : { domain: REMOTE_HOST, ...params })
+  }
+
+  function normalizeHeaders (headers) {
+    return Object.fromEntries(
+      Object.entries(headers).map(([key, value]) => [key, Array.isArray(value) ? value[0] : value])
+    )
+  }
+
+  function assertRfc9421GetHeaders (headers, username = LOCAL_SIGNING_USER) {
+    assert.ok(headers)
+    assert.ok(headers.signature)
+    assert.match(headers.signature, MESSAGE_SIGNATURE_RE)
+    assert.equal(typeof headers['signature-input'], 'string')
+    assert.match(
+      headers['signature-input'],
+      new RegExp(
+        `^sig1=\\("@method" "@authority" "@path" "accept" "date" "user-agent"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
+      )
+    )
+  }
+
+  function assertDraftCavageGetHeaders (headers, username = LOCAL_SIGNING_USER) {
+    assert.ok(headers)
+    assert.ok(headers.signature)
+    assert.match(
+      headers.signature,
+      username === LOCAL_SIGNING_USER
+        ? DRAFT_SIGNATURE_GET_WITH_USER_RE
+        : DRAFT_SIGNATURE_GET_WITHOUT_USER_RE
+    )
+    assert.equal(headers['signature-input'], undefined)
   }
 
   let connection = null
@@ -67,9 +108,12 @@ describe('ActivityPubClient', async () => {
   let formatter = null
   let client = null
   let signer = null
+  let messageSigner = null
   let digester = null
   let logger = null
   let limiter = null
+  let policyStorage = null
+  let remoteObjectCache = null
 
   before(async () => {
     logger = new Logger({
@@ -77,15 +121,37 @@ describe('ActivityPubClient', async () => {
     })
     digester = new Digester(logger)
     signer = new HTTPSignature(logger)
+    messageSigner = new HTTPMessageSignature(logger)
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, LIMITED_HOST]
+      remoteDomains: [
+        REMOTE_HOST,
+        LIMITED_HOST,
+        RFC9421_HOST,
+        DOUBLE_KNOCK_HOST,
+        CACHED_DRAFT_HOST,
+        EXPIRED_DRAFT_HOST,
+        NO_FALLBACK_HOST
+      ]
     })
     keyStorage = new KeyStorage(connection, logger)
     formatter = new UrlFormatter(LOCAL_ORIGIN)
     limiter = new RateLimiter(connection, logger)
+    policyStorage = new SignaturePolicyStorage(connection, logger)
+    remoteObjectCache = new RemoteObjectCache(connection, logger)
+    client = new ActivityPubClient(
+      keyStorage,
+      formatter,
+      signer,
+      digester,
+      logger,
+      limiter,
+      remoteObjectCache,
+      messageSigner,
+      policyStorage
+    )
 
     nockSetup(REMOTE_HOST, logger)
     nockSetup(LIMITED_HOST, { rateLimit: true })
@@ -111,7 +177,15 @@ describe('ActivityPubClient', async () => {
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, LIMITED_HOST]
+      remoteDomains: [
+        REMOTE_HOST,
+        LIMITED_HOST,
+        RFC9421_HOST,
+        DOUBLE_KNOCK_HOST,
+        CACHED_DRAFT_HOST,
+        EXPIRED_DRAFT_HOST,
+        NO_FALLBACK_HOST
+      ]
     })
     await connection.close()
     keyStorage = null
@@ -121,6 +195,9 @@ describe('ActivityPubClient', async () => {
     logger = null
     digester = null
     signer = null
+    messageSigner = null
+    policyStorage = null
+    remoteObjectCache = null
   })
 
   beforeEach(async () => {
@@ -128,8 +205,6 @@ describe('ActivityPubClient', async () => {
   })
 
   it('can initialize', () => {
-    const remoteObjectCache = new RemoteObjectCache(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache)
     assert.ok(client)
   })
 
@@ -140,8 +215,7 @@ describe('ActivityPubClient', async () => {
     assert.equal(typeof obj, 'object')
     assert.equal(obj.id, id)
     const h = getRequestHeaders(id)
-    assert.ok(h.signature)
-    assert.match(h.signature, SIGNATURE_GET_WITH_USER_RE)
+    assertRfc9421GetHeaders(h, LOCAL_SIGNING_USER)
     assert.equal(typeof h.digest, 'undefined')
     assert.equal(typeof h.date, 'string')
     assert.match(h.date, /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
@@ -157,8 +231,7 @@ describe('ActivityPubClient', async () => {
     assert.equal(typeof obj, 'object')
     assert.equal(obj.id, id)
     const h = getRequestHeaders(id)
-    assert.ok(h.signature)
-    assert.match(h.signature, SIGNATURE_GET_WITHOUT_USER_RE)
+    assertRfc9421GetHeaders(h, LOCAL_HOST)
     assert.equal(typeof h.digest, 'undefined')
     assert.equal(typeof h.date, 'string')
     assert.match(h.date, /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
@@ -213,6 +286,194 @@ describe('ActivityPubClient', async () => {
       assert.ok(error)
       assert.equal(error.status, 403)
     }
+  })
+
+  it('sends RFC 9421 signature first', async () => {
+    const url = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      type: 'note',
+      num: 101,
+      domain: RFC9421_HOST
+    })
+    const note = await makeObject(REMOTE_PROFILE_USER, 'note', 101, RFC9421_HOST)
+    const noteText = await note.write({ useOriginalContext: true })
+    const requests = []
+
+    nock(`https://${RFC9421_HOST}`)
+      .get('/user/activitypubclientevan/note/101')
+      .reply(function () {
+        requests.push(normalizeHeaders(this.req.headers))
+        return [200, noteText, { 'Content-Type': 'application/activity+json' }]
+      })
+
+    const obj = await client.get(url, LOCAL_SIGNING_USER)
+    assert.ok(obj)
+
+    assert.strictEqual(requests.length, 1)
+    assertRfc9421GetHeaders(requests[0], LOCAL_SIGNING_USER)
+  })
+
+  it('sends draft-cavage-12 if RFC 9421 fails', async () => {
+    const url = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      type: 'note',
+      num: 102,
+      domain: DOUBLE_KNOCK_HOST
+    })
+    const note = await makeObject(REMOTE_PROFILE_USER, 'note', 102, DOUBLE_KNOCK_HOST)
+    const noteText = await note.write({ useOriginalContext: true })
+    const requests = []
+    let requestNumber = 0
+
+    nock(`https://${DOUBLE_KNOCK_HOST}`)
+      .get('/user/activitypubclientevan/note/102')
+      .twice()
+      .reply(function () {
+        requestNumber += 1
+        requests.push(normalizeHeaders(this.req.headers))
+        return (requestNumber === 1)
+          ? [403, 'forbidden']
+          : [200, noteText, { 'Content-Type': 'application/activity+json' }]
+      })
+
+    const obj = await client.get(url, LOCAL_SIGNING_USER)
+    assert.ok(obj)
+    assert.strictEqual(requests.length, 2)
+    assertRfc9421GetHeaders(requests[0], LOCAL_SIGNING_USER)
+    assertDraftCavageGetHeaders(requests[1], LOCAL_SIGNING_USER)
+  })
+
+  it('does not send RFC 9421 after an RFC 9421 failure plus draft-cavage-12 success', async () => {
+    const firstUrl = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      type: 'note',
+      num: 103,
+      domain: CACHED_DRAFT_HOST
+    })
+    const secondUrl = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      type: 'note',
+      num: 104,
+      domain: CACHED_DRAFT_HOST
+    })
+    const firstNote = await makeObject(REMOTE_PROFILE_USER, 'note', 103, CACHED_DRAFT_HOST)
+    const secondNote = await makeObject(REMOTE_PROFILE_USER, 'note', 104, CACHED_DRAFT_HOST)
+    const firstNoteText = await firstNote.write({ useOriginalContext: true })
+    const secondNoteText = await secondNote.write({ useOriginalContext: true })
+    const firstRequests = []
+    const secondRequests = []
+    let firstRequestNumber = 0
+
+    nock(`https://${CACHED_DRAFT_HOST}`)
+      .get('/user/activitypubclientevan/note/103')
+      .twice()
+      .reply(function () {
+        firstRequestNumber += 1
+        firstRequests.push(normalizeHeaders(this.req.headers))
+        return (firstRequestNumber === 1)
+          ? [403, 'forbidden']
+          : [200, firstNoteText, { 'Content-Type': 'application/activity+json' }]
+      })
+      .get('/user/activitypubclientevan/note/104')
+      .reply(function () {
+        secondRequests.push(normalizeHeaders(this.req.headers))
+        return [200, secondNoteText, { 'Content-Type': 'application/activity+json' }]
+      })
+
+    await client.get(firstUrl, LOCAL_SIGNING_USER)
+    await client.get(secondUrl, LOCAL_SIGNING_USER)
+
+    assert.strictEqual(firstRequests.length, 2)
+    assertRfc9421GetHeaders(firstRequests[0], LOCAL_SIGNING_USER)
+    assertDraftCavageGetHeaders(firstRequests[1], LOCAL_SIGNING_USER)
+    assert.strictEqual(secondRequests.length, 1)
+    assertDraftCavageGetHeaders(secondRequests[0], LOCAL_SIGNING_USER)
+  })
+
+  it('sends RFC 9421 again after a cached draft-cavage-12 policy expires', async () => {
+    const firstUrl = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      type: 'note',
+      num: 105,
+      domain: EXPIRED_DRAFT_HOST
+    })
+    const secondUrl = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      type: 'note',
+      num: 106,
+      domain: EXPIRED_DRAFT_HOST
+    })
+    const firstNote = await makeObject(REMOTE_PROFILE_USER, 'note', 105, EXPIRED_DRAFT_HOST)
+    const secondNote = await makeObject(REMOTE_PROFILE_USER, 'note', 106, EXPIRED_DRAFT_HOST)
+    const firstNoteText = await firstNote.write({ useOriginalContext: true })
+    const secondNoteText = await secondNote.write({ useOriginalContext: true })
+    const firstRequests = []
+    const secondRequests = []
+    let firstRequestNumber = 0
+    let secondRequestNumber = 0
+
+    nock(`https://${EXPIRED_DRAFT_HOST}`)
+      .get('/user/activitypubclientevan/note/105')
+      .twice()
+      .reply(function () {
+        firstRequestNumber += 1
+        firstRequests.push(normalizeHeaders(this.req.headers))
+        return (firstRequestNumber === 1)
+          ? [403, 'forbidden']
+          : [200, firstNoteText, { 'Content-Type': 'application/activity+json' }]
+      })
+      .get('/user/activitypubclientevan/note/106')
+      .twice()
+      .reply(function () {
+        secondRequestNumber += 1
+        secondRequests.push(normalizeHeaders(this.req.headers))
+        return (secondRequestNumber === 1)
+          ? [403, 'forbidden']
+          : [200, secondNoteText, { 'Content-Type': 'application/activity+json' }]
+      })
+
+    await client.get(firstUrl, LOCAL_SIGNING_USER)
+    await connection.query(
+      'UPDATE signature_policy SET expiry = ? WHERE origin = ?',
+      { replacements: [new Date(Date.now() - 1000), `https://${EXPIRED_DRAFT_HOST}`] }
+    )
+
+    await client.get(secondUrl, LOCAL_SIGNING_USER)
+
+    assert.strictEqual(firstRequests.length, 2)
+    assertRfc9421GetHeaders(firstRequests[0], LOCAL_SIGNING_USER)
+    assertDraftCavageGetHeaders(firstRequests[1], LOCAL_SIGNING_USER)
+    assert.strictEqual(secondRequests.length, 2)
+    assertRfc9421GetHeaders(secondRequests[0], LOCAL_SIGNING_USER)
+    assertDraftCavageGetHeaders(secondRequests[1], LOCAL_SIGNING_USER)
+  })
+
+  it('does not fall back on non-auth failures', async () => {
+    const url = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      type: 'note',
+      num: 107,
+      domain: NO_FALLBACK_HOST
+    })
+    const requests = []
+
+    nock(`https://${NO_FALLBACK_HOST}`)
+      .get('/user/activitypubclientevan/note/107')
+      .reply(function () {
+        requests.push(normalizeHeaders(this.req.headers))
+        return [404, 'not found']
+      })
+
+    try {
+      await client.get(url, LOCAL_SIGNING_USER)
+      assert.fail('should have thrown')
+    } catch (error) {
+      assert.ok(error)
+      assert.equal(error.status, 404)
+    }
+
+    assert.strictEqual(requests.length, 1)
+    assertRfc9421GetHeaders(requests[0], LOCAL_SIGNING_USER)
   })
 
   it('can iterate over a Collection', async () => {
@@ -341,29 +602,17 @@ describe('ActivityPubClient', async () => {
 
   describe('with a cache', async () => {
     const CACHED_NOTE = `https://${REMOTE_HOST}/user/${REMOTE_PROFILE_USER}/note/100`
-    let cache = null
-    let cachedClient = null
-
-    before(async () => {
-      cache = new RemoteObjectCache(connection, logger)
-      cachedClient = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, cache)
-    })
-
-    after(async () => {
-      cache = null
-      cachedClient = null
-    })
 
     it('no cache record: hits the remote server', async () => {
-      await cachedClient.get(CACHED_NOTE, LOCAL_SIGNING_USER)
+      await client.get(CACHED_NOTE, LOCAL_SIGNING_USER)
       const h = getRequestHeaders(CACHED_NOTE)
       assert.ok(h)
     })
 
     it('unexpired cache record: does not hit the server', async () => {
       const cachedObject = { id: CACHED_NOTE, type: 'Note', content: 'cached' }
-      await cache.set(CACHED_NOTE, LOCAL_SIGNING_USER, cachedObject, new Headers({ 'cache-control': 'max-age=3600' }))
-      const result = await cachedClient.get(CACHED_NOTE, LOCAL_SIGNING_USER)
+      await remoteObjectCache.set(CACHED_NOTE, LOCAL_SIGNING_USER, cachedObject, new Headers({ 'cache-control': 'max-age=3600' }))
+      const result = await client.get(CACHED_NOTE, LOCAL_SIGNING_USER)
       assert.ok(result)
       assert.equal(result.id, CACHED_NOTE)
       const h = getRequestHeaders(CACHED_NOTE)
@@ -374,12 +623,12 @@ describe('ActivityPubClient', async () => {
       const cachedObject = { id: CACHED_NOTE, type: 'Note', content: 'cached' }
       const etag = '"abc123"'
       const lastModified = new Date(Date.now() - 24 * 60 * 60 * 1000).toUTCString()
-      await cache.set(CACHED_NOTE, LOCAL_SIGNING_USER, cachedObject, new Headers({
+      await remoteObjectCache.set(CACHED_NOTE, LOCAL_SIGNING_USER, cachedObject, new Headers({
         'cache-control': 'no-cache',
         etag,
         'last-modified': lastModified
       }))
-      await cachedClient.get(CACHED_NOTE, LOCAL_SIGNING_USER)
+      await client.get(CACHED_NOTE, LOCAL_SIGNING_USER)
       const h = getRequestHeaders(CACHED_NOTE)
       assert.ok(h)
       assert.equal(h['if-none-match'], etag)
@@ -388,10 +637,10 @@ describe('ActivityPubClient', async () => {
 
     it('expired cache record with no etag or last-modified: does not send conditional headers', async () => {
       const cachedObject = { id: CACHED_NOTE, type: 'Note', content: 'cached' }
-      await cache.set(CACHED_NOTE, LOCAL_SIGNING_USER, cachedObject, new Headers({
+      await remoteObjectCache.set(CACHED_NOTE, LOCAL_SIGNING_USER, cachedObject, new Headers({
         'cache-control': 'no-cache'
       }))
-      await cachedClient.get(CACHED_NOTE, LOCAL_SIGNING_USER)
+      await client.get(CACHED_NOTE, LOCAL_SIGNING_USER)
       const h = getRequestHeaders(CACHED_NOTE)
       assert.ok(h)
       assert.equal(h['if-none-match'], undefined)
