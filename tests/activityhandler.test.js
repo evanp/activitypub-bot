@@ -22,6 +22,7 @@ import { ObjectCache } from '../lib/objectcache.js'
 import as2 from '../lib/activitystreams.js'
 import { Digester } from '../lib/digester.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
+import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { BotContext } from '../lib/botcontext.js'
 import { Transformer } from '../lib/microsyntax.js'
 import OKBot from '../lib/bots/ok.js'
@@ -31,6 +32,7 @@ import { FanoutWorker } from '../lib/fanoutworker.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
+import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
@@ -98,10 +100,12 @@ describe('ActivityHandler', () => {
     keyStorage = new KeyStorage(connection, logger)
     actorStorage = new ActorStorage(connection, formatter)
     const signer = new HTTPSignature(logger)
+    const messageSigner = new HTTPMessageSignature(logger)
     const digester = new Digester(logger)
     const limiter = new RateLimiter(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache)
+    const policyStorage = new SignaturePolicyStorage(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache, messageSigner, policyStorage)
     jobQueue = new JobQueue(connection, logger)
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
     distributionWorker = new DistributionWorker(jobQueue, logger, { client })

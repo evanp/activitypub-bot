@@ -11,6 +11,7 @@ import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
+import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
 import { Authorizer } from '../lib/authorizer.js'
@@ -19,6 +20,7 @@ import { JobQueue } from '../lib/jobqueue.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
+import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
@@ -54,10 +56,12 @@ describe('DeliveryWorker', async () => {
     const objectStorage = new ObjectStorage(connection)
     const keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)
+    const messageSigner = new HTTPMessageSignature(logger)
     const digester = new Digester(logger)
     const limiter = new RateLimiter(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache)
+    const policyStorage = new SignaturePolicyStorage(connection, logger)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache, messageSigner, policyStorage)
     const distributor = new ActivityDistributor(client, formatter, actorStorage, logger, JobQueue)
     const authz = new Authorizer(actorStorage, formatter, client)
     const cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })

@@ -9,9 +9,11 @@ import { UrlFormatter } from '../lib/urlformatter.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
+import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
+import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection } from './utils/db.js'
 
@@ -31,9 +33,11 @@ describe('microsyntax', async () => {
   const keyStorage = new KeyStorage(connection, logger)
   const formatter = new UrlFormatter(origin)
   const signer = new HTTPSignature(logger)
+  const messageSigner = new HTTPMessageSignature(logger)
   const limiter = new RateLimiter(connection, logger)
   const remoteObjectCache = new RemoteObjectCache(connection, logger)
-  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache)
+  const policyStorage = new SignaturePolicyStorage(connection, logger)
+  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache, messageSigner, policyStorage)
   const transformer = new Transformer(tagNamespace, client)
 
   it('has transformer', () => {
