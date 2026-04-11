@@ -76,7 +76,7 @@ const LOCAL_USERNAMES = [
 ]
 const MESSAGE_SIGNATURE_RE = /^sig1=:[0-9A-Za-z+/=]+:$/
 const SIGNATURE_INPUT_RE = new RegExp(
-  `^sig1=\\("@method" "@authority" "@path" "date" "user-agent" "content-type" "digest"\\);keyid="https://${LOCAL_HOST.replace(/\./g, '\\.')}/user/${LOCAL_USER0}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
+  `^sig1=\\("@method" "@authority" "@path" "date" "user-agent" "content-type" "content-digest"\\);keyid="https://${LOCAL_HOST.replace(/\./g, '\\.')}/user/${LOCAL_USER0}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
 )
 
 describe('ActivityDistributor', () => {
@@ -207,15 +207,16 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.equal(postInbox.activitydistributortest1, 1)
     assert.ok(!postInbox.activitydistributortest2)
-    const { signature, 'signature-input': signatureInput, digest, date } =
+    const { signature, 'signature-input': signatureInput, digest, 'content-digest': contentDigest, date } =
       getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
     assert.ok(signatureInput)
-    assert.ok(digest)
+    assert.equal(typeof digest, 'undefined')
+    assert.ok(contentDigest)
     assert.ok(date)
     assert.match(signature, MESSAGE_SIGNATURE_RE)
     assert.match(signatureInput, SIGNATURE_INPUT_RE)
-    assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.match(contentDigest, /^sha-256=:[0-9a-zA-Z+/=]*:$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
   it('can distribute an activity to all followers', async () => {
@@ -227,15 +228,16 @@ describe('ActivityDistributor', () => {
     })
     await distributor.distribute(activity, 'activitydistributortest0')
     await distributor.onIdle()
-    const { signature, 'signature-input': signatureInput, digest, date } =
+    const { signature, 'signature-input': signatureInput, digest, 'content-digest': contentDigest, date } =
       getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
     assert.ok(signatureInput)
-    assert.ok(digest)
+    assert.equal(typeof digest, 'undefined')
+    assert.ok(contentDigest)
     assert.ok(date)
     assert.match(signature, MESSAGE_SIGNATURE_RE)
     assert.match(signatureInput, SIGNATURE_INPUT_RE)
-    assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.match(contentDigest, /^sha-256=:[0-9a-zA-Z+/=]*:$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
   it('can distribute an activity to the public', async () => {
@@ -262,15 +264,16 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(postInbox.activitydistributortest1)
     assert.ok(postInbox.activitydistributortest2)
-    const { signature, 'signature-input': signatureInput, digest, date } =
+    const { signature, 'signature-input': signatureInput, digest, 'content-digest': contentDigest, date } =
       getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
     assert.ok(signatureInput)
-    assert.ok(digest)
+    assert.equal(typeof digest, 'undefined')
+    assert.ok(contentDigest)
     assert.ok(date)
     assert.match(signature, MESSAGE_SIGNATURE_RE)
     assert.match(signatureInput, SIGNATURE_INPUT_RE)
-    assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.match(contentDigest, /^sha-256=:[0-9a-zA-Z+/=]*:$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
   it('can distribute an activity to an addressed actor and the public', async () => {
@@ -285,15 +288,16 @@ describe('ActivityDistributor', () => {
     await distributor.onIdle()
     assert.ok(postInbox.activitydistributortest1)
     assert.ok(!postInbox.activitydistributortest2)
-    const { signature, 'signature-input': signatureInput, digest, date } =
+    const { signature, 'signature-input': signatureInput, digest, 'content-digest': contentDigest, date } =
       getRequestHeaders('https://social.activitydistributor.test/user/activitydistributortest1/inbox')
     assert.ok(signature)
     assert.ok(signatureInput)
-    assert.ok(digest)
+    assert.equal(typeof digest, 'undefined')
+    assert.ok(contentDigest)
     assert.ok(date)
     assert.match(signature, MESSAGE_SIGNATURE_RE)
     assert.match(signatureInput, SIGNATURE_INPUT_RE)
-    assert.match(digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.match(contentDigest, /^sha-256=:[0-9a-zA-Z+/=]*:$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
   it('only sends once to an addressed follower', async () => {

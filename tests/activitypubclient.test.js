@@ -116,7 +116,7 @@ describe('ActivityPubClient', async () => {
     assert.match(
       headers['signature-input'],
       new RegExp(
-        `^sig1=\\("@method" "@authority" "@path" "date" "user-agent" "content-type" "digest"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
+        `^sig1=\\("@method" "@authority" "@path" "date" "user-agent" "content-type" "content-digest"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
       )
     )
   }
@@ -292,8 +292,9 @@ describe('ActivityPubClient', async () => {
     await client.post(inbox, obj, LOCAL_SIGNING_USER)
     const h = getRequestHeaders(inbox)
     assertRfc9421PostHeaders(h, LOCAL_SIGNING_USER)
-    assert.ok(h.digest)
-    assert.match(h.digest, /^sha-256=[0-9a-zA-Z=+/]*$/)
+    assert.equal(typeof h.digest, 'undefined')
+    assert.ok(h['content-digest'])
+    assert.match(h['content-digest'], /^sha-256=:[0-9a-zA-Z+/=]*:$/)
     assert.equal(typeof h.date, 'string')
     assert.match(h.date, /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
     assert.doesNotThrow(() => {
