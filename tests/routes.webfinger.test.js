@@ -96,6 +96,29 @@ describe('webfinger routes', async () => {
       assert.strictEqual(response.status, 400)
     })
   })
+  describe('Webfinger discovery with duplicated resource parameter', async () => {
+    let response = null
+    const existingResource = `acct:${BOT_USERNAME}@${LOCAL_HOST}`
+    const dneResource = `acct:${DNE_USERNAME}@${LOCAL_HOST}`
+
+    it('should work without an error', async () => {
+      response = await request(app).get(
+        `/.well-known/webfinger?resource=${encodeURIComponent(existingResource)}&resource=${encodeURIComponent(dneResource)}`
+      )
+    })
+    it('should return 400 Bad Request', async () => {
+      assert.strictEqual(response.status, 400)
+    })
+    it('should return problem details', async () => {
+      assert.strictEqual(response.type, 'application/problem+json')
+    })
+    it('should return an object with a detail', async () => {
+      assert.strictEqual(typeof response.body.detail, 'string')
+    })
+    it('should return an object with a detail matching the request', async () => {
+      assert.strictEqual(response.body.detail, '"resource" parameter required exactly once')
+    })
+  })
   describe('Webfinger discovery for HTTPS', async () => {
     let response = null
     it('should work without an error', async () => {
