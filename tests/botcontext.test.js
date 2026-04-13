@@ -34,7 +34,7 @@ import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import OKBot from '../lib/bots/ok.js'
-import { RateLimiter } from '../lib/ratelimiter.js'
+import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
@@ -122,10 +122,10 @@ describe('BotContext', () => {
     const signer = new HTTPSignature(logger)
     const messageSigner = new HTTPMessageSignature(logger)
     const digester = new Digester(logger)
-    const limiter = new RateLimiter(connection, logger)
+    const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache, messageSigner, policyStorage, new SafeAgent())
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeAgent())
     jobQueue = new JobQueue(connection, logger)
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
     distributionWorker = new DistributionWorker(jobQueue, logger, { client })

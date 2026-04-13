@@ -20,7 +20,7 @@ import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
-import { RateLimiter } from '../lib/ratelimiter.js'
+import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 import { SafeAgent } from '../lib/safeagent.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
@@ -137,7 +137,7 @@ describe('ActivityPubClient', async () => {
   let messageSigner = null
   let digester = null
   let logger = null
-  let limiter = null
+  let throttler = null
   let policyStorage = null
   let remoteObjectCache = null
   let agent = null
@@ -170,7 +170,7 @@ describe('ActivityPubClient', async () => {
     })
     keyStorage = new KeyStorage(connection, logger)
     formatter = new UrlFormatter(LOCAL_ORIGIN)
-    limiter = new RateLimiter(connection, logger)
+    throttler = new RequestThrottler(connection, logger)
     policyStorage = new SignaturePolicyStorage(connection, logger)
     remoteObjectCache = new RemoteObjectCache(connection, logger)
     agent = new SafeAgent()
@@ -180,7 +180,7 @@ describe('ActivityPubClient', async () => {
       signer,
       digester,
       logger,
-      limiter,
+      throttler,
       remoteObjectCache,
       messageSigner,
       policyStorage,
@@ -960,7 +960,7 @@ describe('ActivityPubClient', async () => {
         signer,
         digester,
         logger,
-        limiter,
+        throttler,
         remoteObjectCache,
         messageSigner,
         policyStorage

@@ -13,7 +13,7 @@ import { SafeAgent } from '../lib/safeagent.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
-import { RateLimiter } from '../lib/ratelimiter.js'
+import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
@@ -37,7 +37,7 @@ describe('RemoteKeyStorage', async () => {
   let remoteKeyStorage = null
   let client = null
   let logger = null
-  let limiter
+  let throttler
 
   before(async () => {
     logger = Logger({
@@ -53,10 +53,10 @@ describe('RemoteKeyStorage', async () => {
     const digester = new Digester(logger)
     const signer = new HTTPSignature(logger)
     const messageSigner = new HTTPMessageSignature(logger)
-    limiter = new RateLimiter(connection, logger)
+    throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache, messageSigner, policyStorage, new SafeAgent())
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeAgent())
     nockSetup(REMOTE_HOST)
   })
 

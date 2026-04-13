@@ -19,7 +19,7 @@ import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import DoNothingBot from '../lib/bots/donothing.js'
-import { RateLimiter } from '../lib/ratelimiter.js'
+import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
@@ -59,10 +59,10 @@ describe('DeliveryWorker', async () => {
     const signer = new HTTPSignature(logger)
     const messageSigner = new HTTPMessageSignature(logger)
     const digester = new Digester(logger)
-    const limiter = new RateLimiter(connection, logger)
+    const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache, messageSigner, policyStorage, new SafeAgent())
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeAgent())
     const distributor = new ActivityDistributor(client, formatter, actorStorage, logger, JobQueue)
     const authz = new Authorizer(actorStorage, formatter, client)
     const cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })

@@ -7,16 +7,16 @@ import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const EPSILON = 100
 
-describe('RateLimiter', async () => {
-  const LOCAL_HOST = 'local.ratelimiter.test'
-  const REMOTE_HOST = 'remote.ratelimiter.test'
-  const THIRD_HOST = 'third.ratelimiter.test'
-  const MASTODON_HOST = 'mastodon.ratelimiter.test'
+describe('RequestThrottler', async () => {
+  const LOCAL_HOST = 'local.requestthrottler.test'
+  const REMOTE_HOST = 'remote.requestthrottler.test'
+  const THIRD_HOST = 'third.requestthrottler.test'
+  const MASTODON_HOST = 'mastodon.requestthrottler.test'
 
   let logger
   let connection
-  let RateLimiter
-  let limiter
+  let RequestThrottler
+  let throttler
 
   before(async () => {
     logger = Logger({
@@ -38,77 +38,77 @@ describe('RateLimiter', async () => {
   })
 
   it('can import correctly', async () => {
-    RateLimiter = (await import('../lib/ratelimiter.js')).RateLimiter
-    assert.ok(RateLimiter)
-    assert.strictEqual(typeof RateLimiter, 'function')
+    RequestThrottler = (await import('../lib/requestthrottler.js')).RequestThrottler
+    assert.ok(RequestThrottler)
+    assert.strictEqual(typeof RequestThrottler, 'function')
   })
 
   it('can be constructed', async () => {
-    assert.ok(RateLimiter)
-    limiter = new RateLimiter(connection, logger)
-    assert.ok(limiter)
+    assert.ok(RequestThrottler)
+    throttler = new RequestThrottler(connection, logger)
+    assert.ok(throttler)
   })
 
   it('goes quickly on first request', async () => {
-    assert.ok(limiter)
+    assert.ok(throttler)
     const startTime = new Date()
-    await limiter.limit(REMOTE_HOST)
+    await throttler.throttle(REMOTE_HOST)
     const endTime = new Date()
     assert.ok(endTime - startTime < EPSILON)
   })
 
   it('accepts headers for updating the limit', async () => {
-    assert.ok(limiter)
+    assert.ok(throttler)
     const headers = new Headers()
     headers.set('x-ratelimit-limit', 1000)
     headers.set('x-ratelimit-remaining', 3)
     headers.set('x-ratelimit-reset', (new Date(Date.now() + 1000)).toISOString())
-    await limiter.update(REMOTE_HOST, headers)
+    await throttler.update(REMOTE_HOST, headers)
     assert.ok(true)
   })
 
   it('spaces out the next requests', async () => {
-    assert.ok(limiter)
+    assert.ok(throttler)
     const startTime = new Date()
-    await limiter.limit(REMOTE_HOST)
-    await limiter.limit(REMOTE_HOST)
-    await limiter.limit(REMOTE_HOST)
-    await limiter.limit(REMOTE_HOST)
+    await throttler.throttle(REMOTE_HOST)
+    await throttler.throttle(REMOTE_HOST)
+    await throttler.throttle(REMOTE_HOST)
+    await throttler.throttle(REMOTE_HOST)
     const endTime = new Date()
     assert.ok(endTime - startTime > 500)
     assert.ok(endTime - startTime < 2000)
   })
 
   it('accepts integer header for updating the limit', async () => {
-    assert.ok(limiter)
+    assert.ok(throttler)
     const headers = new Headers()
     headers.set('x-ratelimit-limit', 1000)
     headers.set('x-ratelimit-remaining', 3)
     headers.set('x-ratelimit-reset', 1)
-    await limiter.update(REMOTE_HOST, headers)
+    await throttler.update(REMOTE_HOST, headers)
     assert.ok(true)
   })
 
   it('spaces out the next requests for integer', async () => {
-    assert.ok(limiter)
+    assert.ok(throttler)
     const startTime = new Date()
-    await limiter.limit(REMOTE_HOST)
-    await limiter.limit(REMOTE_HOST)
-    await limiter.limit(REMOTE_HOST)
-    await limiter.limit(REMOTE_HOST)
+    await throttler.throttle(REMOTE_HOST)
+    await throttler.throttle(REMOTE_HOST)
+    await throttler.throttle(REMOTE_HOST)
+    await throttler.throttle(REMOTE_HOST)
     const endTime = new Date()
     assert.ok(endTime - startTime > 500)
     assert.ok(endTime - startTime < 2000)
   })
 
   it('lets us peek at the rate limit values', async () => {
-    assert.ok(limiter)
+    assert.ok(throttler)
     const headers = new Headers()
     headers.set('x-ratelimit-limit', 1000)
     headers.set('x-ratelimit-remaining', 300)
     headers.set('x-ratelimit-reset', 900)
-    await limiter.update(THIRD_HOST, headers)
-    const limits = await limiter.peek(THIRD_HOST)
+    await throttler.update(THIRD_HOST, headers)
+    const limits = await throttler.peek(THIRD_HOST)
     assert.ok(limits)
     assert.ok(Array.isArray(limits))
     assert.strictEqual(limits.length, 1)
@@ -123,11 +123,11 @@ describe('RateLimiter', async () => {
   })
 
   it('guesses at Mastodon rate limits', async () => {
-    assert.ok(limiter)
+    assert.ok(throttler)
     const headers = new Headers()
     headers.set('server', 'Mastodon')
-    await limiter.update(MASTODON_HOST, headers)
-    let limits = await limiter.peek(MASTODON_HOST)
+    await throttler.update(MASTODON_HOST, headers)
+    let limits = await throttler.peek(MASTODON_HOST)
     assert.ok(limits)
     assert.ok(Array.isArray(limits))
     assert.ok(limits.length > 0)
@@ -140,10 +140,10 @@ describe('RateLimiter', async () => {
     assert.ok(limits[0].reset instanceof Date)
     assert.ok(limits[0].reset - Date.now() <= 300000)
 
-    await limiter.limit(MASTODON_HOST)
+    await throttler.throttle(MASTODON_HOST)
 
-    await limiter.update(MASTODON_HOST, headers)
-    limits = await limiter.peek(MASTODON_HOST)
+    await throttler.update(MASTODON_HOST, headers)
+    limits = await throttler.peek(MASTODON_HOST)
 
     assert.ok(limits)
     assert.ok(Array.isArray(limits))
