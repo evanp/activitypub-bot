@@ -51,6 +51,9 @@ describe('app', async () => {
   it('should return a function', async () => {
     assert.strictEqual(typeof app, 'function')
   })
+  it('should not allow private network requests by default', async () => {
+    assert.strictEqual(app.locals.client.allowPrivateNetworkRequests, false)
+  })
 
   it('Creates an X-Request-ID', async () => {
     const response = await request(app).get('/readyz')
@@ -83,5 +86,33 @@ describe('app', async () => {
     const response = await request(app).get('/readyz')
     assert.strictEqual(response.status, 200)
     assert.ok(!response.headers['x-powered-by'])
+  })
+
+  it('allows private network requests when the override is set', async () => {
+    const overrideHost = 'private-network-override.app.test'
+    const overrideOrigin = `https://${overrideHost}`
+    const overrideUsername = 'apptestbot2'
+    const overrideApp = await makeApp({
+      databaseUrl,
+      origin: overrideOrigin,
+      bots: {
+        [overrideUsername]: new DoNothingBot(overrideUsername)
+      },
+      logLevel: 'silent',
+      allowPrivateNetworkRequests: true
+    })
+    try {
+      await cleanupTestData(overrideApp.locals.connection, {
+        usernames: [overrideUsername],
+        localDomain: overrideHost
+      })
+      assert.strictEqual(overrideApp.locals.client.allowPrivateNetworkRequests, true)
+    } finally {
+      await cleanupTestData(overrideApp.locals.connection, {
+        usernames: [overrideUsername],
+        localDomain: overrideHost
+      })
+      await overrideApp.cleanup()
+    }
   })
 })

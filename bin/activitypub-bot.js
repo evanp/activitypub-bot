@@ -17,6 +17,7 @@ const { values } = parseArgs({
     fanout: { type: 'string' },
     intake: { type: 'string' },
     'index-file': { type: 'string' },
+    'allow-private': { type: 'boolean' },
     help: { type: 'boolean', short: 'h' }
   },
   allowPositionals: false
@@ -37,6 +38,7 @@ Options:
   --intake <number>          Number of background intake workers
   --index-file <path>        HTML page to show at root path
   --profile-file <path>      HTML page to show for bot profiles
+  --allow-private            flag to allow private network requests
   -h, --help                 Show this help
 `)
   process.exit(0)
@@ -47,6 +49,13 @@ const parseNumber = (value) => {
   if (!value) return undefined
   const parsed = Number.parseInt(value, 10)
   return Number.isNaN(parsed) ? undefined : parsed
+}
+function parseBoolean (value) {
+  if (value == null || value === '') return undefined
+  const normalized = value.trim().toLowerCase()
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true
+  if (['0', 'false', 'no', 'off'].includes(normalized)) return false
+  return undefined
 }
 
 const baseDir = dirname(fileURLToPath(import.meta.url))
@@ -69,6 +78,10 @@ const FANOUT = parseNumber(values.fanout) || parseNumber(process.env.FANOUT) || 
 const INTAKE = parseNumber(values.intake) || parseNumber(process.env.INTAKE) || 2
 const INDEX_FILE = values['index-file'] || process.env.INDEX_FILE || DEFAULT_INDEX_FILE
 const PROFILE_FILE = values['profile-file'] || process.env.PROFILE_FILE || DEFAULT_PROFILE_FILE
+const ALLOW_PRIVATE = values['allow-private'] ||
+  ('ALLOW_PRIVATE' in process.env)
+  ? parseBoolean(process.env.ALLOW_PRIVATE)
+  : false
 
 const bots = (await import(BOTS_CONFIG_FILE)).default
 
@@ -82,7 +95,8 @@ const app = await makeApp({
   fanoutWorkerCount: FANOUT,
   intakeWorkerCount: INTAKE,
   indexFileName: INDEX_FILE,
-  profileFileName: PROFILE_FILE
+  profileFileName: PROFILE_FILE,
+  allowPrivateNetworkRequests: ALLOW_PRIVATE
 })
 
 const server = app.listen(parseInt(PORT), () => {
