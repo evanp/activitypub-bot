@@ -88,6 +88,41 @@ describe('app', async () => {
     assert.ok(!response.headers['x-powered-by'])
   })
 
+  it('includes RateLimit headers on GET responses', async () => {
+    const response = await request(app).get('/readyz')
+    assert.strictEqual(response.status, 200)
+    assert.ok(response.headers.ratelimit)
+    assert.ok(response.headers['ratelimit-policy'])
+  })
+
+  it('includes RateLimit headers on POST responses', async () => {
+    const response = await request(app)
+      .post(`/user/${BOT_USERNAME}/inbox`)
+      .set('Content-Type', 'application/activity+json')
+      .send({})
+    // We expect a 4xx (no signature, etc.) but headers should still be present
+    assert.ok(response.headers.ratelimit)
+    assert.ok(response.headers['ratelimit-policy'])
+  })
+
+  it('returns 429 when GET burst rate limit is exceeded', async () => {
+    const burstLimit = 1000
+    const requests = Array.from(
+      { length: burstLimit + 1 },
+      () => request(app).get('/readyz')
+    )
+    const responses = await Promise.all(requests)
+    const rateLimited = responses.filter(r => r.status === 429)
+    assert.ok(rateLimited.length > 0, 'Expected at least one 429 response')
+    const limited = rateLimited[0]
+    assert.strictEqual(limited.headers['content-type'], 'application/problem+json; charset=utf-8')
+    assert.strictEqual(limited.body.status, 429)
+    assert.strictEqual(limited.body.type, 'about:blank')
+    assert.ok(limited.body.title)
+    assert.ok(limited.body.detail)
+    assert.ok(limited.headers['retry-after'])
+  })
+
   it('allows private network requests when the override is set', async () => {
     const overrideHost = 'private-network-override.app.test'
     const overrideOrigin = `https://${overrideHost}`
