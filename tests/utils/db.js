@@ -1,4 +1,5 @@
 import { Sequelize } from 'sequelize'
+import { createClient } from 'redis'
 
 import { runMigrations } from '../../lib/migrations/index.js'
 
@@ -51,6 +52,10 @@ async function deleteWhere (connection, table, clauses, replacements = {}) {
 export function getTestDatabaseUrl () {
   const configured = process.env.TEST_DATABASE_URL
   return normalizeDatabaseUrl(configured || SQLITE_MEMORY_URL)
+}
+
+export function getTestRedisUrl () {
+  return process.env.TEST_REDIS_URL || null
 }
 
 export function createTestConnection (databaseUrl = getTestDatabaseUrl()) {
@@ -154,5 +159,22 @@ export async function cleanupTestData (connection, {
       'DELETE FROM job WHERE queue_id in (?);',
       { replacements: [queues] }
     )
+  }
+}
+
+export async function cleanupRedis (redisPrefix) {
+  const redisUrl = getTestRedisUrl()
+  if (!redisUrl) {
+    return
+  }
+  const client = createClient({ url: redisUrl })
+  await client.connect()
+  try {
+    const keys = await client.keys(`${redisPrefix}*`)
+    if (keys.length > 0) {
+      await client.del(keys)
+    }
+  } finally {
+    await client.disconnect()
   }
 }

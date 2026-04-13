@@ -8,7 +8,7 @@ import { makeApp } from '../lib/app.js'
 import as2 from '../lib/activitystreams.js'
 
 import { makeDigest } from './utils/digest.js'
-import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 const AS = 'https://www.w3.org/ns/activitystreams#'
 
@@ -34,6 +34,7 @@ describe('FollowBack bot', async () => {
   })
 
   after(async () => {
+    await cleanupRedis(origin)
     if (app) {
       await cleanupTestData(app.locals.connection, {
         usernames: TEST_USERNAMES,
@@ -54,8 +55,9 @@ describe('FollowBack bot', async () => {
     assert.strictEqual(typeof FollowBackBot, 'function')
     const testBots = {}
     testBots[BOT_USERNAME] = new FollowBackBot(BOT_USERNAME)
+    await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
     assert.ok(app)
   })

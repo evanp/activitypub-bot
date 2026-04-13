@@ -5,7 +5,7 @@ import request from 'supertest'
 
 import { makeApp } from '../lib/app.js'
 
-import { getTestDatabaseUrl } from './utils/db.js'
+import { getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 
 describe('health check routes', async () => {
@@ -16,12 +16,14 @@ describe('health check routes', async () => {
   let app = null
 
   before(async () => {
+    await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
   })
 
   after(async () => {
+    await cleanupRedis(origin)
     if (!app) {
       return
     }

@@ -7,7 +7,7 @@ import { makeApp } from '../lib/app.js'
 import OKBot from '../lib/bots/ok.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 
-import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 describe('actor routes', async () => {
   const LOCAL_HOST = 'local.routes-actor.test'
@@ -34,8 +34,9 @@ describe('actor routes', async () => {
   let app = null
 
   before(async () => {
+    await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
@@ -44,6 +45,7 @@ describe('actor routes', async () => {
   })
 
   after(async () => {
+    await cleanupRedis(origin)
     if (!app) {
       return
     }

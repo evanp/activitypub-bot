@@ -9,7 +9,7 @@ import {
 
 import { makeApp } from '../lib/app.js'
 
-import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 describe('proxy for remote objects', async () => {
   const LOCAL_HOST = 'local.routes-proxy.test'
@@ -21,8 +21,9 @@ describe('proxy for remote objects', async () => {
   let app
 
   before(async () => {
+    await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots, logLevel
+      databaseUrl, origin, bots, logLevel, redisUrl: getTestRedisUrl()
     })
     await cleanupTestData(app.locals.connection, {
       localDomain: LOCAL_HOST,
@@ -32,6 +33,7 @@ describe('proxy for remote objects', async () => {
   })
 
   after(async () => {
+    await cleanupRedis(origin)
     if (!app) {
       return
     }

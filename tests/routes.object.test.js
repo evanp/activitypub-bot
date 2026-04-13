@@ -8,7 +8,7 @@ import { makeApp } from '../lib/app.js'
 import OKBot from '../lib/bots/ok.js'
 import as2 from '../lib/activitystreams.js'
 
-import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
 
@@ -42,8 +42,9 @@ describe('object collection routes', async () => {
   const privateNanoid = 'Ic3Sa_0xOQKvlPsWU16as'
 
   before(async () => {
+    await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
@@ -143,6 +144,7 @@ describe('object collection routes', async () => {
   })
 
   after(async () => {
+    await cleanupRedis(origin)
     if (!app) {
       return
     }

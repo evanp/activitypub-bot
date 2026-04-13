@@ -6,7 +6,7 @@ import request from 'supertest'
 import { makeApp } from '../lib/app.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 
-import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 const UUID_REGEXP = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -19,14 +19,17 @@ describe('app', async () => {
     [BOT_USERNAME]: new DoNothingBot(BOT_USERNAME)
   }
   const databaseUrl = getTestDatabaseUrl()
+  const redisUrl = getTestRedisUrl()
   let app = null
 
   before(async () => {
+    await cleanupRedis(origin)
     app = await makeApp({
       databaseUrl,
       origin,
       bots: testBots,
-      logLevel: 'silent'
+      logLevel: 'silent',
+      redisUrl
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
@@ -35,6 +38,7 @@ describe('app', async () => {
   })
 
   after(async () => {
+    await cleanupRedis(origin)
     if (!app) {
       return
     }
@@ -134,7 +138,8 @@ describe('app', async () => {
         [overrideUsername]: new DoNothingBot(overrideUsername)
       },
       logLevel: 'silent',
-      allowPrivateNetworkRequests: true
+      allowPrivateNetworkRequests: true,
+      redisUrl
     })
     try {
       await cleanupTestData(overrideApp.locals.connection, {

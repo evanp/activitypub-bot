@@ -9,7 +9,7 @@ import { makeApp } from '../lib/app.js'
 import OKBot from '../lib/bots/ok.js'
 
 import { makeDigest } from './utils/digest.js'
-import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 async function asyncSome (array, asyncPredicate) {
   for (let i = 0; i < array.length; i++) {
@@ -45,8 +45,9 @@ describe('OK bot', async () => {
 
   before(async () => {
     nockSetup(REMOTE_HOST)
+    await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
@@ -56,6 +57,7 @@ describe('OK bot', async () => {
   })
 
   after(async () => {
+    await cleanupRedis(origin)
     if (!app) {
       return
     }

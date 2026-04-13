@@ -7,7 +7,7 @@ import { nockSetup } from '@evanp/activitypub-nock'
 import { makeApp } from '../lib/app.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 
-import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 describe('DoNothing bot', async () => {
   const LOCAL_HOST = 'local.bot-donothing.test'
@@ -37,8 +37,9 @@ describe('DoNothing bot', async () => {
 
   before(async () => {
     nockSetup(REMOTE_HOST)
+    await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
@@ -48,6 +49,7 @@ describe('DoNothing bot', async () => {
   })
 
   after(async () => {
+    await cleanupRedis(origin)
     if (!app) {
       return
     }

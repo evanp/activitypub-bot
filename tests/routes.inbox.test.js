@@ -10,7 +10,7 @@ import { makeApp } from '../lib/app.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 
 import { makeDigest } from './utils/digest.js'
-import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
 
 describe('routes.inbox', async () => {
@@ -63,8 +63,9 @@ describe('routes.inbox', async () => {
 
   before(async () => {
     nockSetup(REMOTE_HOST)
+    await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
@@ -74,6 +75,7 @@ describe('routes.inbox', async () => {
   })
 
   after(async () => {
+    await cleanupRedis(origin)
     if (!app) {
       return
     }

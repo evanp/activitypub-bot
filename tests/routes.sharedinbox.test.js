@@ -20,7 +20,7 @@ import DoNothingBot from '../lib/bots/donothing.js'
 
 import { makeDigest } from './utils/digest.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
-import { cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
+import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 describe('routes.sharedinbox', async () => {
   const LOCAL_HOST = 'local.routes-sharedinbox.test'
@@ -118,8 +118,9 @@ describe('routes.sharedinbox', async () => {
 
   before(async () => {
     nockSetup(remoteHost)
+    await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent'
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
     formatter = app.locals.formatter
     actorStorage = app.locals.actorStorage
@@ -132,6 +133,7 @@ describe('routes.sharedinbox', async () => {
   })
 
   after(async () => {
+    await cleanupRedis(origin)
     if (!app) {
       return
     }
