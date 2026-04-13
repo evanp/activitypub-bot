@@ -897,4 +897,111 @@ describe('ActivityPubClient', async () => {
       nock.activate()
     }
   })
+
+  it('throws on get() with http: URL', async () => {
+    const url = 'http://93.184.216.34/user/test/note/1'
+    await assert.rejects(
+      () => client.get(url, LOCAL_SIGNING_USER),
+      (err) => {
+        assert.strictEqual(err.name, 'ProtocolError')
+        return true
+      }
+    )
+  })
+
+  it('throws on post() with http: URL', async () => {
+    const url = 'http://93.184.216.34/user/test/inbox'
+    const obj = as2.note()
+      .content('test')
+      .publishedNow()
+      .get()
+    await assert.rejects(
+      () => client.post(url, obj, LOCAL_SIGNING_USER),
+      (err) => {
+        assert.strictEqual(err.name, 'ProtocolError')
+        return true
+      }
+    )
+  })
+
+  it('throws on get() with unsupported protocol', async () => {
+    const url = 'ftp://social.example.com/user/test/note/1'
+    await assert.rejects(
+      () => client.get(url, LOCAL_SIGNING_USER),
+      (err) => {
+        assert.strictEqual(err.name, 'ProtocolError')
+        return true
+      }
+    )
+  })
+
+  it('throws on post() with unsupported protocol', async () => {
+    const url = 'ftp://social.example.com/user/test/inbox'
+    const obj = as2.note()
+      .content('test')
+      .publishedNow()
+      .get()
+    await assert.rejects(
+      () => client.post(url, obj, LOCAL_SIGNING_USER),
+      (err) => {
+        assert.strictEqual(err.name, 'ProtocolError')
+        return true
+      }
+    )
+  })
+
+  describe('without SafeAgent', async () => {
+    let unsafeClient = null
+
+    before(() => {
+      unsafeClient = new ActivityPubClient(
+        keyStorage,
+        formatter,
+        signer,
+        digester,
+        logger,
+        limiter,
+        remoteObjectCache,
+        messageSigner,
+        policyStorage
+      )
+    })
+
+    it('throws on get() with http: URL to public address', async () => {
+      const url = 'http://93.184.216.34/user/test/note/1'
+      await assert.rejects(
+        () => unsafeClient.get(url, LOCAL_SIGNING_USER),
+        (err) => {
+          assert.strictEqual(err.name, 'ProtocolError')
+          return true
+        }
+      )
+    })
+
+    it('throws on post() with http: URL to public address', async () => {
+      const url = 'http://93.184.216.34/user/test/inbox'
+      const obj = as2.note()
+        .content('test')
+        .publishedNow()
+        .get()
+      await assert.rejects(
+        () => unsafeClient.post(url, obj, LOCAL_SIGNING_USER),
+        (err) => {
+          assert.strictEqual(err.name, 'ProtocolError')
+          return true
+        }
+      )
+    })
+
+    it('throws on get() with unsupported protocol', async () => {
+      const url = 'ftp://social.example.com/user/test/note/1'
+      await assert.rejects(
+        () => unsafeClient.get(url, LOCAL_SIGNING_USER),
+        (err) => {
+          assert.strictEqual(err.name, 'ProtocolError')
+          return true
+        }
+      )
+    })
+  })
 })
