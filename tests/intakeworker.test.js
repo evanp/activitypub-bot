@@ -11,6 +11,7 @@ import as2 from '../lib/activitystreams.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
+import { SafeAgent } from '../lib/safeagent.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { ObjectStorage } from '../lib/objectstorage.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
@@ -70,7 +71,7 @@ describe('IntakeWorker', async () => {
     const limiter = new RateLimiter(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache, messageSigner, policyStorage)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache, messageSigner, policyStorage, new SafeAgent())
     queue = new JobQueue(connection, logger)
     const distributor = new ActivityDistributor(client, formatter, actorStorage, logger, queue)
     const authz = new Authorizer(actorStorage, formatter, client)

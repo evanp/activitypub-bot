@@ -16,6 +16,7 @@ import { ObjectStorage } from '../lib/objectstorage.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
+import { SafeAgent } from '../lib/safeagent.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { Transformer } from '../lib/microsyntax.js'
@@ -104,7 +105,7 @@ describe('RelayClientBot', () => {
     const limiter = new RateLimiter(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache, messageSigner, policyStorage)
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, limiter, remoteObjectCache, messageSigner, policyStorage, new SafeAgent())
     jobQueue = new JobQueue(connection, logger)
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
     distributionWorker = new DistributionWorker(jobQueue, logger, { client })
