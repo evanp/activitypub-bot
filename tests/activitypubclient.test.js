@@ -22,6 +22,7 @@ import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { RateLimiter } from '../lib/ratelimiter.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
+import { SafeAgent } from '../lib/safeagent.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
@@ -139,6 +140,7 @@ describe('ActivityPubClient', async () => {
   let limiter = null
   let policyStorage = null
   let remoteObjectCache = null
+  let agent = null
 
   before(async () => {
     logger = new Logger({
@@ -171,6 +173,7 @@ describe('ActivityPubClient', async () => {
     limiter = new RateLimiter(connection, logger)
     policyStorage = new SignaturePolicyStorage(connection, logger)
     remoteObjectCache = new RemoteObjectCache(connection, logger)
+    agent = new SafeAgent()
     client = new ActivityPubClient(
       keyStorage,
       formatter,
@@ -180,7 +183,8 @@ describe('ActivityPubClient', async () => {
       limiter,
       remoteObjectCache,
       messageSigner,
-      policyStorage
+      policyStorage,
+      agent
     )
 
     nockSetup(REMOTE_HOST, logger)
@@ -854,5 +858,43 @@ describe('ActivityPubClient', async () => {
       assert.equal(h['if-none-match'], undefined)
       assert.equal(h['if-modified-since'], undefined)
     })
+  })
+
+  it('throws on get() to a private IP address', async () => {
+    const url = 'https://192.168.0.1/user/test/note/1'
+    nock.restore()
+    try {
+      await assert.rejects(
+        () => client.get(url, LOCAL_SIGNING_USER),
+        (err) => {
+          assert.strictEqual(err.name, 'FetchError')
+          assert.match(err.message, /Private network address 192\.168\.0\.1/)
+          return true
+        }
+      )
+    } finally {
+      nock.activate()
+    }
+  })
+
+  it('throws on post() to a private IP address', async () => {
+    const url = 'https://192.168.0.1/user/test/inbox'
+    const obj = as2.note()
+      .content('test')
+      .publishedNow()
+      .get()
+    nock.restore()
+    try {
+      await assert.rejects(
+        () => client.post(url, obj, LOCAL_SIGNING_USER),
+        (err) => {
+          assert.strictEqual(err.name, 'FetchError')
+          assert.match(err.message, /Private network address 192\.168\.0\.1/)
+          return true
+        }
+      )
+    } finally {
+      nock.activate()
+    }
   })
 })
