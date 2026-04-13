@@ -33,6 +33,7 @@
     "activitystrea.ms": "^3.3.0",
     "express": "^5.2.1",
     "humanhash": "^1.0.4",
+    "ipaddr.js": "^2.3.0",
     "lru-cache": "^11.1.0",
     "nanoid": "^5.1.5",
     "node-fetch": "^3.3.2",
