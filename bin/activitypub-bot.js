@@ -20,6 +20,7 @@ const { values } = parseArgs({
     'profile-file': { type: 'string' },
     'allow-private': { type: 'boolean' },
     'redis-url': { type: 'string' },
+    'trust-proxy': { type: 'string' },
     help: { type: 'boolean', short: 'h' }
   },
   allowPositionals: false
@@ -42,6 +43,7 @@ Options:
   --profile-file <path>      HTML page to show for bot profiles
   --allow-private            flag to allow private network requests
   --redis-url <url>          Redis connection URL for rate limiting
+  --trust-proxy <value>      Express 'trust proxy' setting (e.g. "1", "loopback", "true")
   -h, --help                 Show this help
 `)
   process.exit(0)
@@ -82,6 +84,15 @@ const INTAKE = parseNumber(values.intake) || parseNumber(process.env.INTAKE) || 
 const INDEX_FILE = values['index-file'] || process.env.INDEX_FILE || DEFAULT_INDEX_FILE
 const PROFILE_FILE = values['profile-file'] || process.env.PROFILE_FILE || DEFAULT_PROFILE_FILE
 const REDIS_URL = normalize(values['redis-url']) || process.env.REDIS_URL || undefined
+const TRUST_PROXY_RAW = normalize(values['trust-proxy']) || process.env.TRUST_PROXY
+const TRUST_PROXY = (() => {
+  if (TRUST_PROXY_RAW == null) return undefined
+  const bool = parseBoolean(TRUST_PROXY_RAW)
+  if (bool !== undefined) return bool
+  const num = Number.parseInt(TRUST_PROXY_RAW, 10)
+  if (!Number.isNaN(num) && String(num) === TRUST_PROXY_RAW.trim()) return num
+  return TRUST_PROXY_RAW
+})()
 const ALLOW_PRIVATE = values['allow-private'] ||
   ('ALLOW_PRIVATE' in process.env)
   ? parseBoolean(process.env.ALLOW_PRIVATE)
@@ -101,7 +112,8 @@ const app = await makeApp({
   indexFileName: INDEX_FILE,
   profileFileName: PROFILE_FILE,
   allowPrivateNetworkRequests: ALLOW_PRIVATE,
-  redisUrl: REDIS_URL
+  redisUrl: REDIS_URL,
+  trustProxy: TRUST_PROXY
 })
 
 const server = app.listen(parseInt(PORT), () => {
