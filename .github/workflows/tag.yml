@@ -74,7 +74,7 @@ jobs:
       env:
         TEST_DATABASE_URL: postgres://test:test@localhost:5432/test
         TEST_REDIS_URL: redis://localhost:6379
-      run: npm run test
+      run: npm run test:serial
 
   publish-npm:
     needs: [runTests, integrationTests]
