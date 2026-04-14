@@ -87,11 +87,12 @@ const REDIS_URL = normalize(values['redis-url']) || process.env.REDIS_URL || und
 const TRUST_PROXY_RAW = normalize(values['trust-proxy']) || process.env.TRUST_PROXY
 const TRUST_PROXY = (() => {
   if (TRUST_PROXY_RAW == null) return undefined
-  const bool = parseBoolean(TRUST_PROXY_RAW)
+  const trimmed = TRUST_PROXY_RAW.trim()
+  const num = Number.parseInt(trimmed, 10)
+  if (!Number.isNaN(num) && String(num) === trimmed) return num
+  const bool = parseBoolean(trimmed)
   if (bool !== undefined) return bool
-  const num = Number.parseInt(TRUST_PROXY_RAW, 10)
-  if (!Number.isNaN(num) && String(num) === TRUST_PROXY_RAW.trim()) return num
-  return TRUST_PROXY_RAW
+  return trimmed
 })()
 const ALLOW_PRIVATE = values['allow-private'] ||
   ('ALLOW_PRIVATE' in process.env)
