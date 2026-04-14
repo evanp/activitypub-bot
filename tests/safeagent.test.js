@@ -75,9 +75,11 @@ describe('SafeAgent', () => {
     }
     const agent = new SafeAgent()
     const original = https.Agent.prototype.createConnection
-    https.Agent.prototype.createConnection = (options, callback) => {
-      assert.strictEqual(options.hostname, '93.184.216.34')
-      callback(null, 'fake-socket')
+    https.Agent.prototype.createConnection = function (options) {
+      assert.strictEqual(options.host, '93.184.216.34')
+      assert.strictEqual(options.hostname, 'example.com')
+      assert.strictEqual(options.servername, 'example.com')
+      return 'fake-socket'
     }
     agent.createConnection({ hostname: 'example.com' }, (err, socket) => {
       https.Agent.prototype.createConnection = original
