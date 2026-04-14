@@ -17,6 +17,7 @@ const { values } = parseArgs({
     fanout: { type: 'string' },
     intake: { type: 'string' },
     'index-file': { type: 'string' },
+    'profile-file': { type: 'string' },
     'allow-private': { type: 'boolean' },
     help: { type: 'boolean', short: 'h' }
   },
