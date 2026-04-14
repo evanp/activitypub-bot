@@ -19,6 +19,7 @@ const { values } = parseArgs({
     'index-file': { type: 'string' },
     'profile-file': { type: 'string' },
     'allow-private': { type: 'boolean' },
+    'redis-url': { type: 'string' },
     help: { type: 'boolean', short: 'h' }
   },
   allowPositionals: false
@@ -40,6 +41,7 @@ Options:
   --index-file <path>        HTML page to show at root path
   --profile-file <path>      HTML page to show for bot profiles
   --allow-private            flag to allow private network requests
+  --redis-url <url>          Redis connection URL for rate limiting
   -h, --help                 Show this help
 `)
   process.exit(0)
@@ -79,6 +81,7 @@ const FANOUT = parseNumber(values.fanout) || parseNumber(process.env.FANOUT) || 
 const INTAKE = parseNumber(values.intake) || parseNumber(process.env.INTAKE) || 2
 const INDEX_FILE = values['index-file'] || process.env.INDEX_FILE || DEFAULT_INDEX_FILE
 const PROFILE_FILE = values['profile-file'] || process.env.PROFILE_FILE || DEFAULT_PROFILE_FILE
+const REDIS_URL = normalize(values['redis-url']) || process.env.REDIS_URL || undefined
 const ALLOW_PRIVATE = values['allow-private'] ||
   ('ALLOW_PRIVATE' in process.env)
   ? parseBoolean(process.env.ALLOW_PRIVATE)
@@ -97,7 +100,8 @@ const app = await makeApp({
   intakeWorkerCount: INTAKE,
   indexFileName: INDEX_FILE,
   profileFileName: PROFILE_FILE,
-  allowPrivateNetworkRequests: ALLOW_PRIVATE
+  allowPrivateNetworkRequests: ALLOW_PRIVATE,
+  redisUrl: REDIS_URL
 })
 
 const server = app.listen(parseInt(PORT), () => {
