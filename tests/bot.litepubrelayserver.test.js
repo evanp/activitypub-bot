@@ -20,11 +20,14 @@ describe('LitePubRelayServerBot', async () => {
   const LOCAL_HOST = 'local.bot-litepubrelayserver.test'
   const REMOTE_HOST = 'remote.bot-litepubrelayserver.test'
   const BOT_USERNAME = 'botlitepubrelayservertest'
+  const BOT_USERNAME_NO_FORWARDING = 'botlitepubrelayservertestnoforward'
   const REMOTE_ACTOR = 'botlitepubrelayserverremote'
   const REMOTE_ACTOR_2 = 'botlitepubrelayserverremote2'
   const REMOTE_ACTOR_3 = 'botlitepubrelayserverremote3'
   const REMOTE_ACTOR_4 = 'botlitepubrelayserverremote4'
-  const TEST_USERNAMES = [BOT_USERNAME]
+  const REMOTE_ACTOR_5 = 'botlitepubrelayserverremote5'
+  const REMOTE_ACTOR_6 = 'botlitepubrelayserverremote6'
+  const TEST_USERNAMES = [BOT_USERNAME, BOT_USERNAME_NO_FORWARDING]
 
   const host = LOCAL_HOST
   const origin = `https://${host}`
@@ -58,6 +61,10 @@ describe('LitePubRelayServerBot', async () => {
     assert.strictEqual(typeof LitePubRelayServerBot, 'function')
     const testBots = {}
     testBots[BOT_USERNAME] = new LitePubRelayServerBot(BOT_USERNAME)
+    testBots[BOT_USERNAME_NO_FORWARDING] = new LitePubRelayServerBot(
+      BOT_USERNAME_NO_FORWARDING,
+      { relayForwarding: false }
+    )
     await cleanupRedis(origin)
     app = await makeApp({
       databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
@@ -357,6 +364,122 @@ describe('LitePubRelayServerBot', async () => {
         }
       }
       assert.ok(foundActivity)
+    })
+  })
+
+  describe('does not forward an Announce when relayForwarding is false', async () => {
+    const senderUsername = REMOTE_ACTOR_5
+    const otherUsername = REMOTE_ACTOR_6
+    const domain = REMOTE_HOST
+    const senderId = nockFormat({ username: senderUsername, domain })
+    const path = `/user/${BOT_USERNAME_NO_FORWARDING}/inbox`
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    let response
+    let body
+    let signature
+    let digest
+    let announcedId
+    let otherPostsBefore
+
+    async function sendFollow (username) {
+      const { formatter } = app.locals
+      const botId = formatter.format({ username: BOT_USERNAME_NO_FORWARDING })
+      const follow = await as2.import({
+        type: 'Follow',
+        actor: nockFormat({ username, domain }),
+        id: nockFormat({ username, type: 'follow', num: 1, obj: botId, domain }),
+        object: botId,
+        to: botId
+      })
+      const fBody = await follow.write()
+      const fDigest = makeDigest(fBody)
+      const fSig = await nockSignature({
+        method: 'POST',
+        username,
+        url,
+        digest: fDigest,
+        date,
+        domain
+      })
+      await request(app)
+        .post(path)
+        .send(fBody)
+        .set('Signature', fSig)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', fDigest)
+        .set('Content-Type', 'application/activity+json')
+      await app.onIdle()
+    }
+
+    before(async () => {
+      await sendFollow(senderUsername)
+      await sendFollow(otherUsername)
+
+      otherPostsBefore = postInbox[otherUsername] || 0
+
+      announcedId = nockFormat({ username: senderUsername, type: 'note', num: 1, domain })
+
+      const { formatter } = app.locals
+      const announce = await as2.import({
+        type: 'Announce',
+        actor: senderId,
+        id: nockFormat({ username: senderUsername, type: 'announce', num: 1, domain }),
+        object: announcedId,
+        to: [
+          formatter.format({
+            username: BOT_USERNAME_NO_FORWARDING,
+            collection: 'followers'
+          })
+        ],
+        cc: ['as:Public']
+      })
+      body = await announce.write()
+      digest = makeDigest(body)
+      signature = await nockSignature({
+        method: 'POST',
+        username: senderUsername,
+        url,
+        digest,
+        date,
+        domain
+      })
+    })
+
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202, JSON.stringify(response.body))
+    })
+
+    it('should not deliver an Announce to the other follower', async () => {
+      assert.strictEqual(postInbox[otherUsername], otherPostsBefore)
+    })
+
+    it('should not have a re-Announce in its outbox', async () => {
+      const { actorStorage, objectStorage } = app.locals
+      let foundActivity = false
+      for await (const item of actorStorage.items(BOT_USERNAME_NO_FORWARDING, 'outbox')) {
+        const obj = await objectStorage.read(item.id)
+        if (obj.type === ANNOUNCE_TYPE &&
+          obj.object?.first?.id === announcedId) {
+          foundActivity = true
+          break
+        }
+      }
+      assert.strictEqual(foundActivity, false)
     })
   })
 })
