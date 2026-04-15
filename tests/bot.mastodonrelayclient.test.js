@@ -56,7 +56,7 @@ function isRelayUnfollow (activity) {
     activity.object.first.object.first.id === `${AS2_NS}Public`
 }
 
-describe('RelayClientBot', () => {
+describe('MastodonRelayClientBot', () => {
   const botName = BOT_USERNAME
   let connection = null
   let botDataStorage = null
@@ -69,7 +69,7 @@ describe('RelayClientBot', () => {
   let context = null
   let transformer = null
   let logger = null
-  let RelayClientBot = null
+  let MastodonRelayClientBot = null
   let relay = null
   let bot = null
   let jobQueue
@@ -159,13 +159,13 @@ describe('RelayClientBot', () => {
   })
 
   it('can be imported', async () => {
-    RelayClientBot = (await import('../lib/bots/relayclient.js')).default
-    assert.ok(RelayClientBot)
-    assert.equal(typeof RelayClientBot, 'function')
+    MastodonRelayClientBot = (await import('../lib/bots/mastodonrelayclient.js')).default
+    assert.ok(MastodonRelayClientBot)
+    assert.equal(typeof MastodonRelayClientBot, 'function')
   })
 
   it('can be constructed', async () => {
-    bot = new RelayClientBot(botName, { relay })
+    bot = new MastodonRelayClientBot(botName, { relay })
     assert.ok(bot)
     bots[botName] = bot
   })
@@ -268,7 +268,7 @@ describe('RelayClientBot', () => {
 
   it('unsubscribes from a remote relay on initialize', async () => {
     const unsubscribe = true
-    bot = new RelayClientBot(botName, { relay, unsubscribe })
+    bot = new MastodonRelayClientBot(botName, { relay, unsubscribe })
     assert.ok(bot)
     bots[botName] = bot
     await bot.initialize(context)

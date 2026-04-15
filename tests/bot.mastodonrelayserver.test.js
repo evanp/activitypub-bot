@@ -5,13 +5,13 @@ import request from 'supertest'
 import { nockSetup, nockSignature, nockFormat, makeActor, resetInbox, postInbox } from '@evanp/activitypub-nock'
 
 import { makeApp } from '../lib/app.js'
-import RelayServerBot from '../lib/bots/relayserver.js'
+import MastodonRelayServerBot from '../lib/bots/mastodonrelayserver.js'
 import as2 from '../lib/activitystreams.js'
 
 import { makeDigest } from './utils/digest.js'
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
-describe('RelayServerBot', async () => {
+describe('MastodonRelayServerBot', async () => {
   const LOCAL_HOST = 'local.bot-relayserver.test'
   const REMOTE_HOST = 'remote.bot-relayserver.test'
   const RELAY_SERVER_BOT_USERNAME = 'botrelayservertest'
@@ -21,7 +21,7 @@ describe('RelayServerBot', async () => {
   const origin = `https://${host}`
   const databaseUrl = getTestDatabaseUrl()
   const testBots = {
-    [RELAY_SERVER_BOT_USERNAME]: new RelayServerBot(RELAY_SERVER_BOT_USERNAME)
+    [RELAY_SERVER_BOT_USERNAME]: new MastodonRelayServerBot(RELAY_SERVER_BOT_USERNAME)
   }
   let app = null
   let formatter = null

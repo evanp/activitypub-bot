@@ -35,14 +35,14 @@ describe('package exports', () => {
     assert.equal(typeof DoNothingBot, 'function')
   })
 
-  it('exports RelayClientBot', async () => {
-    const RelayClientBot = module.RelayClientBot
-    assert.equal(typeof RelayClientBot, 'function')
+  it('exports MastodonRelayClientBot', async () => {
+    const MastodonRelayClientBot = module.MastodonRelayClientBot
+    assert.equal(typeof MastodonRelayClientBot, 'function')
   })
 
-  it('exports RelayServerBot', async () => {
-    const RelayServerBot = module.RelayServerBot
-    assert.equal(typeof RelayServerBot, 'function')
+  it('exports MastodonRelayServerBot', async () => {
+    const MastodonRelayServerBot = module.MastodonRelayServerBot
+    assert.equal(typeof MastodonRelayServerBot, 'function')
   })
 
   it('exports FollowBackBot', async () => {

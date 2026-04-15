@@ -1,6 +1,6 @@
 import DoNothingBot from '../../lib/bots/donothing.js'
 import OKBot from '../../lib/bots/ok.js'
-import RelayServerBot from '../../lib/bots/relayserver.js'
+import MastodonRelayServerBot from '../../lib/bots/mastodonrelayserver.js'
 
 import EventLoggingBot from './eventloggingbot.js'
 import ProvinceBotFactory from './provincebotfactory.js'
@@ -25,6 +25,6 @@ export default {
   test14: new DoNothingBot('test14'),
   test15: new DoNothingBot('test15'),
   logging: new EventLoggingBot('logging'),
-  _____relayserver_____: new RelayServerBot('_____relayserver_____'),
+  _____relayserver_____: new MastodonRelayServerBot('_____relayserver_____'),
   '*': new ProvinceBotFactory()
 }
