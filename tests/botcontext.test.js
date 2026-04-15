@@ -924,4 +924,23 @@ describe('BotContext', () => {
     assert.ok(!await actorStorage.isInCollection(botName, 'pendingFollowing', followActivity))
     assert.ok(!await actorStorage.isInCollection(botName, 'pendingFollowing', actor12))
   })
+
+  it('can get the followers collection ID', () => {
+    const followersId = context.getFollowersId()
+    assert.strictEqual(
+      followersId,
+      formatter.format({ username: botName, collection: 'followers' })
+    )
+  })
+
+  it('can return true when an actor is a follower', async () => {
+    const actor13 = await makeActorDefault('botcontextactor13')
+    await actorStorage.addToCollection(botName, 'followers', actor13)
+    assert.strictEqual(await context.isFollower(actor13), true)
+  })
+
+  it('can return false when an actor is not a follower', async () => {
+    const actor14 = await makeActorDefault('botcontextactor14')
+    assert.strictEqual(await context.isFollower(actor14), false)
+  })
 })
