@@ -943,4 +943,37 @@ describe('BotContext', () => {
     const actor14 = await makeActorDefault('botcontextactor14')
     assert.strictEqual(await context.isFollower(actor14), false)
   })
+
+  it('isLocal returns true for a local object id', () => {
+    const localId = formatter.format({ username: BOT_USERNAME })
+    assert.strictEqual(context.isLocal(localId), true)
+  })
+
+  it('isLocal returns false for a remote object id', () => {
+    const remoteId = nockFormatDefault({ username: REMOTE_USER_2 })
+    assert.strictEqual(context.isLocal(remoteId), false)
+  })
+
+  it('isFollowing returns true when actor is in following collection', async () => {
+    const actor15 = await makeActorDefault('botcontextactor15')
+    await actorStorage.addToCollection(botName, 'following', actor15)
+    assert.strictEqual(await context.isFollowing(actor15), true)
+  })
+
+  it('isFollowing returns false when actor is not in following collection', async () => {
+    const actor16 = await makeActorDefault('botcontextactor16')
+    assert.strictEqual(await context.isFollowing(actor16), false)
+  })
+
+  it('isPendingFollowing returns true while a Follow of the actor is pending', async () => {
+    const actor17 = await makeActorDefault('botcontextactor17')
+    await context.followActor(actor17)
+    await context.onIdle()
+    assert.strictEqual(await context.isPendingFollowing(actor17), true)
+  })
+
+  it('isPendingFollowing returns false when no Follow of the actor is pending', async () => {
+    const actor18 = await makeActorDefault('botcontextactor18')
+    assert.strictEqual(await context.isPendingFollowing(actor18), false)
+  })
 })
