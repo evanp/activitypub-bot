@@ -289,5 +289,32 @@ describe('DistributionWorker', async () => {
         error => error.status === 501
       )
     })
+
+    it('logs a serialized error message when no HTTP status is available', async () => {
+      const lines = []
+      const captureStream = {
+        write (chunk) {
+          lines.push(JSON.parse(chunk))
+        }
+      }
+      const captureLogger = Logger({ level: 'warn' }, captureStream)
+      const payload = await makePayload({
+        nanoid: 'logserialize12345678'
+      })
+      const noStatusWorker = new DistributionWorker(queue, captureLogger, {
+        client: {
+          async post () {
+            throw new Error('network exploded')
+          }
+        }
+      })
+
+      await assert.rejects(noStatusWorker.doJob(payload, 1))
+
+      const entry = lines.find(l => l.msg === 'Could not deliver activity and no HTTP status available')
+      assert.ok(entry, 'expected warning log entry')
+      assert.ok(entry.err, 'expected serialized err on log entry')
+      assert.strictEqual(entry.err.message, 'network exploded')
+    })
   })
 })
