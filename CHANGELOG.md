@@ -9,6 +9,22 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- `ActivityPubClient` now falls back from RFC 9421 to draft-cavage-12
+  signatures on `400`, `401`, or `403` responses (previously only 401 and
+  403), so remote servers that reject RFC 9421 with a 400 — e.g.
+  Pleroma-Relay's `"missing signature header"` — now trigger the
+  double-knock instead of failing the request.
+- Signature-policy caching is no longer overeager: successful RFC 9421
+  requests no longer store a per-origin policy, and only confirmed
+  draft-cavage-12 fallbacks are cached. This prevents origins whose
+  public endpoints don't actually verify signatures (e.g. public
+  actor fetches) from pinning the wrong scheme.
+- Fallback on auth-shaped errors now also fires when the stored policy
+  is the legacy `rfc9421` value, so existing caches from earlier
+  releases self-correct on their next failure.
+
 ## [0.43.0] - 2026-04-22
 
 ### Added
