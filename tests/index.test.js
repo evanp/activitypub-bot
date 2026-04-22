@@ -49,4 +49,24 @@ describe('package exports', () => {
     const FollowBackBot = module.FollowBackBot
     assert.equal(typeof FollowBackBot, 'function')
   })
+
+  it('exports LitePubRelayClientBot', async () => {
+    const LitePubRelayClientBot = module.LitePubRelayClientBot
+    assert.equal(typeof LitePubRelayClientBot, 'function')
+  })
+
+  it('exports LitePubRelayServerBot', async () => {
+    const LitePubRelayServerBot = module.LitePubRelayServerBot
+    assert.equal(typeof LitePubRelayServerBot, 'function')
+  })
+
+  it('exports RelayClientBot as an alias for MastodonRelayClientBot', async () => {
+    assert.equal(typeof module.RelayClientBot, 'function')
+    assert.strictEqual(module.RelayClientBot, module.MastodonRelayClientBot)
+  })
+
+  it('exports RelayServerBot as an alias for MastodonRelayServerBot', async () => {
+    assert.equal(typeof module.RelayServerBot, 'function')
+    assert.strictEqual(module.RelayServerBot, module.MastodonRelayServerBot)
+  })
 })
