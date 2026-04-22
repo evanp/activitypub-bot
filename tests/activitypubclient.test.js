@@ -47,6 +47,12 @@ describe('ActivityPubClient', async () => {
   const CACHED_DRAFT_POST_HOST = 'cacheddraft-post.activitypubclient.test'
   const EXPIRED_DRAFT_POST_HOST = 'expireddraft-post.activitypubclient.test'
   const NO_FALLBACK_POST_HOST = 'nofallback-post.activitypubclient.test'
+  const RFC9421_NO_CACHE_HOST = 'rfc9421-nocache.activitypubclient.test'
+  const RFC9421_NO_CACHE_POST_HOST = 'rfc9421-nocache-post.activitypubclient.test'
+  const BAD_REQUEST_HOST = 'bad-request.activitypubclient.test'
+  const BAD_REQUEST_POST_HOST = 'bad-request-post.activitypubclient.test'
+  const LEGACY_RFC9421_HOST = 'legacy-rfc9421.activitypubclient.test'
+  const LEGACY_RFC9421_POST_HOST = 'legacy-rfc9421-post.activitypubclient.test'
   const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
   const LOCAL_SIGNING_USER = 'activitypubclienttestfoobot'
   const REMOTE_PROFILE_USER = 'activitypubclientevan'
@@ -165,7 +171,13 @@ describe('ActivityPubClient', async () => {
         DOUBLE_KNOCK_POST_HOST,
         CACHED_DRAFT_POST_HOST,
         EXPIRED_DRAFT_POST_HOST,
-        NO_FALLBACK_POST_HOST
+        NO_FALLBACK_POST_HOST,
+        RFC9421_NO_CACHE_HOST,
+        RFC9421_NO_CACHE_POST_HOST,
+        BAD_REQUEST_HOST,
+        BAD_REQUEST_POST_HOST,
+        LEGACY_RFC9421_HOST,
+        LEGACY_RFC9421_POST_HOST
       ]
     })
     keyStorage = new KeyStorage(connection, logger)
@@ -223,7 +235,13 @@ describe('ActivityPubClient', async () => {
         DOUBLE_KNOCK_POST_HOST,
         CACHED_DRAFT_POST_HOST,
         EXPIRED_DRAFT_POST_HOST,
-        NO_FALLBACK_POST_HOST
+        NO_FALLBACK_POST_HOST,
+        RFC9421_NO_CACHE_HOST,
+        RFC9421_NO_CACHE_POST_HOST,
+        BAD_REQUEST_HOST,
+        BAD_REQUEST_POST_HOST,
+        LEGACY_RFC9421_HOST,
+        LEGACY_RFC9421_POST_HOST
       ]
     })
     await connection.close()
@@ -1003,5 +1021,200 @@ describe('ActivityPubClient', async () => {
         }
       )
     })
+  })
+
+  it('does not store a policy after a successful RFC 9421 GET', async () => {
+    const url = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      type: 'note',
+      num: 108,
+      domain: RFC9421_NO_CACHE_HOST
+    })
+    const note = await makeObject(REMOTE_PROFILE_USER, 'note', 108, RFC9421_NO_CACHE_HOST)
+    const noteText = await note.write({ useOriginalContext: true })
+    const requests = []
+
+    nock(`https://${RFC9421_NO_CACHE_HOST}`)
+      .get('/user/activitypubclientevan/note/108')
+      .reply(function () {
+        requests.push(normalizeHeaders(this.req.headers))
+        return [200, noteText, { 'Content-Type': 'application/activity+json' }]
+      })
+
+    await client.get(url, LOCAL_SIGNING_USER)
+
+    assert.strictEqual(requests.length, 1)
+    assertRfc9421GetHeaders(requests[0], LOCAL_SIGNING_USER)
+    const stored = await policyStorage.get(`https://${RFC9421_NO_CACHE_HOST}`)
+    assert.strictEqual(stored, null)
+  })
+
+  it('does not store a policy after a successful RFC 9421 POST', async () => {
+    const inbox = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      collection: 'inbox',
+      domain: RFC9421_NO_CACHE_POST_HOST
+    })
+    const obj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(`https://${RFC9421_NO_CACHE_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .to(`https://${RFC9421_NO_CACHE_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .publishedNow()
+      .get()
+    const requests = []
+
+    nock(`https://${RFC9421_NO_CACHE_POST_HOST}`)
+      .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
+      .reply(function () {
+        requests.push(normalizeHeaders(this.req.headers))
+        return [202, 'accepted']
+      })
+
+    await client.post(inbox, obj, LOCAL_SIGNING_USER)
+
+    assert.strictEqual(requests.length, 1)
+    assertRfc9421PostHeaders(requests[0], LOCAL_SIGNING_USER)
+    const stored = await policyStorage.get(`https://${RFC9421_NO_CACHE_POST_HOST}`)
+    assert.strictEqual(stored, null)
+  })
+
+  it('sends draft-cavage-12 if RFC 9421 returns 400 on GET', async () => {
+    const url = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      type: 'note',
+      num: 109,
+      domain: BAD_REQUEST_HOST
+    })
+    const note = await makeObject(REMOTE_PROFILE_USER, 'note', 109, BAD_REQUEST_HOST)
+    const noteText = await note.write({ useOriginalContext: true })
+    const requests = []
+    let requestNumber = 0
+
+    nock(`https://${BAD_REQUEST_HOST}`)
+      .get('/user/activitypubclientevan/note/109')
+      .twice()
+      .reply(function () {
+        requestNumber += 1
+        requests.push(normalizeHeaders(this.req.headers))
+        return (requestNumber === 1)
+          ? [400, 'bad request']
+          : [200, noteText, { 'Content-Type': 'application/activity+json' }]
+      })
+
+    const obj = await client.get(url, LOCAL_SIGNING_USER)
+    assert.ok(obj)
+    assert.strictEqual(requests.length, 2)
+    assertRfc9421GetHeaders(requests[0], LOCAL_SIGNING_USER)
+    assertDraftCavageGetHeaders(requests[1], LOCAL_SIGNING_USER)
+  })
+
+  it('sends draft-cavage-12 if RFC 9421 returns 400 on POST', async () => {
+    const inbox = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      collection: 'inbox',
+      domain: BAD_REQUEST_POST_HOST
+    })
+    const obj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(`https://${BAD_REQUEST_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .to(`https://${BAD_REQUEST_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .publishedNow()
+      .get()
+    const requests = []
+    let requestNumber = 0
+
+    nock(`https://${BAD_REQUEST_POST_HOST}`)
+      .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
+      .twice()
+      .reply(function () {
+        requestNumber += 1
+        requests.push(normalizeHeaders(this.req.headers))
+        return (requestNumber === 1)
+          ? [400, 'bad request']
+          : [202, 'accepted']
+      })
+
+    await client.post(inbox, obj, LOCAL_SIGNING_USER)
+
+    assert.strictEqual(requests.length, 2)
+    assertRfc9421PostHeaders(requests[0], LOCAL_SIGNING_USER)
+    assertDraftCavagePostHeaders(requests[1])
+  })
+
+  it('falls back to draft-cavage-12 when stored policy is rfc9421 and GET fails', async () => {
+    const url = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      type: 'note',
+      num: 110,
+      domain: LEGACY_RFC9421_HOST
+    })
+    const note = await makeObject(REMOTE_PROFILE_USER, 'note', 110, LEGACY_RFC9421_HOST)
+    const noteText = await note.write({ useOriginalContext: true })
+    const requests = []
+    let requestNumber = 0
+
+    await policyStorage.set(
+      `https://${LEGACY_RFC9421_HOST}`,
+      SignaturePolicyStorage.RFC9421
+    )
+
+    nock(`https://${LEGACY_RFC9421_HOST}`)
+      .get('/user/activitypubclientevan/note/110')
+      .twice()
+      .reply(function () {
+        requestNumber += 1
+        requests.push(normalizeHeaders(this.req.headers))
+        return (requestNumber === 1)
+          ? [400, 'bad request']
+          : [200, noteText, { 'Content-Type': 'application/activity+json' }]
+      })
+
+    const obj = await client.get(url, LOCAL_SIGNING_USER)
+    assert.ok(obj)
+    assert.strictEqual(requests.length, 2)
+    assertRfc9421GetHeaders(requests[0], LOCAL_SIGNING_USER)
+    assertDraftCavageGetHeaders(requests[1], LOCAL_SIGNING_USER)
+    const stored = await policyStorage.get(`https://${LEGACY_RFC9421_HOST}`)
+    assert.strictEqual(stored, SignaturePolicyStorage.DRAFT_CAVAGE_12)
+  })
+
+  it('falls back to draft-cavage-12 when stored policy is rfc9421 and POST fails', async () => {
+    const inbox = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      collection: 'inbox',
+      domain: LEGACY_RFC9421_POST_HOST
+    })
+    const obj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(`https://${LEGACY_RFC9421_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .to(`https://${LEGACY_RFC9421_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .publishedNow()
+      .get()
+    const requests = []
+    let requestNumber = 0
+
+    await policyStorage.set(
+      `https://${LEGACY_RFC9421_POST_HOST}`,
+      SignaturePolicyStorage.RFC9421
+    )
+
+    nock(`https://${LEGACY_RFC9421_POST_HOST}`)
+      .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
+      .twice()
+      .reply(function () {
+        requestNumber += 1
+        requests.push(normalizeHeaders(this.req.headers))
+        return (requestNumber === 1)
+          ? [400, 'bad request']
+          : [202, 'accepted']
+      })
+
+    await client.post(inbox, obj, LOCAL_SIGNING_USER)
+
+    assert.strictEqual(requests.length, 2)
+    assertRfc9421PostHeaders(requests[0], LOCAL_SIGNING_USER)
+    assertDraftCavagePostHeaders(requests[1])
+    const stored = await policyStorage.get(`https://${LEGACY_RFC9421_POST_HOST}`)
+    assert.strictEqual(stored, SignaturePolicyStorage.DRAFT_CAVAGE_12)
   })
 })
