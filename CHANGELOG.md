@@ -9,6 +9,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.43.2] - 2026-04-22
+
+### Fixed
+
+- `ActivityPubClient.post()` now re-sends the original activity JSON when
+  falling back from RFC 9421 to draft-cavage-12. A variable-shadowing bug
+  caused the retry to POST the error response body from the failed RFC 9421
+  attempt (e.g. `{"error":"missing signature header"}`) instead of the
+  original activity, which remote servers then rejected with `400 "no actor
+  in message"`.
+
 ## [0.43.1] - 2026-04-22
 
 ### Fixed
