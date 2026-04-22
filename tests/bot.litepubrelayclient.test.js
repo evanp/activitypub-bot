@@ -307,6 +307,8 @@ describe('LitePubRelayClientBot', () => {
         to: 'as:Public'
       }
     })
+    const relayActor = await context.getObject(relay)
+    await actorStorage.addToCollection(botName, 'followers', relayActor)
     await bot.onPublic(create)
     await context.onIdle()
 
@@ -394,40 +396,6 @@ describe('LitePubRelayClientBot', () => {
     }
   })
 
-  it('unsubscribes from a remote relay on initialize', async () => {
-    const unsubscribe = true
-    bot = new LitePubRelayClientBot(botName, { relay, unsubscribe })
-    assert.ok(bot)
-    bots[botName] = bot
-    await bot.initialize(context)
-    await context.onIdle()
-    assert.equal(postInbox[RELAY_USERNAME], 1)
-
-    let foundInOutbox = false
-
-    for await (const item of actorStorage.items(botName, 'outbox')) {
-      const activity = await objectStorage.read(item.id)
-      foundInOutbox = isRelayUnfollow(activity, relay)
-      if (foundInOutbox) {
-        break
-      }
-    }
-
-    assert.ok(foundInOutbox)
-
-    let foundInInbox = false
-
-    for await (const item of actorStorage.items(botName, 'inbox')) {
-      const activity = await objectStorage.read(item.id)
-      foundInInbox = isRelayUnfollow(activity, relay)
-      if (foundInInbox) {
-        break
-      }
-    }
-
-    assert.ok(foundInInbox)
-  })
-
   it('does not announce a public Create when relayForwarding is false', async () => {
     const relayForwarding = false
     bot = new LitePubRelayClientBot(botName, { relay, relayForwarding })
@@ -469,6 +437,186 @@ describe('LitePubRelayClientBot', () => {
       if (activity.type === `${AS2_NS}Announce` &&
           activity.object?.first?.id === noteId) {
         assert.fail('should not have announced when relayForwarding is false')
+      }
+    }
+  })
+
+  it('subscribes to multiple relays when relay is an array', async () => {
+    const multiA = nockFormat({ username: 'botlitepubmultia', domain: REMOTE_HOST })
+    const multiB = nockFormat({ username: 'botlitepubmultib', domain: REMOTE_HOST })
+    bot = new LitePubRelayClientBot(botName, { relay: [multiA, multiB] })
+    bots[botName] = bot
+    await bot.initialize(context)
+    await context.onIdle()
+
+    let foundA = false
+    let foundB = false
+    for await (const item of actorStorage.items(botName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (isRelayFollow(activity, multiA)) foundA = true
+      if (isRelayFollow(activity, multiB)) foundB = true
+    }
+    assert.ok(foundA, 'should have followed relay A')
+    assert.ok(foundB, 'should have followed relay B')
+  })
+
+  it('unfollows relays no longer in the relay config on initialize', async () => {
+    const persistRelay = nockFormat({ username: 'botlitepubpersist', domain: REMOTE_HOST })
+    const removedRelay = nockFormat({ username: 'botlitepubremoved', domain: REMOTE_HOST })
+
+    bot = new LitePubRelayClientBot(botName, { relay: [persistRelay, removedRelay] })
+    bots[botName] = bot
+    await bot.initialize(context)
+    await context.onIdle()
+
+    const persistActor = await context.getObject(persistRelay)
+    const removedActor = await context.getObject(removedRelay)
+    await actorStorage.addToCollection(botName, 'following', persistActor)
+    await actorStorage.addToCollection(botName, 'following', removedActor)
+
+    bot = new LitePubRelayClientBot(botName, { relay: [persistRelay] })
+    bots[botName] = bot
+    await bot.initialize(context)
+    await context.onIdle()
+
+    let foundRemovedUndo = false
+    for await (const item of actorStorage.items(botName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (isRelayUnfollow(activity, removedRelay)) {
+        foundRemovedUndo = true
+        break
+      }
+    }
+    assert.ok(foundRemovedUndo, 'should have sent Undo Follow for removed relay')
+    assert.strictEqual(
+      await actorStorage.isInCollection(botName, 'following', removedActor),
+      false,
+      'removed relay should no longer be in following'
+    )
+    assert.strictEqual(
+      await actorStorage.isInCollection(botName, 'following', persistActor),
+      true,
+      'persistent relay should still be in following'
+    )
+  })
+
+  it('is idempotent when re-initialized with same relay config', async () => {
+    const stableRelay = nockFormat({ username: 'botlitepubstable', domain: REMOTE_HOST })
+    bot = new LitePubRelayClientBot(botName, { relay: stableRelay })
+    bots[botName] = bot
+    await bot.initialize(context)
+    await context.onIdle()
+
+    let firstCount = 0
+    for await (const item of actorStorage.items(botName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (isRelayFollow(activity, stableRelay)) firstCount++
+    }
+
+    await bot.initialize(context)
+    await context.onIdle()
+
+    let secondCount = 0
+    for await (const item of actorStorage.items(botName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (isRelayFollow(activity, stableRelay)) secondCount++
+    }
+    assert.strictEqual(secondCount, firstCount, 're-initialize should not produce a new Follow')
+  })
+
+  it('announces on onPublic when at least one relay is a follower', async () => {
+    const followerRelay = nockFormat({ username: 'botlitepubfollower', domain: REMOTE_HOST })
+    bot = new LitePubRelayClientBot(botName, { relay: followerRelay })
+    bots[botName] = bot
+    await bot.initialize(context)
+    await context.onIdle()
+
+    const relayActor = await context.getObject(followerRelay)
+    await actorStorage.addToCollection(botName, 'followers', relayActor)
+
+    const authorUsername = 'botlitepubfollowerauthor'
+    const authorId = formatter.format({ username: authorUsername })
+    const noteId = formatter.format({
+      username: authorUsername,
+      type: 'note',
+      nanoid: 'followernote1'
+    })
+    const createId = formatter.format({
+      username: authorUsername,
+      type: 'create',
+      nanoid: 'followercreate1'
+    })
+    const create = await as2.import({
+      type: 'Create',
+      id: createId,
+      actor: authorId,
+      to: 'as:Public',
+      object: {
+        type: 'Note',
+        id: noteId,
+        attributedTo: authorId,
+        content: 'hello followers',
+        to: 'as:Public'
+      }
+    })
+    await bot.onPublic(create)
+    await context.onIdle()
+
+    let foundInOutbox = false
+    for await (const item of actorStorage.items(botName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (activity.type === `${AS2_NS}Announce` &&
+          activity.object?.first?.id === noteId) {
+        foundInOutbox = true
+        break
+      }
+    }
+    assert.ok(foundInOutbox)
+  })
+
+  it('does not announce on onPublic when relay is in following but not in followers', async () => {
+    const followOnlyRelay = nockFormat({ username: 'botlitepubfollowonly', domain: REMOTE_HOST })
+    bot = new LitePubRelayClientBot(botName, { relay: followOnlyRelay })
+    bots[botName] = bot
+    await bot.initialize(context)
+    await context.onIdle()
+
+    const relayActor = await context.getObject(followOnlyRelay)
+    await actorStorage.addToCollection(botName, 'following', relayActor)
+
+    const authorUsername = 'botlitepubfollowonlyauthor'
+    const authorId = formatter.format({ username: authorUsername })
+    const noteId = formatter.format({
+      username: authorUsername,
+      type: 'note',
+      nanoid: 'followonlynote1'
+    })
+    const createId = formatter.format({
+      username: authorUsername,
+      type: 'create',
+      nanoid: 'followonlycreate1'
+    })
+    const create = await as2.import({
+      type: 'Create',
+      id: createId,
+      actor: authorId,
+      to: 'as:Public',
+      object: {
+        type: 'Note',
+        id: noteId,
+        attributedTo: authorId,
+        content: 'should not announce',
+        to: 'as:Public'
+      }
+    })
+    await bot.onPublic(create)
+    await context.onIdle()
+
+    for await (const item of actorStorage.items(botName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (activity.type === `${AS2_NS}Announce` &&
+          activity.object?.first?.id === noteId) {
+        assert.fail('should not have announced when relay is not in followers')
       }
     }
   })
