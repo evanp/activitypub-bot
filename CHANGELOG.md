@@ -9,6 +9,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.43.1] - 2026-04-22
+
 ### Fixed
 
 - `ActivityPubClient` now falls back from RFC 9421 to draft-cavage-12
