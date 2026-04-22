@@ -435,7 +435,7 @@ describe('ActivityDistributor', () => {
     } catch (error) {
       assert.fail(`Error in distribution: ${error.message}`)
     }
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await distributor.onIdle()
     assert.equal(postInbox.activitydistributorflaky1, 1)
   })
   it('can distribute a single activity to a local account', async () => {
