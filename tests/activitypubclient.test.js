@@ -53,6 +53,7 @@ describe('ActivityPubClient', async () => {
   const BAD_REQUEST_POST_HOST = 'bad-request-post.activitypubclient.test'
   const LEGACY_RFC9421_HOST = 'legacy-rfc9421.activitypubclient.test'
   const LEGACY_RFC9421_POST_HOST = 'legacy-rfc9421-post.activitypubclient.test'
+  const FALLBACK_BODY_POST_HOST = 'fallback-body-post.activitypubclient.test'
   const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
   const LOCAL_SIGNING_USER = 'activitypubclienttestfoobot'
   const REMOTE_PROFILE_USER = 'activitypubclientevan'
@@ -177,7 +178,8 @@ describe('ActivityPubClient', async () => {
         BAD_REQUEST_HOST,
         BAD_REQUEST_POST_HOST,
         LEGACY_RFC9421_HOST,
-        LEGACY_RFC9421_POST_HOST
+        LEGACY_RFC9421_POST_HOST,
+        FALLBACK_BODY_POST_HOST
       ]
     })
     keyStorage = new KeyStorage(connection, logger)
@@ -241,7 +243,8 @@ describe('ActivityPubClient', async () => {
         BAD_REQUEST_HOST,
         BAD_REQUEST_POST_HOST,
         LEGACY_RFC9421_HOST,
-        LEGACY_RFC9421_POST_HOST
+        LEGACY_RFC9421_POST_HOST,
+        FALLBACK_BODY_POST_HOST
       ]
     })
     await connection.close()
@@ -1216,5 +1219,54 @@ describe('ActivityPubClient', async () => {
     assertDraftCavagePostHeaders(requests[1])
     const stored = await policyStorage.get(`https://${LEGACY_RFC9421_POST_HOST}`)
     assert.strictEqual(stored, SignaturePolicyStorage.DRAFT_CAVAGE_12)
+  })
+
+  it('resends the original activity body on draft-cavage-12 fallback POST', async () => {
+    const inbox = nockFormat({
+      username: REMOTE_PROFILE_USER,
+      collection: 'inbox',
+      domain: FALLBACK_BODY_POST_HOST
+    })
+    const obj = as2.follow()
+      .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+      .object(`https://${FALLBACK_BODY_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .to(`https://${FALLBACK_BODY_POST_HOST}/user/${REMOTE_PROFILE_USER}`)
+      .publishedNow()
+      .get()
+    const bodies = []
+    let requestNumber = 0
+
+    nock(`https://${FALLBACK_BODY_POST_HOST}`)
+      .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
+      .twice()
+      .reply(function (uri, requestBody) {
+        requestNumber += 1
+        bodies.push(requestBody)
+        return (requestNumber === 1)
+          ? [400, JSON.stringify({ error: 'missing signature header' }), { 'Content-Type': 'application/json' }]
+          : [202, 'accepted']
+      })
+
+    await client.post(inbox, obj, LOCAL_SIGNING_USER)
+
+    assert.strictEqual(bodies.length, 2)
+    const first = typeof bodies[0] === 'string' ? JSON.parse(bodies[0]) : bodies[0]
+    const second = typeof bodies[1] === 'string' ? JSON.parse(bodies[1]) : bodies[1]
+    assert.strictEqual(first.type, 'Follow')
+    assert.strictEqual(
+      first.actor,
+      `${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`
+    )
+    assert.strictEqual(
+      second.type,
+      'Follow',
+      `retry body should be the original Follow activity, got ${JSON.stringify(second)}`
+    )
+    assert.strictEqual(
+      second.actor,
+      `${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`,
+      `retry body should preserve the original actor, got ${JSON.stringify(second)}`
+    )
+    assert.deepStrictEqual(second, first)
   })
 })
