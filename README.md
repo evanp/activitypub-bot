@@ -64,6 +64,9 @@ Options:
   --intake <number>          Number of background intake workers
   --index-file <path>        HTML page to show at root path
   --profile-file <path>      HTML page to show for bot profiles
+  --allow-private            flag to allow private network requests
+  --redis-url <url>          Redis connection URL for rate limiting
+  --trust-proxy <value>      Express 'trust proxy' setting (e.g. "1", "loopback", "true")
   -h, --help                 Show this help
 ```
 
@@ -139,6 +142,24 @@ Path to the HTML file to show for bot profile pages. Like `--index-file`, any ex
 
 Falls back to the `PROFILE_FILE` environment variable. The default profile file is in `web/profile.html`.
 
+#### --allow-private
+
+Boolean flag. When set, the server will make outbound HTTP requests to private IP addresses (loopback, link-local, private, unique-local). By default these are blocked by `SafeAgent` to protect against SSRF. Enable this only when you need to reach ActivityPub peers on your local network or container network — for example, during development or integration testing.
+
+Falls back to the `ALLOW_PRIVATE` environment variable. Default is `false`.
+
+#### --redis-url
+
+Redis connection URL used to back the rate-limit store. If unset, rate-limit counters live in memory, which is fine for a single-process deployment but loses state on restart and doesn't coordinate across multiple instances. Provide a Redis URL to share limits across processes.
+
+Falls back to the `REDIS_URL` environment variable. Default is unset (in-memory limiter).
+
+#### --trust-proxy
+
+Express [`trust proxy`](https://expressjs.com/en/guide/behind-proxies.html) setting. Needed when the server runs behind a reverse proxy or load balancer so that `req.ip`, rate limiting, and logged client IPs reflect the real client rather than the proxy. Numeric values are parsed as a hop count (`1` means trust one hop), boolean-like values (`true`, `false`) toggle trust on or off, and any other value is passed through as a string (e.g. `"loopback"`, or a specific IP or CIDR range).
+
+Falls back to the `TRUST_PROXY` environment variable. Default is unset (Express default, no proxy trust).
+
 ### Config file
 
 The config file defines the bots provided by this server.
@@ -188,13 +209,21 @@ A *DoNothingBot* instance will only do default stuff, like accepting follows.
 A *FollowBackBot* will follow back anyone who follows it. Useful for collecting
 public information.
 
-#### RelayClientBot
+#### MastodonRelayClientBot
 
-A *RelayClientBot* can be the client of a Mastodon or Pleroma relay.
+A *MastodonRelayClientBot* can be the client of a Mastodon relay.
 
-#### RelayServerBot
+#### MastodonRelayServerBot
 
-A *RelayServerBot* will act as a relay server for remote servers.
+A *MastodonRelayServerBot* will act as a relay server for remote Mastodon servers.
+
+#### LitePubRelayClientBot
+
+A *LitePubRelayClientBot* can be the client of a LitePub (Pleroma) relay.
+
+#### LitePubRelayServerBot
+
+A *LitePubRelayServerBot* will act as a relay server for remote Pleroma servers and other LitePub-relay-compliant servers.
 
 ## API
 
@@ -246,6 +275,11 @@ A [getter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Fun
 
 A [getter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get) for the username of the bot. Should match the constructor argument.
 
+#### get type ()
+
+A getter for the type of the bot. This should be an Activity Streams 2.0 object type;
+the default is `Service`.
+
 #### get _context ()
 
 A protected [getter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get) for the context of the bot. (The default implementation stashes the context in a private variable, so this protected
@@ -277,11 +311,11 @@ Called when the server receives a public activity to its shared inbox. This can 
 
 Called when one of the bot's objects is shared by another actor. The first argument is the object, and the second is the `Announce` activity itself. This method is called after the activity has been added to the `shares` collection.
 
-#### async actorOK (actor, activity)
+#### async actorOK (actorId, activity)
 
 Lets the bot override the default check for matching the actor who sent an activity with the
 actor who did the activity. Usually, these need to be the same, but for some sub-protocols, like
-relays, it can be different. Returns a boolean saying whether the actor is OK.
+relays, it can be different. `actorId` is the id of the actor who delivered the activity. Returns a boolean saying whether the actor is OK.
 
 #### async handleActivity (activity)
 
@@ -309,7 +343,7 @@ When a public activity is received at the shared inbox of the server, this metho
 
 This is the bot's control panel for working with the rest of the server.
 
-#### get botID ()
+#### get botId ()
 
 Returns the username of the bot this context was created for.
 
@@ -333,6 +367,10 @@ Deletes the data stored for this key. There's no backup; it's just gone.
 
 Checks to see if any data has been previously stored with this key; returns a boolean.
 
+#### async duplicate (username)
+
+Returns a new `BotContext` identical to this one but scoped to the given `username`. Used by `BotFactory` implementations to produce a per-bot context from a shared template without re-wiring the underlying storage, client, and formatter.
+
 #### async getObject (id)
 
 Given an [ActivityPub object identifier](https://www.w3.org/TR/activitypub/#obj-id), returns an [activitystrea.ms](#activitystreams) object.
@@ -355,6 +393,14 @@ The optional additional parameters are strings used for ActivityPub properties o
 
 A shortcut for sending a reply with `content` to the `object`. Extracts and configures the right addressing properties and threading properties from `object`, and passes them to `sendNote()`.
 
+#### async updateNote (note, content)
+
+Updates a previously-sent `Note` with new `content`. Re-runs the microtext transformation, stores the updated object, and sends an `Update` activity to the original addressees.
+
+#### async deleteNote (note)
+
+Deletes a previously-sent `Note`. Replaces the stored object with a `Tombstone` and sends a `Delete` activity to the original addressees.
+
 #### async likeObject (obj)
 
 Sends a `Like` activity for the passed-in object in [activitystrea.ms](#activitystreams) form.
@@ -363,9 +409,9 @@ Sends a `Like` activity for the passed-in object in [activitystrea.ms](#activity
 
 Sends an `Undo`/`Like` activity for the passed-in object in [activitystrea.ms](#activitystreams) form which was previously liked.
 
-#### async announceObject (obj)
+#### async announceObject (obj, actors = null)
 
-Sends an `Announce` activity for the passed-in object in [activitystrea.ms](#activitystreams) form to followers.
+Sends an `Announce` activity for the passed-in object in [activitystrea.ms](#activitystreams) form. If `actors` is `null` (the default), the `Announce` is addressed to the bot's followers. Otherwise, pass an array of actor IDs (or actor objects) to address the `Announce` to a specific set of recipients — useful for relay-style re-Announce.
 
 #### async unannounceObject (obj)
 
@@ -400,6 +446,38 @@ Gets the `id` of the [ActivityPub Actor](https://www.w3.org/TR/activitypub/#acto
 #### async toWebfinger (actorId)
 
 Gets the [WebFinger](https://en.wikipedia.org/wiki/WebFinger) identity of the [ActivityPub Actor](https://www.w3.org/TR/activitypub/#actors) with the given `id`.
+
+#### getFollowersId ()
+
+Returns the URL of this bot's `followers` collection. Synchronous.
+
+#### async isFollower (obj)
+
+Returns `true` if `obj` (an actor object in [activitystrea.ms](#activitystreams) form, or anything with an `id`) is in this bot's `followers` collection.
+
+#### async isFollowing (obj)
+
+Returns `true` if `obj` is in this bot's `following` collection.
+
+#### async isPendingFollowing (obj)
+
+Returns `true` if this bot has sent a `Follow` to `obj` that has not yet been accepted or rejected.
+
+#### async \* followers ()
+
+Async generator that yields each actor in this bot's `followers` collection, one at a time, across collection pages.
+
+#### async \* following ()
+
+Async generator that yields each actor in this bot's `following` collection, one at a time, across collection pages.
+
+#### isLocal (url)
+
+Returns `true` if `url` is served by this activitypub-bot instance (i.e. its origin matches the configured `--origin`). Synchronous.
+
+#### async onIdle ()
+
+Resolves when the background distribution queue has drained. Intended for test code that needs to wait for outbound activities to finish being delivered before asserting on their effects.
 
 ### activitystrea.ms
 
