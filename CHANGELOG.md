@@ -9,6 +9,16 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.42.1] - 2026-04-22
+
+### Added
+
+- `CHANGELOG.md` in [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+  format.
+- `CODE_OF_CONDUCT.md`.
+- `.markdownlint.json` with `MD024` set to `siblings_only` to allow repeated
+  `### Added`/`### Fixed` subheadings per release.
+
 ### Fixed
 
 - Flaky `retries distribution to a flaky recipient` test waits on
