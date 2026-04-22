@@ -976,4 +976,72 @@ describe('BotContext', () => {
     const actor18 = await makeActorDefault('botcontextactor18')
     assert.strictEqual(await context.isPendingFollowing(actor18), false)
   })
+
+  it('following() yields actors in the following collection', async () => {
+    const actor19 = await makeActorDefault('botcontextactor19')
+    const actor20 = await makeActorDefault('botcontextactor20')
+    await actorStorage.addToCollection(botName, 'following', actor19)
+    await actorStorage.addToCollection(botName, 'following', actor20)
+
+    const seen = new Set()
+    for await (const actor of context.following()) {
+      seen.add(actor.id)
+    }
+    assert.ok(seen.has(actor19.id))
+    assert.ok(seen.has(actor20.id))
+  })
+
+  it('following() yields nothing when the following collection is empty', async () => {
+    const emptyBotName = 'botcontextemptyfollowing'
+    const emptyContext = new BotContext(
+      emptyBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger
+    )
+    let count = 0
+    for await (const _ of emptyContext.following()) {
+      count++
+    }
+    assert.strictEqual(count, 0)
+  })
+
+  it('followers() yields actors in the followers collection', async () => {
+    const actor21 = await makeActorDefault('botcontextactor21')
+    const actor22 = await makeActorDefault('botcontextactor22')
+    await actorStorage.addToCollection(botName, 'followers', actor21)
+    await actorStorage.addToCollection(botName, 'followers', actor22)
+
+    const seen = new Set()
+    for await (const actor of context.followers()) {
+      seen.add(actor.id)
+    }
+    assert.ok(seen.has(actor21.id))
+    assert.ok(seen.has(actor22.id))
+  })
+
+  it('followers() yields nothing when the followers collection is empty', async () => {
+    const emptyBotName = 'botcontextemptyfollowers'
+    const emptyContext = new BotContext(
+      emptyBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger
+    )
+    let count = 0
+    for await (const _ of emptyContext.followers()) {
+      count++
+    }
+    assert.strictEqual(count, 0)
+  })
 })
