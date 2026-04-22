@@ -9,6 +9,28 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-04-22
+
+### Added
+
+- Top-level exports for `LitePubRelayClientBot` and `LitePubRelayServerBot`
+  from `@evanp/activitypub-bot`.
+- Back-compat aliases `RelayClientBot` and `RelayServerBot`, each re-exported
+  as the corresponding Mastodon relay class.
+- README documentation for the `--allow-private`, `--redis-url`, and
+  `--trust-proxy` command-line options.
+- README sections for `BotContext.duplicate()`, `updateNote()`, `deleteNote()`,
+  `getFollowersId()`, `isFollower()`, `isFollowing()`, `isPendingFollowing()`,
+  `followers()`, `following()`, `isLocal()`, and `onIdle()`.
+
+### Changed
+
+- `.markdownlint.json` disables `MD013` inside code blocks so the CLI
+  help-output block can include longer option descriptions verbatim.
+- README now documents `Bot.actorOK()` with its actual `actorId` parameter
+  name, and `BotContext.announceObject()` with its optional `actors` argument.
+- `get botID ()` in the README was a typo for `get botId ()`; corrected.
+
 ## [0.42.1] - 2026-04-22
 
 ### Added
