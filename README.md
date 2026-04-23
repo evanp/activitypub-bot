@@ -204,6 +204,13 @@ An *OKBot* instance will reply to any message that it's mentioned in with the co
 
 A *DoNothingBot* instance will only do default stuff, like accepting follows.
 
+#### LoggingBot
+
+A *LoggingBot* behaves like `DoNothingBot` but logs each `Bot` interface
+callback it receives (`onPublic`, `onFollow`, `onMention`, etc.) at `debug`
+level. Useful as a smoke-test bot to confirm that activities are being
+delivered to local bots; silent in production unless log level is lowered.
+
 #### FollowBackBot
 
 A *FollowBackBot* will follow back anyone who follows it. Useful for collecting
@@ -211,7 +218,15 @@ public information.
 
 #### MastodonRelayClientBot
 
-A *MastodonRelayClientBot* can be the client of a Mastodon relay.
+A *MastodonRelayClientBot* can be the client of one or more Mastodon-style
+relays. Its `relay` option accepts either a single actor URL as a string or
+an array of actor URLs; the bot sends a Mastodon-style `Follow`
+(`object: https://www.w3.org/ns/activitystreams#Public`) to each on
+initialize. To unsubscribe from a relay, remove it from the array and
+re-initialize — the bot diffs the new config against the current `following`
+collection and sends an `Undo`/`Follow` for each removed relay. It also
+advertises `Application` actor type, which Mastodon-style relay software
+(e.g. Pleroma-Relay) requires from subscribers.
 
 #### MastodonRelayServerBot
 
@@ -474,6 +489,27 @@ Async generator that yields each actor in this bot's `following` collection, one
 #### isLocal (url)
 
 Returns `true` if `url` is served by this activitypub-bot instance (i.e. its origin matches the configured `--origin`). Synchronous.
+
+#### async addFollowingUnsafe (actor)
+
+Forcibly adds `actor` to this bot's `following` collection without sending
+a `Follow` or waiting for an `Accept`. Intended for bots (like relay
+clients) whose followship is established through a protocol exchange that
+sits outside the usual Follow/Accept flow. Trust that the caller knows
+what they're doing.
+
+#### async removeFollowingUnsafe (actor)
+
+Forcibly removes `actor` from this bot's `following` collection without
+sending an `Undo`/`Follow`. The protocol-level cleanup is the caller's
+responsibility. Pair with `addFollowingUnsafe()` for symmetry.
+
+#### async fanoutPublic (activity)
+
+Invokes `onPublic(activity)` on every bot registered on the server, so one
+bot can forward a public activity it received through a side-channel
+(e.g. a relay-forwarded `Announce`) to all local bots. Errors in any
+individual bot's `onPublic` are logged and do not interrupt the fanout.
 
 #### async onIdle ()
 
