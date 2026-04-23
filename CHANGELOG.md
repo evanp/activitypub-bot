@@ -9,6 +9,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.44.0] - 2026-04-22
+
+- Add `nodeinfo` route with minimal required information
+
 ## [0.43.3] - 2026-04-22
 
 - `Digest:` header uses uppercase name for algorithm. It's supposed to be
