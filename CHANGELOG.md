@@ -9,15 +9,28 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.44.2] - 2026-04-23
+
+### Fixed
+
+- cleanup server actor keys in tests
+- looser count comparison for keystorage.count() test
+
 ## [0.44.1] - 2026-04-23
+
+### Fixed
 
 - Missing `nodeinfo` files
 
 ## [0.44.0] - 2026-04-22
 
+### Added
+
 - Add `nodeinfo` route with minimal required information
 
 ## [0.43.3] - 2026-04-22
+
+### Fixed
 
 - `Digest:` header uses uppercase name for algorithm. It's supposed to be
   case-insensitive per RFC 3230, but some software compares it case-sensitive
