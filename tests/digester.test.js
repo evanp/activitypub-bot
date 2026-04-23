@@ -24,7 +24,7 @@ describe('Digester', () => {
     const text = 'Hello, world!'
     const digest = await digester.digest(text)
     assert.ok(digest)
-    assert.equal(digest, 'sha-256=MV9b23bQeMQ7isAGTkoBZGErH853yGk0W/yUx1iU7dM=')
+    assert.equal(digest, 'SHA-256=MV9b23bQeMQ7isAGTkoBZGErH853yGk0W/yUx1iU7dM=')
   })
 
   it('can compare two equal digests', async () => {
@@ -47,7 +47,7 @@ describe('Digester', () => {
   it('can compare two digests that differ only in case of the algorithm', async () => {
     const text = 'Hello, world!'
     const digest1 = await digester.digest(text)
-    const digest2 = digest1.replace('sha-256', 'SHA-256')
+    const digest2 = digest1.replace('SHA-256', 'sha-256')
     const result = await digester.equals(digest1, digest2)
     assert.ok(result)
   })
