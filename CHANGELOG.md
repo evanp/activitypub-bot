@@ -9,6 +9,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.44.1] - 2026-04-23
+
+- Missing `nodeinfo` files
+
 ## [0.44.0] - 2026-04-22
 
 - Add `nodeinfo` route with minimal required information
