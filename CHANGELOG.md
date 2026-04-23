@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.43.3] - 2026-04-22
+
+- `Digest:` header uses uppercase name for algorithm. It's supposed to be
+  case-insensitive per RFC 3230, but some software compares it case-sensitive
+  against uppercase.
+
 ## [0.43.2] - 2026-04-22
 
 ### Fixed
