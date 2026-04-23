@@ -9,6 +9,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.44.3] - 2026-04-23
+
+### Fixed
+
+- MastodonRelayClientBot has type 'Application' to work
+  with relay servers like Pleroma-Relay that require it
+
 ## [0.44.2] - 2026-04-23
 
 ### Fixed
