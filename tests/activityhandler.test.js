@@ -118,6 +118,10 @@ describe('ActivityHandler', () => {
     transformer = new Transformer(`${origin}/tag/`, client)
     bot = new OKBot(botName)
     lb = new EventLoggingBot(loggerBotName)
+    testBots = {
+      [bot.username]: bot,
+      [lb.username]: lb
+    }
     await bot.initialize(
       new BotContext(
         bot.username,
@@ -128,7 +132,8 @@ describe('ActivityHandler', () => {
         distributor,
         formatter,
         transformer,
-        logger
+        logger,
+        testBots
       )
     )
     await lb.initialize(
@@ -141,13 +146,10 @@ describe('ActivityHandler', () => {
         distributor,
         formatter,
         transformer,
-        logger
+        logger,
+        testBots
       )
     )
-    testBots = {
-      [bot.username]: bot,
-      [lb.username]: lb
-    }
 
     botId = formatter.format({ username: botName })
     lbId = formatter.format({ username: loggerBotName })

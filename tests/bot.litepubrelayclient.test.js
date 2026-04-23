@@ -136,7 +136,8 @@ describe('LitePubRelayClientBot', () => {
       distributor,
       formatter,
       transformer,
-      logger
+      logger,
+      bots
     )
     nockSetup(REMOTE_HOST)
     relay = nockFormat({ username: RELAY_USERNAME, domain: REMOTE_HOST })

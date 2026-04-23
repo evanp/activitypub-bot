@@ -136,7 +136,8 @@ describe('MastodonRelayClientBot', () => {
       distributor,
       formatter,
       transformer,
-      logger
+      logger,
+      bots
     )
     nockSetup(REMOTE_HOST)
     relay = nockFormat({ username: RELAY_USERNAME, domain: REMOTE_HOST })
@@ -302,5 +303,156 @@ describe('MastodonRelayClientBot', () => {
 
   it('has actor type Application', async () => {
     assert.strictEqual(bot.type, 'Application')
+  })
+
+  it('adds the relay actor to the following collection on Accept', async () => {
+    const followingBotName = 'botrelayclienttestfollowing'
+    const followingRelayUsername = 'botrelayclienttestfollowingrelay'
+    const followingRelay = nockFormat({
+      username: followingRelayUsername,
+      domain: REMOTE_HOST
+    })
+    TEST_USERNAMES.push(followingBotName)
+
+    const followingContext = new BotContext(
+      followingBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      bots
+    )
+    const followingBot = new MastodonRelayClientBot(followingBotName, {
+      relay: followingRelay
+    })
+    bots[followingBotName] = followingBot
+
+    await followingBot.initialize(followingContext)
+    await followingContext.onIdle()
+
+    const inbox = nockFormat({
+      username: followingRelayUsername,
+      collection: 'inbox',
+      domain: REMOTE_HOST
+    })
+    const body = getBody(inbox)
+    assert.ok(body, 'expected a Follow to have been posted to the relay')
+    const follow = JSON.parse(body)
+    const accept = await as2.import({
+      type: 'Accept',
+      id: nockFormat({
+        username: followingRelayUsername,
+        type: 'Accept',
+        num: 1,
+        domain: REMOTE_HOST
+      }),
+      actor: followingRelay,
+      to: formatter.format({ username: followingBotName }),
+      object: {
+        id: follow.id,
+        type: follow.type,
+        object: follow.object
+      }
+    })
+    await followingBot.handleActivity(accept)
+
+    assert.ok(
+      await actorStorage.isInCollection(
+        followingBotName, 'following', { id: followingRelay }
+      ),
+      'relay actor should be in the bot\'s following collection after Accept'
+    )
+  })
+
+  it('calls onPublic on other bots when an Announce arrives from the subscribed relay', async () => {
+    const announceBotName = 'botrelayclienttestannounce'
+    const announceRelayUsername = 'botrelayclienttestannouncerelay'
+    const announceRelay = nockFormat({
+      username: announceRelayUsername,
+      domain: REMOTE_HOST
+    })
+    TEST_USERNAMES.push(announceBotName)
+
+    const announceContext = new BotContext(
+      announceBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      bots
+    )
+    const announceBot = new MastodonRelayClientBot(announceBotName, {
+      relay: announceRelay
+    })
+    bots[announceBotName] = announceBot
+
+    await announceBot.initialize(announceContext)
+    await announceContext.onIdle()
+
+    const inbox = nockFormat({
+      username: announceRelayUsername,
+      collection: 'inbox',
+      domain: REMOTE_HOST
+    })
+    const follow = JSON.parse(getBody(inbox))
+    const accept = await as2.import({
+      type: 'Accept',
+      id: nockFormat({
+        username: announceRelayUsername,
+        type: 'Accept',
+        num: 1,
+        domain: REMOTE_HOST
+      }),
+      actor: announceRelay,
+      to: formatter.format({ username: announceBotName }),
+      object: {
+        id: follow.id,
+        type: follow.type,
+        object: follow.object
+      }
+    })
+    await announceBot.handleActivity(accept)
+
+    const spyCalls = []
+    const spyBotName = 'botrelayclienttestspy'
+    bots[spyBotName] = {
+      id: formatter.format({ username: spyBotName }),
+      username: spyBotName,
+      onPublic: async (activity) => {
+        spyCalls.push(activity)
+      }
+    }
+
+    const announce = await as2.import({
+      type: 'Announce',
+      id: nockFormat({
+        username: announceRelayUsername,
+        type: 'Announce',
+        num: 1,
+        domain: REMOTE_HOST
+      }),
+      actor: announceRelay,
+      object: `https://${REMOTE_HOST}/user/otherperson/statuses/1`,
+      to: `${announceRelay}/followers`
+    })
+    await announceBot.handleActivity(announce)
+
+    assert.strictEqual(
+      spyCalls.length,
+      1,
+      'spy bot onPublic should be called exactly once'
+    )
+    const received = spyCalls[0]
+    const receivedId = received.id?.first?.id ?? received.id
+    const expectedId = announce.id?.first?.id ?? announce.id
+    assert.strictEqual(receivedId, expectedId)
   })
 })

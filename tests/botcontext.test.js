@@ -188,7 +188,8 @@ describe('BotContext', () => {
         distributor,
         formatter,
         transformer,
-        logger
+        logger,
+        bots
       )
       assert.ok(true)
     } catch (err) {
@@ -1002,7 +1003,8 @@ describe('BotContext', () => {
       distributor,
       formatter,
       transformer,
-      logger
+      logger,
+      bots
     )
     let count = 0
     for await (const _ of emptyContext.following()) {
@@ -1036,12 +1038,71 @@ describe('BotContext', () => {
       distributor,
       formatter,
       transformer,
-      logger
+      logger,
+      bots
     )
     let count = 0
     for await (const _ of emptyContext.followers()) {
       count++
     }
     assert.strictEqual(count, 0)
+  })
+
+  it('addFollowingUnsafe puts the actor in the following collection', async () => {
+    const actor = await makeActorDefault(REMOTE_USER_7)
+    await context.addFollowingUnsafe(actor)
+    const isFollowing = await actorStorage.isInCollection(
+      botName, 'following', actor
+    )
+    assert.strictEqual(isFollowing, true)
+  })
+
+  it('fanoutPublic invokes onPublic on registered bots with the given activity', async () => {
+    const calls = []
+    const spyBotName = 'botcontextfanoutspy'
+    bots[spyBotName] = {
+      id: formatter.format({ username: spyBotName }),
+      username: spyBotName,
+      onPublic: async (activity) => {
+        calls.push(activity)
+      }
+    }
+
+    const activity = await as2.import({
+      id: `${REMOTE_ORIGIN}/activities/fanout-spy-1`,
+      type: 'Announce',
+      actor: `${REMOTE_ORIGIN}/user/${REMOTE_USER_7}`,
+      object: `${REMOTE_ORIGIN}/user/${REMOTE_USER_7}/note/1`,
+      to: `${REMOTE_ORIGIN}/user/${REMOTE_USER_7}/followers`
+    })
+
+    await context.fanoutPublic(activity)
+
+    assert.strictEqual(
+      calls.length,
+      1,
+      'spy bot onPublic should have been called exactly once'
+    )
+    const receivedId = calls[0].id?.first?.id ?? calls[0].id
+    const expectedId = activity.id?.first?.id ?? activity.id
+    assert.strictEqual(receivedId, expectedId)
+  })
+
+  it('removeFollowingUnsafe takes the actor out of the following collection', async () => {
+    const actor = await makeActorDefault(REMOTE_USER_8)
+    await actorStorage.addToCollection(botName, 'following', actor)
+    assert.strictEqual(
+      await actorStorage.isInCollection(botName, 'following', actor),
+      true,
+      'precondition: actor should be in following before removal'
+    )
+
+    await context.removeFollowingUnsafe(actor)
+
+    assert.strictEqual(
+      await actorStorage.isInCollection(botName, 'following', actor),
+      false,
+      'actor should no longer be in the bot\'s following collection'
+    )
   })
 })
