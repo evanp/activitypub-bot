@@ -143,6 +143,7 @@ describe('LitePubRelayClientBot', () => {
     relay = nockFormat({ username: RELAY_USERNAME, domain: REMOTE_HOST })
   })
   after(async () => {
+    await distributor.onIdle()
     jobQueue.abort()
     fanoutWorker.stop()
     deliveryWorker.stop()
@@ -677,6 +678,7 @@ describe('LitePubRelayClientBot', () => {
       }
     })
     await handler.handleActivity(fanoutBot, accept)
+    await fanoutContext.onIdle()
 
     const calls = []
     const spyBotName = 'botlitepubrelayclientfanoutspy'
