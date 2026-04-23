@@ -220,7 +220,6 @@ describe('MastodonRelayClientBot', () => {
       }),
       actor: nockFormat({
         username: RELAY_USERNAME,
-        collection: 'inbox',
         domain: REMOTE_HOST
       }),
       to: formatter.format({ username: BOT_USERNAME }),
@@ -253,7 +252,6 @@ describe('MastodonRelayClientBot', () => {
       }),
       actor: nockFormat({
         username: RELAY_USERNAME,
-        collection: 'inbox',
         domain: REMOTE_HOST
       }),
       to: formatter.format({ username: BOT_USERNAME }),
@@ -265,40 +263,6 @@ describe('MastodonRelayClientBot', () => {
     })
     const handled = await bot.handleActivity(reject)
     assert.strictEqual(handled, true)
-  })
-
-  it('unsubscribes from a remote relay on initialize', async () => {
-    const unsubscribe = true
-    bot = new MastodonRelayClientBot(botName, { relay, unsubscribe })
-    assert.ok(bot)
-    bots[botName] = bot
-    await bot.initialize(context)
-    await context.onIdle()
-    assert.equal(postInbox[RELAY_USERNAME], 1)
-
-    let foundInOutbox = false
-
-    for await (const item of actorStorage.items(botName, 'outbox')) {
-      const activity = await objectStorage.read(item.id)
-      foundInOutbox = isRelayUnfollow(activity)
-      if (foundInOutbox) {
-        break
-      }
-    }
-
-    assert.ok(foundInOutbox)
-
-    let foundInInbox = false
-
-    for await (const item of actorStorage.items(botName, 'inbox')) {
-      const activity = await objectStorage.read(item.id)
-      foundInInbox = isRelayUnfollow(activity)
-      if (foundInInbox) {
-        break
-      }
-    }
-
-    assert.ok(foundInInbox)
   })
 
   it('has actor type Application', async () => {
@@ -454,5 +418,175 @@ describe('MastodonRelayClientBot', () => {
     const receivedId = received.id?.first?.id ?? received.id
     const expectedId = announce.id?.first?.id ?? announce.id
     assert.strictEqual(receivedId, expectedId)
+  })
+
+  it('subscribes to multiple relays when relay is an array', async () => {
+    const multiBotName = 'botmastodonrelayclienttestmulti'
+    const multiA = nockFormat({
+      username: 'botmastodonrelaymultia',
+      domain: REMOTE_HOST
+    })
+    const multiB = nockFormat({
+      username: 'botmastodonrelaymultib',
+      domain: REMOTE_HOST
+    })
+    TEST_USERNAMES.push(multiBotName)
+
+    const multiContext = new BotContext(
+      multiBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      bots
+    )
+    const multiBot = new MastodonRelayClientBot(multiBotName, {
+      relay: [multiA, multiB]
+    })
+    bots[multiBotName] = multiBot
+    await multiBot.initialize(multiContext)
+    await multiContext.onIdle()
+
+    let foundA = false
+    let foundB = false
+    for await (const item of actorStorage.items(multiBotName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (!isRelayFollow(activity)) continue
+      const toId = activity.to?.first?.id
+      if (toId === multiA) foundA = true
+      if (toId === multiB) foundB = true
+    }
+    assert.ok(foundA, 'should have followed relay A')
+    assert.ok(foundB, 'should have followed relay B')
+  })
+
+  it('unfollows relays no longer in the relay config on initialize', async () => {
+    const diffBotName = 'botmastodonrelayclienttestdiff'
+    const persistRelay = nockFormat({
+      username: 'botmastodonrelaypersist',
+      domain: REMOTE_HOST
+    })
+    const removedRelay = nockFormat({
+      username: 'botmastodonrelayremoved',
+      domain: REMOTE_HOST
+    })
+    TEST_USERNAMES.push(diffBotName)
+
+    const diffContext = new BotContext(
+      diffBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      bots
+    )
+
+    let diffBot = new MastodonRelayClientBot(diffBotName, {
+      relay: [persistRelay, removedRelay]
+    })
+    bots[diffBotName] = diffBot
+    await diffBot.initialize(diffContext)
+    await diffContext.onIdle()
+
+    // Simulate Accepts having arrived: both relays are in following.
+    const persistActor = await as2.import({ id: persistRelay })
+    const removedActor = await as2.import({ id: removedRelay })
+    await actorStorage.addToCollection(diffBotName, 'following', persistActor)
+    await actorStorage.addToCollection(diffBotName, 'following', removedActor)
+
+    diffBot = new MastodonRelayClientBot(diffBotName, {
+      relay: [persistRelay]
+    })
+    bots[diffBotName] = diffBot
+    await diffBot.initialize(diffContext)
+    await diffContext.onIdle()
+
+    let foundRemovedUndo = false
+    for await (const item of actorStorage.items(diffBotName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (!isRelayUnfollow(activity)) continue
+      if (activity.to?.first?.id === removedRelay) {
+        foundRemovedUndo = true
+        break
+      }
+    }
+    assert.ok(
+      foundRemovedUndo,
+      'should have sent an Undo Follow addressed to the removed relay'
+    )
+    assert.strictEqual(
+      await actorStorage.isInCollection(
+        diffBotName, 'following', removedActor
+      ),
+      false,
+      'removed relay should no longer be in following'
+    )
+    assert.strictEqual(
+      await actorStorage.isInCollection(
+        diffBotName, 'following', persistActor
+      ),
+      true,
+      'persistent relay should still be in following'
+    )
+  })
+
+  it('is idempotent when re-initialized with the same relay config', async () => {
+    const stableBotName = 'botmastodonrelayclientteststable'
+    const stableRelay = nockFormat({
+      username: 'botmastodonrelaystable',
+      domain: REMOTE_HOST
+    })
+    TEST_USERNAMES.push(stableBotName)
+
+    const stableContext = new BotContext(
+      stableBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      bots
+    )
+    const stableBot = new MastodonRelayClientBot(stableBotName, {
+      relay: [stableRelay]
+    })
+    bots[stableBotName] = stableBot
+
+    await stableBot.initialize(stableContext)
+    await stableContext.onIdle()
+
+    let firstCount = 0
+    for await (const item of actorStorage.items(stableBotName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (!isRelayFollow(activity)) continue
+      if (activity.to?.first?.id === stableRelay) firstCount++
+    }
+    assert.ok(firstCount > 0, 'first initialize should send at least one Follow')
+
+    await stableBot.initialize(stableContext)
+    await stableContext.onIdle()
+
+    let secondCount = 0
+    for await (const item of actorStorage.items(stableBotName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (!isRelayFollow(activity)) continue
+      if (activity.to?.first?.id === stableRelay) secondCount++
+    }
+    assert.strictEqual(
+      secondCount,
+      firstCount,
+      're-initializing with the same config should not send extra Follows'
+    )
   })
 })
