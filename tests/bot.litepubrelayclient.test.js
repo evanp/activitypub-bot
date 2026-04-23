@@ -621,4 +621,94 @@ describe('LitePubRelayClientBot', () => {
       }
     }
   })
+
+  it('fans out to other bots onPublic when an Announce arrives from the subscribed relay', async () => {
+    const fanoutBotName = 'botlitepubrelayclientfanout'
+    const fanoutRelayUsername = 'botlitepubrelayclientfanoutrelay'
+    const fanoutRelay = nockFormat({
+      username: fanoutRelayUsername,
+      domain: REMOTE_HOST
+    })
+    TEST_USERNAMES.push(fanoutBotName)
+
+    const fanoutBot = new LitePubRelayClientBot(fanoutBotName, {
+      relay: fanoutRelay
+    })
+    bots[fanoutBotName] = fanoutBot
+
+    const fanoutContext = new BotContext(
+      fanoutBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      bots
+    )
+
+    await fanoutBot.initialize(fanoutContext)
+    await fanoutContext.onIdle()
+
+    const inbox = nockFormat({
+      username: fanoutRelayUsername,
+      collection: 'inbox',
+      domain: REMOTE_HOST
+    })
+    const body = getBody(inbox)
+    assert.ok(body, 'expected a Follow to have been posted to the relay')
+    const follow = JSON.parse(body)
+    const accept = await as2.import({
+      type: 'Accept',
+      id: nockFormat({
+        username: fanoutRelayUsername,
+        type: 'Accept',
+        num: 1,
+        domain: REMOTE_HOST
+      }),
+      actor: fanoutRelay,
+      to: formatter.format({ username: fanoutBotName }),
+      object: {
+        id: follow.id,
+        type: follow.type,
+        object: follow.object
+      }
+    })
+    await handler.handleActivity(fanoutBot, accept)
+
+    const calls = []
+    const spyBotName = 'botlitepubrelayclientfanoutspy'
+    bots[spyBotName] = {
+      id: formatter.format({ username: spyBotName }),
+      username: spyBotName,
+      onPublic: async (activity) => {
+        calls.push(activity)
+      }
+    }
+
+    const announce = await as2.import({
+      type: 'Announce',
+      id: nockFormat({
+        username: fanoutRelayUsername,
+        type: 'Announce',
+        num: 1,
+        domain: REMOTE_HOST
+      }),
+      actor: fanoutRelay,
+      object: `https://${REMOTE_HOST}/user/otherperson/statuses/1`,
+      to: `${fanoutRelay}/followers`
+    })
+    await fanoutBot.handleActivity(announce)
+
+    assert.strictEqual(
+      calls.length,
+      1,
+      'spy bot onPublic should have been called exactly once'
+    )
+    const receivedId = calls[0].id?.first?.id ?? calls[0].id
+    const expectedId = announce.id?.first?.id ?? announce.id
+    assert.strictEqual(receivedId, expectedId)
+  })
 })
