@@ -128,4 +128,10 @@ describe('KeyStorage', async () => {
     assert.match(secondSystemPrivateKey, /-----END PRIVATE KEY-----\n$/)
     assert.equal(firstSystemPrivateKey, secondSystemPrivateKey)
   })
+  it('can count keypairs', async () => {
+    const n = await storage.count()
+    assert.equal(typeof n, 'number')
+    assert.ok(Number.isInteger(n))
+    assert.equal(n, 3)
+  })
 })
