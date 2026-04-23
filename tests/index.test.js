@@ -69,4 +69,9 @@ describe('package exports', () => {
     assert.equal(typeof module.RelayServerBot, 'function')
     assert.strictEqual(module.RelayServerBot, module.MastodonRelayServerBot)
   })
+
+  it('exports LoggingBot', async () => {
+    const LoggingBot = module.LoggingBot
+    assert.equal(typeof LoggingBot, 'function')
+  })
 })
