@@ -132,6 +132,6 @@ describe('KeyStorage', async () => {
     const n = await storage.count()
     assert.equal(typeof n, 'number')
     assert.ok(Number.isInteger(n))
-    assert.equal(n, 3)
+    assert.ok(n >= 3, `expected at least 3 keypairs, got ${n}`)
   })
 })

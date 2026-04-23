@@ -84,11 +84,17 @@ export async function cleanupTestData (connection, {
     ? [localPattern, ...normalizedRemotePatterns]
     : normalizedRemotePatterns
 
+  // The system/instance actor stores its keypair and records under
+  // username = localDomain, so include it whenever a local domain is given.
+  const effectiveUsernames = localDomain && !usernames.includes(localDomain)
+    ? [...usernames, localDomain]
+    : usernames
+
   const actorCollectionPageClauses = []
   const actorCollectionPageReplacements = {}
-  if (usernames.length > 0) {
+  if (effectiveUsernames.length > 0) {
     actorCollectionPageClauses.push('username IN (:usernames)')
-    actorCollectionPageReplacements.usernames = usernames
+    actorCollectionPageReplacements.usernames = effectiveUsernames
   }
   addLikeClauses(
     actorCollectionPageClauses,
@@ -99,8 +105,8 @@ export async function cleanupTestData (connection, {
   )
   await deleteWhere(connection, 'actorcollectionpage', actorCollectionPageClauses, actorCollectionPageReplacements)
 
-  if (usernames.length > 0) {
-    const usernameOnlyReplacements = { usernames }
+  if (effectiveUsernames.length > 0) {
+    const usernameOnlyReplacements = { usernames: effectiveUsernames }
     await deleteWhere(connection, 'actorcollection', ['username IN (:usernames)'], usernameOnlyReplacements)
     await deleteWhere(connection, 'lastactivity', ['username IN (:usernames)'], usernameOnlyReplacements)
     await deleteWhere(connection, 'botdata', ['username IN (:usernames)'], usernameOnlyReplacements)
@@ -139,9 +145,9 @@ export async function cleanupTestData (connection, {
 
   const remoteCacheClauses = []
   const remoteCacheReplacements = {}
-  if (usernames.length > 0) {
+  if (effectiveUsernames.length > 0) {
     remoteCacheClauses.push('username IN (:usernames)')
-    remoteCacheReplacements.usernames = usernames
+    remoteCacheReplacements.usernames = effectiveUsernames
   }
   addLikeClauses(remoteCacheClauses, remoteCacheReplacements, 'id', allPatterns, 'remoteCacheIdPattern')
   await deleteWhere(connection, 'remote_object_cache', remoteCacheClauses, remoteCacheReplacements)
