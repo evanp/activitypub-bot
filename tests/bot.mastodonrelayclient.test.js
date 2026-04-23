@@ -299,4 +299,8 @@ describe('MastodonRelayClientBot', () => {
 
     assert.ok(foundInInbox)
   })
+
+  it('has actor type Application', async () => {
+    assert.strictEqual(bot.type, 'Application')
+  })
 })
