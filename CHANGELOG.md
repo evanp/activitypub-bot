@@ -9,6 +9,25 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-04-23
+
+### Added
+
+- LoggingBot class for debugging installations
+- addFollowingUnsafe(), removeFollowingUnsafe(), fanoutPublic()
+  methods of BotContext
+
+### Changed
+
+- MastodonRelayClientBot can take an array of relay ids as
+  `relay` option or one as a string
+- MastodonRelayClientBot ignores `unsubscribe`, syncs relay
+  array instead
+- MastodonRelayClientBot adds relay server to `following`
+- MastodonRelayClientBot and LitePubRelayClientBot fan out
+  relay server `Announce` activities to all other bots
+- BotContext constructor takes `bots` argument
+
 ## [0.44.3] - 2026-04-23
 
 ### Fixed
