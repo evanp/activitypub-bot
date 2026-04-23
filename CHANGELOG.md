@@ -9,6 +9,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.1] - 2026-04-23
+
+### Fixed
+
+- LitePubRelayClientBot test was not clearing
+  queued jobs
+
 ## [0.45.0] - 2026-04-23
 
 ### Added
