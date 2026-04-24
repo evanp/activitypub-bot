@@ -801,6 +801,10 @@ describe('BotContext', () => {
       activity.summary.get('en'),
       activity.summary.get()
     )
+    assert.strictEqual(
+      activity.summary.get('en'),
+      `${botName} shared "a(n) ${type}"`
+    )
 
     await context.onIdle()
 
