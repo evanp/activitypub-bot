@@ -9,6 +9,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.2] - 2026-04-24
+
+### Fixed
+
+- Only send activities with `actor` property as a bare URI,
+  not an embedded object. Fixes interoperability with Misskey.
+- Explicitly set `manuallyApprovesFollowers` to false. Fixes
+  (some) interoperability with Pixelfed.
+
 ## [0.45.1] - 2026-04-23
 
 ### Fixed
