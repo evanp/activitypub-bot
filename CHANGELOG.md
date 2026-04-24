@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.3] - 2026-04-24
+
+### Fixed
+
+- Correct summary for Announce activities
+
 ## [0.45.2] - 2026-04-24
 
 ### Fixed
