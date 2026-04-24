@@ -166,6 +166,10 @@ describe('actor routes', async () => {
       assert.strictEqual(typeof response.body.url.mediaType, 'string')
       assert.strictEqual(response.body.url.mediaType, 'text/html')
     })
+    it('should include manuallyApprovesFollowers', async () => {
+      assert.strictEqual(typeof response.body.manuallyApprovesFollowers, 'boolean')
+      assert.strictEqual(response.body.manuallyApprovesFollowers, false)
+    })
   })
 
   describe('GET non-existent user', async () => {
