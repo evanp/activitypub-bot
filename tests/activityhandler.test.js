@@ -6,7 +6,8 @@ import {
   nockSetup,
   postInbox,
   makeActor as makeNockActor,
-  nockFormat as rawNockFormat
+  nockFormat as rawNockFormat,
+  getBody
 } from '@evanp/activitypub-nock'
 
 import { ActivityHandler } from '../lib/activityhandler.js'
@@ -2420,5 +2421,29 @@ describe('ActivityHandler', () => {
     })
     await handler.handleActivity(lb, undoActivity)
     assert.ok(lb.unfollows.has(undoActivity.id))
+  })
+  it('sends actor as a string URI in outgoing activities', async () => {
+    const username = 'stringactorfollower1'
+    const actor = await makeActor(username)
+    const followId = nockFormat({ username, type: 'follow', num: 1, obj: botId })
+    const followActivity = await as2.import({
+      type: 'Follow',
+      id: followId,
+      actor: actor.id,
+      object: botId,
+      to: botId
+    })
+    await handler.handleActivity(bot, followActivity)
+    await handler.onIdle()
+    const inbox = `https://${socialDomain}/user/${username}/inbox`
+    const raw = getBody(inbox)
+    assert.ok(raw, 'expected a request body captured for the follower inbox')
+    const body = JSON.parse(raw)
+    assert.strictEqual(
+      typeof body.actor,
+      'string',
+      `actor should be a string URI, got ${typeof body.actor}: ${JSON.stringify(body.actor)}`
+    )
+    assert.strictEqual(body.actor, botId)
   })
 })

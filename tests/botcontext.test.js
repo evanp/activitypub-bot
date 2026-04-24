@@ -7,7 +7,8 @@ import {
   resetInbox,
   makeActor,
   makeObject,
-  nockFormat
+  nockFormat,
+  getBody
 } from '@evanp/activitypub-nock'
 import Logger from 'pino'
 
@@ -1104,5 +1105,23 @@ describe('BotContext', () => {
       false,
       'actor should no longer be in the bot\'s following collection'
     )
+  })
+
+  it('sends actor as a string URI in outgoing activities', async () => {
+    const username = 'botcontextstringactor1'
+    const actor = await makeActorDefault(username)
+    await context.followActor(actor)
+    await context.onIdle()
+    assert.strictEqual(postInbox[username], 1)
+    const inbox = `${REMOTE_ORIGIN}/user/${username}/inbox`
+    const raw = getBody(inbox)
+    assert.ok(raw, 'expected a request body captured for the remote inbox')
+    const body = JSON.parse(raw)
+    assert.strictEqual(
+      typeof body.actor,
+      'string',
+      `actor should be a string URI, got ${typeof body.actor}: ${JSON.stringify(body.actor)}`
+    )
+    assert.strictEqual(body.actor, formatter.format({ username: BOT_USERNAME }))
   })
 })
