@@ -9,6 +9,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.5] - 2026-04-27
+
+### Fixed
+
+- Clear stale follow requests in followback bot
+- Synchronize followers collection in followback bot
+
 ## [0.45.4] - 2026-04-26
 
 ### Fixed
