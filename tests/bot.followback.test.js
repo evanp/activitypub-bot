@@ -320,4 +320,84 @@ describe('FollowBack bot', async () => {
       assert.strictEqual(postInbox[pendingUsername] ?? 0, pendingCountBefore)
     })
   })
+
+  describe('abandons stale pending Follows on initialize', async () => {
+    const staleUsername = 'reconcilestale'
+    const staleId = nockFormat({ username: staleUsername, domain: REMOTE_HOST })
+    const staleFollowId = `__set_in_before__`
+    let stalePendingFollow
+    let staleCountBefore
+
+    before(async () => {
+      const { actorStorage, objectStorage, formatter } = app.locals
+      staleCountBefore = postInbox[staleUsername] ?? 0
+
+      // In followers, has a Follow in pendingFollowing whose published is > 7 days ago
+      await actorStorage.addToCollection(BOT_USERNAME, 'followers', { id: staleId })
+      const botId = formatter.format({ username: BOT_USERNAME })
+      const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()
+      stalePendingFollow = await as2.import({
+        type: 'Follow',
+        id: `${botId}/follow/reconcilestale`,
+        actor: botId,
+        object: staleId,
+        to: staleId,
+        published: eightDaysAgo
+      })
+      await objectStorage.create(stalePendingFollow)
+      await actorStorage.setLastActivity(BOT_USERNAME, stalePendingFollow)
+      await actorStorage.addToCollection(BOT_USERNAME, 'pendingFollowing', stalePendingFollow)
+
+      // Re-trigger initialize to run the stale sweep + synchronize
+      const bot = app.locals.bots[BOT_USERNAME]
+      await bot.initialize(bot._context)
+      await app.onIdle()
+    })
+
+    it('should deliver activities to the stale follower (Undo + fresh Follow)', async () => {
+      assert.ok(
+        (postInbox[staleUsername] ?? 0) >= staleCountBefore + 2,
+        `expected postInbox[${staleUsername}] to grow by at least 2 from ${staleCountBefore}, got ${postInbox[staleUsername]}`
+      )
+    })
+
+    it('should have an Undo of the stale Follow in its outbox', async () => {
+      const { actorStorage, objectStorage } = app.locals
+      let foundUndo
+      for await (const item of actorStorage.items(BOT_USERNAME, 'outbox')) {
+        const obj = await objectStorage.read(item.id)
+        if (obj.type === UNDO_TYPE &&
+          obj.object?.first?.id === stalePendingFollow.id) {
+          foundUndo = obj
+          break
+        }
+      }
+      assert.ok(foundUndo, 'expected an Undo of the stale Follow in the bot outbox')
+    })
+
+    it('should have a fresh Follow for the stale follower in its outbox', async () => {
+      const { actorStorage, objectStorage } = app.locals
+      let foundFreshFollow
+      for await (const item of actorStorage.items(BOT_USERNAME, 'outbox')) {
+        const obj = await objectStorage.read(item.id)
+        if (obj.type === FOLLOW_TYPE &&
+          obj.id !== stalePendingFollow.id &&
+          obj.object?.first?.id === staleId) {
+          foundFreshFollow = obj
+          break
+        }
+      }
+      assert.ok(foundFreshFollow, 'expected a fresh Follow (different id) for the stale follower')
+    })
+
+    it('should remove the stale Follow from pendingFollowing', async () => {
+      const { actorStorage } = app.locals
+      const stillPending = await actorStorage.isInCollection(
+        BOT_USERNAME,
+        'pendingFollowing',
+        stalePendingFollow
+      )
+      assert.strictEqual(stillPending, false)
+    })
+  })
 })
