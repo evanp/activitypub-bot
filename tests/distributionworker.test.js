@@ -19,7 +19,7 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { JobQueue } from '../lib/jobqueue.js'
-import { RequestThrottler } from '../lib/requestthrottler.js'
+import { RequestThrottler, ThrottleError } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 import { RecoverableError } from '../lib/worker.js'
@@ -315,6 +315,31 @@ describe('DistributionWorker', async () => {
       assert.ok(entry, 'expected warning log entry')
       assert.ok(entry.err, 'expected serialized err on log entry')
       assert.strictEqual(entry.err.message, 'network exploded')
+    })
+
+    it('retries when the request throttler rejects with the throttler-supplied waitTime', async () => {
+      const payload = await makePayload({
+        nanoid: 'throttled12345678901'
+      })
+      const expectedWait = 39963
+      const throttledWorker = new DistributionWorker(queue, logger, {
+        client: {
+          async post () {
+            const err = new ThrottleError('Wait time is too long; 39963 > 30000')
+            err.waitTime = expectedWait
+            throw err
+          }
+        }
+      })
+
+      await assert.rejects(
+        throttledWorker.doJob(payload, 1),
+        error => {
+          assert.ok(error instanceof RecoverableError, 'expected RecoverableError')
+          assert.strictEqual(error.delay, expectedWait, 'expected delay to match throttler waitTime')
+          return true
+        }
+      )
     })
   })
 })
