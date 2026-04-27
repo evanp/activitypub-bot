@@ -12,6 +12,7 @@ describe('RequestThrottler', async () => {
   const REMOTE_HOST = 'remote.requestthrottler.test'
   const THIRD_HOST = 'third.requestthrottler.test'
   const MASTODON_HOST = 'mastodon.requestthrottler.test'
+  const SHED_HOST = 'shed.requestthrottler.test'
 
   let logger
   let connection
@@ -25,14 +26,14 @@ describe('RequestThrottler', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST]
     })
   })
 
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST]
     })
     await connection.close()
   })
@@ -156,5 +157,25 @@ describe('RequestThrottler', async () => {
     assert.strictEqual(typeof limits[0].reset, 'object')
     assert.ok(limits[0].reset instanceof Date)
     assert.ok(limits[0].reset - Date.now() <= 300000)
+  })
+
+  it('throws a ThrottleError when the wait would exceed the max wait time', async () => {
+    assert.ok(throttler)
+    const { ThrottleError } = await import('../lib/requestthrottler.js')
+    assert.ok(ThrottleError, 'expected ThrottleError to be exported from requestthrottler.js')
+
+    const headers = new Headers()
+    headers.set('x-ratelimit-limit', 1000)
+    headers.set('x-ratelimit-remaining', 0)
+    headers.set('x-ratelimit-reset', (new Date(Date.now() + 60000)).toISOString())
+    await throttler.update(SHED_HOST, headers)
+
+    await assert.rejects(
+      throttler.throttle(SHED_HOST),
+      err => {
+        assert.ok(err instanceof ThrottleError, 'expected ThrottleError instance')
+        return true
+      }
+    )
   })
 })
