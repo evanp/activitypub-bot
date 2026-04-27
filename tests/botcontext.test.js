@@ -1128,4 +1128,52 @@ describe('BotContext', () => {
     )
     assert.strictEqual(body.actor, formatter.format({ username: BOT_USERNAME }))
   })
+
+  it('pendingFollowing() yields activities in the pendingFollowing collection', async () => {
+    const pendingBotName = 'botcontextpendingfollowing'
+    const pendingContext = new BotContext(
+      pendingBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      bots
+    )
+    const followA = { id: `${formatter.format({ username: pendingBotName })}/follow/pendinggen-a` }
+    const followB = { id: `${formatter.format({ username: pendingBotName })}/follow/pendinggen-b` }
+    await actorStorage.addToCollection(pendingBotName, 'pendingFollowing', followA)
+    await actorStorage.addToCollection(pendingBotName, 'pendingFollowing', followB)
+
+    const seen = new Set()
+    for await (const activity of pendingContext.pendingFollowing()) {
+      seen.add(activity.id)
+    }
+    assert.ok(seen.has(followA.id))
+    assert.ok(seen.has(followB.id))
+  })
+
+  it('pendingFollowing() yields nothing when the pendingFollowing collection is empty', async () => {
+    const emptyBotName = 'botcontextemptypendingfollowing'
+    const emptyContext = new BotContext(
+      emptyBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      bots
+    )
+    let count = 0
+    for await (const _ of emptyContext.pendingFollowing()) {
+      count++
+    }
+    assert.strictEqual(count, 0)
+  })
 })
