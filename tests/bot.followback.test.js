@@ -258,4 +258,66 @@ describe('FollowBack bot', async () => {
       assert.ok(foundActivity)
     })
   })
+
+  describe('reconciles missing follows on initialize', async () => {
+    const driftUsername = 'reconciledrift'
+    const existingUsername = 'reconcileexisting'
+    const pendingUsername = 'reconcilepending'
+    const driftId = nockFormat({ username: driftUsername, domain: REMOTE_HOST })
+    const existingId = nockFormat({ username: existingUsername, domain: REMOTE_HOST })
+    const pendingId = nockFormat({ username: pendingUsername, domain: REMOTE_HOST })
+
+    let driftCountBefore
+    let existingCountBefore
+    let pendingCountBefore
+
+    before(async () => {
+      const { actorStorage, objectStorage, formatter } = app.locals
+
+      driftCountBefore = postInbox[driftUsername] ?? 0
+      existingCountBefore = postInbox[existingUsername] ?? 0
+      pendingCountBefore = postInbox[pendingUsername] ?? 0
+
+      // Drift: in followers only — should be followed on init
+      await actorStorage.addToCollection(BOT_USERNAME, 'followers', { id: driftId })
+
+      // Existing: in followers AND following — should NOT be re-followed
+      await actorStorage.addToCollection(BOT_USERNAME, 'followers', { id: existingId })
+      await actorStorage.addToCollection(BOT_USERNAME, 'following', { id: existingId })
+
+      // Pending: in followers, has a pending Follow — should NOT be re-followed
+      await actorStorage.addToCollection(BOT_USERNAME, 'followers', { id: pendingId })
+      const botId = formatter.format({ username: BOT_USERNAME })
+      const pendingFollow = await as2.import({
+        type: 'Follow',
+        id: `${botId}/follow/reconcilepending`,
+        actor: botId,
+        object: pendingId,
+        to: pendingId
+      })
+      await objectStorage.create(pendingFollow)
+      await actorStorage.setLastActivity(BOT_USERNAME, pendingFollow)
+      await actorStorage.addToCollection(BOT_USERNAME, 'pendingFollowing', pendingFollow)
+
+      // Re-trigger initialize to run reconciliation against seeded state
+      const bot = app.locals.bots[BOT_USERNAME]
+      await bot.initialize(bot._context)
+      await app.onIdle()
+    })
+
+    it('should send a Follow to a follower not in following or pending', async () => {
+      assert.ok(
+        (postInbox[driftUsername] ?? 0) > driftCountBefore,
+        `expected postInbox[${driftUsername}] to increase from ${driftCountBefore}, got ${postInbox[driftUsername]}`
+      )
+    })
+
+    it('should NOT send a Follow to a follower already in following', async () => {
+      assert.strictEqual(postInbox[existingUsername] ?? 0, existingCountBefore)
+    })
+
+    it('should NOT send a Follow to a follower with a pending Follow', async () => {
+      assert.strictEqual(postInbox[pendingUsername] ?? 0, pendingCountBefore)
+    })
+  })
 })
