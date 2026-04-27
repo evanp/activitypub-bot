@@ -164,16 +164,22 @@ describe('RequestThrottler', async () => {
     const { ThrottleError } = await import('../lib/requestthrottler.js')
     assert.ok(ThrottleError, 'expected ThrottleError to be exported from requestthrottler.js')
 
+    const RESET_MS = 60000
+    const MAX_WAIT = 30000
+
     const headers = new Headers()
     headers.set('x-ratelimit-limit', 1000)
     headers.set('x-ratelimit-remaining', 0)
-    headers.set('x-ratelimit-reset', (new Date(Date.now() + 60000)).toISOString())
+    headers.set('x-ratelimit-reset', (new Date(Date.now() + RESET_MS)).toISOString())
     await throttler.update(SHED_HOST, headers)
 
     await assert.rejects(
-      throttler.throttle(SHED_HOST),
+      throttler.throttle(SHED_HOST, MAX_WAIT),
       err => {
         assert.ok(err instanceof ThrottleError, 'expected ThrottleError instance')
+        assert.strictEqual(typeof err.waitTime, 'number', 'expected numeric waitTime')
+        assert.ok(err.waitTime > MAX_WAIT, `expected waitTime > maxWaitTime, got ${err.waitTime}`)
+        assert.ok(err.waitTime <= RESET_MS, `expected waitTime <= window, got ${err.waitTime}`)
         return true
       }
     )
