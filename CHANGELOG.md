@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.4] - 2026-04-26
+
+### Fixed
+
+- Retry throttled deliveries
+
 ## [0.45.3] - 2026-04-24
 
 ### Fixed
