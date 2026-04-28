@@ -13,6 +13,13 @@ and this project adheres to
 
 ### Fixed
 
+- Remove `onIdle` call that stalled FollowbackBot
+  since no workers had started yet.
+
+## [0.45.6] - 2026-04-27
+
+### Fixed
+
 - Patch up database problem where actors are
   stored in `pendingFollowing` instead of
   `Follow` activities.
