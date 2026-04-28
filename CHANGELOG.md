@@ -9,6 +9,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.6] - 2026-04-27
+
+### Fixed
+
+- Patch up database problem where actors are
+  stored in `pendingFollowing` instead of
+  `Follow` activities.
+
 ## [0.45.5] - 2026-04-27
 
 ### Fixed
