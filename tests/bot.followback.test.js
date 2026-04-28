@@ -400,4 +400,78 @@ describe('FollowBack bot', async () => {
       assert.strictEqual(stillPending, false)
     })
   })
+
+  describe('cleans up legacy bare-actor pending entries on initialize', async () => {
+    // Pre-March-2026 bug: pendingFollowing was sometimes populated with the
+    // bare actor URL instead of the Follow activity URL. Those entries can't
+    // be aged by published date (no Follow activity is fetched — getObject
+    // returns the remote Actor). The bot should detect this shape and
+    // unfollow directly via the actor.
+    const legacyUsername = 'reconcilelegacyactor'
+    const legacyId = nockFormat({ username: legacyUsername, domain: REMOTE_HOST })
+    let legacyFollow
+    let legacyCountBefore
+
+    before(async () => {
+      const { actorStorage, objectStorage, formatter } = app.locals
+      legacyCountBefore = postInbox[legacyUsername] ?? 0
+
+      // Seed the proper local Follow activity + lastactivity row, exactly as
+      // production has: the original Follow exists, but the bad code path
+      // wrote the actor URL into pendingFollowing instead of the activity URL.
+      const botId = formatter.format({ username: BOT_USERNAME })
+      legacyFollow = await as2.import({
+        type: 'Follow',
+        id: `${botId}/follow/reconcilelegacyactor`,
+        actor: botId,
+        object: legacyId,
+        to: legacyId,
+        published: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      })
+      await objectStorage.create(legacyFollow)
+      await actorStorage.setLastActivity(BOT_USERNAME, legacyFollow)
+
+      // The bug: bare actor in pendingFollowing, NOT the Follow activity.
+      await actorStorage.addToCollection(
+        BOT_USERNAME,
+        'pendingFollowing',
+        { id: legacyId }
+      )
+
+      const bot = app.locals.bots[BOT_USERNAME]
+      await bot.initialize(bot._context)
+      await app.onIdle()
+    })
+
+    it('should deliver an Undo to the legacy actor', async () => {
+      assert.ok(
+        (postInbox[legacyUsername] ?? 0) > legacyCountBefore,
+        `expected postInbox[${legacyUsername}] to grow from ${legacyCountBefore}, got ${postInbox[legacyUsername]}`
+      )
+    })
+
+    it('should have an Undo of the original Follow in its outbox', async () => {
+      const { actorStorage, objectStorage } = app.locals
+      let foundUndo
+      for await (const item of actorStorage.items(BOT_USERNAME, 'outbox')) {
+        const obj = await objectStorage.read(item.id)
+        if (obj.type === UNDO_TYPE &&
+          obj.object?.first?.id === legacyFollow.id) {
+          foundUndo = obj
+          break
+        }
+      }
+      assert.ok(foundUndo, 'expected an Undo of the original Follow activity in the outbox')
+    })
+
+    it('should remove the legacy bare-actor entry from pendingFollowing', async () => {
+      const { actorStorage } = app.locals
+      const stillPending = await actorStorage.isInCollection(
+        BOT_USERNAME,
+        'pendingFollowing',
+        { id: legacyId }
+      )
+      assert.strictEqual(stillPending, false)
+    })
+  })
 })
