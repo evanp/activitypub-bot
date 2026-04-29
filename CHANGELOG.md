@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.7] - 2026-04-29
+
+### Added
+
+- Log memory usage.
+
 ## [0.45.6] - 2026-04-27
 
 ### Fixed
