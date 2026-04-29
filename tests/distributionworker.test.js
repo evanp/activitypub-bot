@@ -341,5 +341,69 @@ describe('DistributionWorker', async () => {
         }
       )
     })
+
+    it('throws the original error on recoverable client errors at max attempts', async () => {
+      const payload = await makePayload({
+        domain: maxAttemptsHost,
+        nanoid: 'maxattempts4xx12345'
+      })
+
+      nock(`https://${maxAttemptsHost}`)
+        .post(`/user/${remoteUsernames[0]}/inbox`)
+        .reply(429, 'too many requests', { 'retry-after': '12' })
+
+      await assert.rejects(
+        worker.doJob(payload, 21),
+        error => error.status === 429
+      )
+    })
+
+    it('uses exponential backoff when it exceeds retry-after', async () => {
+      const payload = await makePayload({
+        domain: retryAfterHost,
+        nanoid: 'maxretrydelaytenattp'
+      })
+
+      nock(`https://${retryAfterHost}`)
+        .post(`/user/${remoteUsernames[0]}/inbox`)
+        .reply(429, 'too many requests', { 'retry-after': '1' })
+
+      await assert.rejects(
+        worker.doJob(payload, 10),
+        error => {
+          assert.ok(error instanceof RecoverableError)
+          // exponential at attempts=10 is 2^9 * 1000 * (0.5..1.5) = 256_000..768_000ms,
+          // far exceeding the 1000ms retry-after header.
+          assert.ok(
+            error.delay > 1000,
+            `expected delay to exceed retry-after of 1000ms, got ${error.delay}`
+          )
+          return true
+        }
+      )
+    })
+
+    it('uses retry-after when it exceeds exponential backoff', async () => {
+      const payload = await makePayload({
+        domain: retryAfterHost,
+        nanoid: 'maxretrydelaylongra1'
+      })
+
+      const longRetryAfter = 86400 // one day in seconds
+
+      nock(`https://${retryAfterHost}`)
+        .post(`/user/${remoteUsernames[0]}/inbox`)
+        .reply(429, 'too many requests', { 'retry-after': String(longRetryAfter) })
+
+      await assert.rejects(
+        worker.doJob(payload, 1),
+        error => {
+          assert.ok(error instanceof RecoverableError)
+          // exponential at attempts=1 is 500..1500ms; header dominates at 86_400_000ms.
+          assert.strictEqual(error.delay, longRetryAfter * 1000)
+          return true
+        }
+      )
+    })
   })
 })
