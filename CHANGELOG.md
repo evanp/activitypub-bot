@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.9] - 2026-04-29
+
+### Fixed
+
+- Don't infinitely retry on 429 status code.
+
 ## [0.45.8] - 2026-04-29
 
 ### Added
