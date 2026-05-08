@@ -18,6 +18,7 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
+import { EndpointCache } from '../lib/endpointcache.js'
 import { ActivityDeliverer } from '../lib/activitydeliverer.js'
 import { ActivityHandler } from '../lib/activityhandler.js'
 import { Authorizer } from '../lib/authorizer.js'
@@ -73,7 +74,8 @@ describe('IntakeWorker', async () => {
     const policyStorage = new SignaturePolicyStorage(connection, logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeAgent())
     queue = new JobQueue(connection, logger)
-    const distributor = new ActivityDistributor(client, formatter, actorStorage, logger, queue)
+    const endpointCache = new EndpointCache(connection, logger)
+    const distributor = new ActivityDistributor(client, formatter, actorStorage, logger, queue, endpointCache)
     const authz = new Authorizer(actorStorage, formatter, client)
     const cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
     const handler = new ActivityHandler(

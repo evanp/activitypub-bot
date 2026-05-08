@@ -19,6 +19,7 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
+import { EndpointCache } from '../lib/endpointcache.js'
 import { DistributionWorker } from '../lib/distributionworker.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
@@ -64,7 +65,8 @@ describe('FanoutWorker', async () => {
     const policyStorage = new SignaturePolicyStorage(connection, logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeAgent())
     queue = new JobQueue(connection, logger)
-    distributor = new ActivityDistributor(client, formatter, actorStorage, logger, queue)
+    const endpointCache = new EndpointCache(connection, logger)
+    distributor = new ActivityDistributor(client, formatter, actorStorage, logger, queue, endpointCache)
     nockSetup(remoteHost)
   })
 

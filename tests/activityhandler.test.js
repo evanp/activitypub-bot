@@ -18,6 +18,7 @@ import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { SafeAgent } from '../lib/safeagent.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
+import { EndpointCache } from '../lib/endpointcache.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { Authorizer } from '../lib/authorizer.js'
 import { ObjectCache } from '../lib/objectcache.js'
@@ -109,7 +110,8 @@ describe('ActivityHandler', () => {
     const policyStorage = new SignaturePolicyStorage(connection, logger)
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeAgent())
     jobQueue = new JobQueue(connection, logger)
-    distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue)
+    const endpointCache = new EndpointCache(connection, logger)
+    distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue, endpointCache)
     distributionWorker = new DistributionWorker(jobQueue, logger, { client })
     distributionWorkerRun = distributionWorker.run()
     fanoutWorker = new FanoutWorker(jobQueue, logger, { distributor })
