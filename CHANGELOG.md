@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.11] - 2026-05-09
+
+### Changed
+
+- Upgraded ip-address.
+
 ## [0.45.10] - 2026-05-09
 
 ### Changed
