@@ -31,7 +31,7 @@
   "homepage": "https://github.com/evanp/activitypub-bot#readme",
   "dependencies": {
     "@isaacs/ttlcache": "^2.1.4",
-    "activitystrea.ms": "^3.3.0",
+    "activitystrea.ms": "^3.3.3",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.2",
     "humanhash": "^1.0.4",
