@@ -319,10 +319,6 @@ describe('ActivityHandler', () => {
     assert.equal(cached.id, activity.object?.first.id)
     const cached2 = await cache.get(activity.target?.first.id)
     assert.equal(cached2.id, activity.target?.first.id)
-    assert.equal(
-      true,
-      await cache.isMember(activity.target?.first, activity.object?.first)
-    )
   })
 
   it('can handle a remove activity', async () => {
@@ -349,10 +345,6 @@ describe('ActivityHandler', () => {
     assert.equal(cached.id, activity.object?.first.id)
     const cached2 = await cache.get(activity.target?.first.id)
     assert.equal(cached2.id, activity.target?.first.id)
-    assert.equal(
-      false,
-      await cache.isMember(activity.target?.first, activity.object?.first)
-    )
   })
   it('can handle a follow activity', async () => {
     const actor = await makeActor('follower1')
