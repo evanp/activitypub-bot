@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.12] - 2026-05-09
+
+### Changed
+
+- Upgraded activitystrea.ms, activitypub-nock.
+
 ## [0.45.11] - 2026-05-09
 
 ### Changed
