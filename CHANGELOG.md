@@ -9,6 +9,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.10] - 2026-05-09
+
+### Changed
+
+- Upgraded nock, ipaddr.js, and mysql2.
+- inbox and sharedInbox caches are now persistent and shared across servers.
+
 ## [0.45.9] - 2026-04-29
 
 ### Fixed
