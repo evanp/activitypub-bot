@@ -30,6 +30,8 @@ const NOSEC_HOST = 'nosec.remotekeystorage.test'
 const NOSEC_USER = 'remotekeystoragenosec1'
 const DUPLICATE_KEY_HOST = 'duplicatekey.remotekeystorage.test'
 const DUPLICATE_KEY_USER = 'remotekeystoragedupkey1'
+const MISMATCH_ID_HOST = 'mismatchid.remotekeystorage.test'
+const MISMATCH_ID_USER = 'remotekeystoragemismatchid1'
 
 describe('RemoteKeyStorage', async () => {
   const origin = `https://${LOCAL_HOST}`
@@ -46,7 +48,7 @@ describe('RemoteKeyStorage', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST, MISMATCH_ID_HOST]
     })
     const keyStorage = new KeyStorage(connection, logger)
     const formatter = new UrlFormatter(origin)
@@ -63,7 +65,7 @@ describe('RemoteKeyStorage', async () => {
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST, MISMATCH_ID_HOST]
     })
     await connection.close()
   })
@@ -226,6 +228,40 @@ describe('RemoteKeyStorage', async () => {
     nock(`https://${domain}`)
       .get(`/user/${username}`)
       .twice()
+      .reply(200, JSON.stringify(actorJson), { 'Content-Type': 'application/activity+json' })
+
+    const remote = await remoteKeyStorage.getPublicKey(keyId)
+    assert.ok(remote)
+    assert.equal(remote.publicKeyPem, publicKeyPem)
+    assert.equal(remote.owner, actorId)
+  })
+
+  it('can get a remote public key when fetched URL does not match returned id', async () => {
+    const domain = MISMATCH_ID_HOST
+    const username = MISMATCH_ID_USER
+    const actorId = `https://${domain}/users/${username}`
+    const keyId = `${actorId}/main-key`
+    const publicKeyPem = await getPublicKey(REMOTE_USER_1, REMOTE_HOST)
+
+    const actorJson = {
+      '@context': [
+        'https://www.w3.org/ns/activitystreams',
+        'https://w3id.org/security/v1'
+      ],
+      id: actorId,
+      type: 'Person',
+      publicKey: {
+        id: keyId,
+        type: 'CryptographicKey',
+        owner: actorId,
+        publicKeyPem
+      }
+    }
+
+    nock(`https://${domain}`)
+      .get(`/users/${username}/main-key`)
+      .reply(200, JSON.stringify(actorJson), { 'Content-Type': 'application/activity+json' })
+      .get(`/users/${username}`)
       .reply(200, JSON.stringify(actorJson), { 'Content-Type': 'application/activity+json' })
 
     const remote = await remoteKeyStorage.getPublicKey(keyId)
