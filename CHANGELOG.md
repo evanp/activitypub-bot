@@ -9,6 +9,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.14] - 2026-05-10
+
+### Changed
+
+- Depend on inbox forwarding for distribution to remote collections.
+- More robust handling of client request failures in delivery and distribution.
+- More robust handling of intake, fanout throttle errors.
+- Store error stack for failing jobs in queue job entries.
+
 ## [0.45.13] - 2026-05-10
 
 ### Changed
