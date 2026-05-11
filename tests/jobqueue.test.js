@@ -8,7 +8,7 @@ import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 const JOB_RUNNER_ID = 'jobqueue.test.js'
 
 describe('JobQueue', async () => {
-  const testQueues = [...Array(9).keys()].map(i => `jobqueue.test.js:${i}`)
+  const testQueues = [...Array(13).keys()].map(i => `jobqueue.test.js:${i}`)
   let connection = null
   let logger = null
   let JobQueue = null
@@ -137,5 +137,78 @@ describe('JobQueue', async () => {
     const { jobId } = await queue.dequeue(queueId, JOB_RUNNER_ID)
     await queue.fail(jobId, JOB_RUNNER_ID)
     assert.ok(true)
+  })
+
+  it('retryAfter() persists lastError to job.last_error', async () => {
+    const queueId = 'jobqueue.test.js:9'
+    const lastError = 'simulated 503 from remote'
+    await queue.enqueue(queueId, { foo: 'bar' })
+    const { jobId } = await queue.dequeue(queueId, JOB_RUNNER_ID)
+    await queue.retryAfter(jobId, JOB_RUNNER_ID, 1000, lastError)
+
+    const [rows] = await connection.query(
+      'SELECT last_error FROM job WHERE job_id = ?',
+      { replacements: [jobId] }
+    )
+    assert.strictEqual(rows.length, 1)
+    assert.strictEqual(rows[0].last_error, lastError)
+  })
+
+  it('fail() persists lastError to failed_job.last_error', async () => {
+    const queueId = 'jobqueue.test.js:10'
+    const lastError = 'permanent: invalid signature'
+    await queue.enqueue(queueId, { foo: 'bar' })
+    const { jobId } = await queue.dequeue(queueId, JOB_RUNNER_ID)
+    await queue.fail(jobId, JOB_RUNNER_ID, lastError)
+
+    const [rows] = await connection.query(
+      'SELECT last_error FROM failed_job WHERE job_id = ?',
+      { replacements: [jobId] }
+    )
+    assert.strictEqual(rows.length, 1)
+    assert.strictEqual(rows[0].last_error, lastError)
+  })
+
+  it('retryAfter() and fail() work without a lastError argument', async () => {
+    const retryQueueId = 'jobqueue.test.js:11'
+    await queue.enqueue(retryQueueId, { foo: 'bar' })
+    const retryJob = await queue.dequeue(retryQueueId, JOB_RUNNER_ID)
+    await queue.retryAfter(retryJob.jobId, JOB_RUNNER_ID, 1000)
+    const [retryRows] = await connection.query(
+      'SELECT last_error FROM job WHERE job_id = ?',
+      { replacements: [retryJob.jobId] }
+    )
+    assert.strictEqual(retryRows.length, 1)
+    assert.strictEqual(retryRows[0].last_error, null)
+
+    const failQueueId = 'jobqueue.test.js:12'
+    await queue.enqueue(failQueueId, { foo: 'bar' })
+    const failJob = await queue.dequeue(failQueueId, JOB_RUNNER_ID)
+    await queue.fail(failJob.jobId, JOB_RUNNER_ID)
+    const [failRows] = await connection.query(
+      'SELECT last_error FROM failed_job WHERE job_id = ?',
+      { replacements: [failJob.jobId] }
+    )
+    assert.strictEqual(failRows.length, 1)
+    assert.strictEqual(failRows[0].last_error, null)
+  })
+
+  it('a subsequent retryAfter() overwrites the previous lastError on the same job', async () => {
+    // Use a fresh JobQueue so the abort signal from the earlier abort test
+    // doesn't poison our second dequeue (which has to wait for retry_after).
+    const localQueue = new JobQueue(connection, logger)
+    const queueId = 'jobqueue.test.js:1'
+    await localQueue.enqueue(queueId, { foo: 'bar' })
+    let result = await localQueue.dequeue(queueId, JOB_RUNNER_ID)
+    await localQueue.retryAfter(result.jobId, JOB_RUNNER_ID, 1, 'first error')
+    result = await localQueue.dequeue(queueId, JOB_RUNNER_ID)
+    await localQueue.retryAfter(result.jobId, JOB_RUNNER_ID, 1, 'second error')
+
+    const [rows] = await connection.query(
+      'SELECT last_error FROM job WHERE job_id = ?',
+      { replacements: [result.jobId] }
+    )
+    assert.strictEqual(rows.length, 1)
+    assert.strictEqual(rows[0].last_error, 'second error')
   })
 })
