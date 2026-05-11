@@ -538,4 +538,40 @@ describe('ActivityDistributor', () => {
     assert.ok(postInbox.activitydistributorremote7)
     assert.ok(await actorStorage.isInCollection('activitydistributortest7', 'inbox', activity))
   })
+
+  it('leaves expansion to inbox forwarding when collection owner is also a recipient', async () => {
+    const id = formatter.format({
+      username: LOCAL_USER0,
+      type: 'intransitiveactivity',
+      nanoid: 'inboxFwdTest12345678'
+    })
+    // Address both REMOTE_USER1 AND their followers collection. The
+    // expectation is that fanout posts once to REMOTE_USER1 (direct delivery)
+    // and relies on REMOTE_USER1's home server to inbox-forward to its own
+    // followers, rather than us expanding the collection and posting to each
+    // follower individually.
+    const activity = await as2.import({
+      id,
+      type: 'IntransitiveActivity',
+      actor: formatter.format({ username: LOCAL_USER0 }),
+      to: [
+        nockFormat({ domain: SOCIAL_HOST, username: REMOTE_USER1 }),
+        nockFormat({ domain: SOCIAL_HOST, username: REMOTE_USER1, collection: 'followers' })
+      ]
+    })
+    await distributor.distribute(activity, LOCAL_USER0)
+    await distributor.onIdle()
+
+    // Direct delivery to the owner still happens.
+    assert.ok(postInbox[REMOTE_USER1], 'expected direct delivery to the collection owner')
+
+    // The followers (REMOTE_USER2/3/4) should NOT have received an individual
+    // delivery from us — that's the responsibility of REMOTE_USER1's server.
+    assert.ok(!postInbox[REMOTE_USER2],
+      `expected no direct delivery to ${REMOTE_USER2}; got count=${postInbox[REMOTE_USER2]}`)
+    assert.ok(!postInbox[REMOTE_USER3],
+      `expected no direct delivery to ${REMOTE_USER3}; got count=${postInbox[REMOTE_USER3]}`)
+    assert.ok(!postInbox[REMOTE_USER4],
+      `expected no direct delivery to ${REMOTE_USER4}; got count=${postInbox[REMOTE_USER4]}`)
+  })
 })
