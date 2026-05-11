@@ -210,4 +210,58 @@ describe('RemoteObjectCache', async () => {
     const expectedExpiry = Date.now() + 3600 * 1000
     assert.ok(Math.abs(result.expiry.getTime() - expectedExpiry) < 1000)
   })
+
+  it('set() with no headers argument stores the object using type-based default expiry', async () => {
+    const id = `https://${REMOTE_HOST}/user/testuser/note/10`
+    const noteObject = { id, type: 'Note', content: 'null headers test' }
+    await cache.set(id, TEST_USERNAME, noteObject)
+
+    const result = await cache.get(id, TEST_USERNAME)
+    assert.ok(result)
+    assert.deepEqual(result.object, noteObject)
+    assert.ok(result.expiry instanceof Date)
+    // No headers means no etag/last-modified to record.
+    assert.equal(result.etag, null)
+    assert.equal(result.lastModified, null)
+    // Note → 5-minute content default expiry from #getExpiryFromObject.
+    const expectedExpiry = Date.now() + 5 * 60 * 1000
+    assert.ok(Math.abs(result.expiry.getTime() - expectedExpiry) < 1000)
+  })
+
+  it('clear(id) removes entries for all usernames at that id', async () => {
+    const id = `https://${REMOTE_HOST}/user/testuser/note/11`
+    const OTHER_USERNAME = 'remoteobjectcachetestbot3'
+    const objectForFirst = { id, type: 'Note', content: 'first user' }
+    const objectForOther = { id, type: 'Note', content: 'other user' }
+    await cache.set(id, TEST_USERNAME, objectForFirst)
+    await cache.set(id, OTHER_USERNAME, objectForOther)
+
+    // Sanity: both rows exist before clear.
+    assert.ok(await cache.get(id, TEST_USERNAME))
+    assert.ok(await cache.get(id, OTHER_USERNAME))
+
+    await cache.clear(id)
+
+    assert.equal(await cache.get(id, TEST_USERNAME), null)
+    assert.equal(await cache.get(id, OTHER_USERNAME), null)
+  })
+
+  it('clear(id) does not affect entries with different ids', async () => {
+    const keepId = `https://${REMOTE_HOST}/user/testuser/note/12`
+    const removeId = `https://${REMOTE_HOST}/user/testuser/note/13`
+    await cache.set(keepId, TEST_USERNAME, { id: keepId, type: 'Note', content: 'keep' })
+    await cache.set(removeId, TEST_USERNAME, { id: removeId, type: 'Note', content: 'remove' })
+
+    await cache.clear(removeId)
+
+    const kept = await cache.get(keepId, TEST_USERNAME)
+    assert.ok(kept)
+    assert.equal(kept.object.content, 'keep')
+    assert.equal(await cache.get(removeId, TEST_USERNAME), null)
+  })
+
+  it('clear(id) on a non-existent id is a no-op', async () => {
+    const id = `https://${REMOTE_HOST}/user/testuser/note/never-cached`
+    await assert.doesNotReject(cache.clear(id))
+  })
 })
