@@ -210,11 +210,11 @@ describe('DistributionWorker', async () => {
 
       nock(`https://${clientErrorHost}`)
         .post(`/user/${remoteUsernames[0]}/inbox`)
-        .reply(404, 'not found')
+        .reply(418, "i'm a teapot")
 
       await assert.rejects(
         worker.doJob(payload, 1),
-        error => error.status === 404
+        error => error.status === 418
       )
     })
 
