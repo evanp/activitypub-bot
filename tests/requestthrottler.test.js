@@ -13,6 +13,8 @@ describe('RequestThrottler', async () => {
   const THIRD_HOST = 'third.requestthrottler.test'
   const MASTODON_HOST = 'mastodon.requestthrottler.test'
   const SHED_HOST = 'shed.requestthrottler.test'
+  const RESET_OFFSET_HOST = 'reset-offset.requestthrottler.test'
+  const RESET_EPOCH_HOST = 'reset-epoch.requestthrottler.test'
 
   let logger
   let connection
@@ -26,14 +28,14 @@ describe('RequestThrottler', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST, RESET_OFFSET_HOST, RESET_EPOCH_HOST]
     })
   })
 
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST, RESET_OFFSET_HOST, RESET_EPOCH_HOST]
     })
     await connection.close()
   })
@@ -182,6 +184,49 @@ describe('RequestThrottler', async () => {
         assert.ok(err.waitTime <= RESET_MS, `expected waitTime <= window, got ${err.waitTime}`)
         return true
       }
+    )
+  })
+
+  it('treats numeric x-ratelimit-reset below 30 days (in seconds) as a relative offset', async () => {
+    // Just under the 30-day boundary, in seconds.
+    const offsetSeconds = 30 * 24 * 60 * 60 - 1 // 2,591,999
+    const beforeUpdate = Date.now()
+    const headers = new Headers()
+    headers.set('x-ratelimit-limit', 1000)
+    headers.set('x-ratelimit-remaining', 100)
+    headers.set('x-ratelimit-reset', String(offsetSeconds))
+    await throttler.update(RESET_OFFSET_HOST, headers)
+
+    const limits = await throttler.peek(RESET_OFFSET_HOST)
+    assert.strictEqual(limits.length, 1)
+    assert.ok(limits[0].reset instanceof Date)
+    // reset should be ~offsetSeconds in the future from when we called update.
+    const expected = beforeUpdate + offsetSeconds * 1000
+    const drift = Math.abs(limits[0].reset.getTime() - expected)
+    assert.ok(
+      drift < 5000,
+      `expected reset within 5s of now+${offsetSeconds}s, got drift=${drift}ms (reset=${limits[0].reset.toISOString()})`
+    )
+  })
+
+  it('treats numeric x-ratelimit-reset at or above 30 days (in seconds) as Unix epoch seconds', async () => {
+    // Plausible epoch-seconds value: current epoch + 60s. Well above the 30-day threshold.
+    const targetMs = Date.now() + 60_000
+    const epochSeconds = Math.floor(targetMs / 1000)
+    const headers = new Headers()
+    headers.set('x-ratelimit-limit', 1000)
+    headers.set('x-ratelimit-remaining', 100)
+    headers.set('x-ratelimit-reset', String(epochSeconds))
+    await throttler.update(RESET_EPOCH_HOST, headers)
+
+    const limits = await throttler.peek(RESET_EPOCH_HOST)
+    assert.strictEqual(limits.length, 1)
+    assert.ok(limits[0].reset instanceof Date)
+    // reset should be ~targetMs, NOT now + epochSeconds*1000 (which would be ~56,000 years out).
+    const drift = Math.abs(limits[0].reset.getTime() - targetMs)
+    assert.ok(
+      drift < 5000,
+      `expected reset within 5s of epoch-derived target ${new Date(targetMs).toISOString()}, got reset=${limits[0].reset.toISOString()} (drift=${drift}ms)`
     )
   })
 })
