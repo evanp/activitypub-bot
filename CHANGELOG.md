@@ -19,6 +19,8 @@ and this project adheres to
 
 - Look up id in results body even if the the id is not a fragment; fixes
   problems with gotosocial keys.
+- Retry signature code on more HTTP status
+results, for servers that use (wrong, bad) 400, 404 and 410 results for bad signatures.
 
 ## [0.45.16] - 2026-05-11
 
