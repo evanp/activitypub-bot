@@ -9,6 +9,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.17] - 2026-05-11
+
+### Changed
+
+- Bumped activitypub-nock.
+
+### Fixed
+
+- Look up id in results body even if the the id is not a fragment; fixes
+  problems with gotosocial keys.
+
 ## [0.45.16] - 2026-05-11
 
 ### Changed
