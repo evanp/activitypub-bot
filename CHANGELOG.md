@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.13] - 2026-05-10
+
+### Changed
+
+- Replace in-memory ObjectCache with persistent and shared RemoteObjectCache.
+
 ## [0.45.12] - 2026-05-09
 
 ### Changed
