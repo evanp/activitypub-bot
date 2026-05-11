@@ -8,7 +8,7 @@ import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 const JOB_RUNNER_ID = 'jobqueue.test.js'
 
 describe('JobQueue', async () => {
-  const testQueues = [...Array(13).keys()].map(i => `jobqueue.test.js:${i}`)
+  const testQueues = [...Array(16).keys()].map(i => `jobqueue.test.js:${i}`)
   let connection = null
   let logger = null
   let JobQueue = null
@@ -210,5 +210,63 @@ describe('JobQueue', async () => {
     )
     assert.strictEqual(rows.length, 1)
     assert.strictEqual(rows[0].last_error, 'second error')
+  })
+
+  // The following three tests cover the sanity-cap on `delay` in retryAfter().
+  // We don't pin a specific cap value — the contract is just "do not let an
+  // invalid delay produce an Invalid Date in the SQL parameter." The
+  // implementation can clamp to any sane maximum, or reject, as long as the
+  // resulting retry_after column is a valid finite timestamp (or NULL).
+
+  async function assertRetryAfterIsValid (jobId, label) {
+    const [rows] = await connection.query(
+      'SELECT retry_after FROM job WHERE job_id = ?',
+      { replacements: [jobId] }
+    )
+    assert.strictEqual(rows.length, 1, `${label}: expected job row`)
+    const ra = rows[0].retry_after
+    // Allow either NULL (the impl chose to skip setting it) or a valid Date.
+    if (ra !== null) {
+      const d = new Date(ra)
+      assert.ok(!isNaN(d.getTime()), `${label}: retry_after must be a valid Date, got ${ra}`)
+    }
+  }
+
+  it('retryAfter() with a NaN delay does not poison retry_after with "Invalid date"', async () => {
+    const localQueue = new JobQueue(connection, logger)
+    const queueId = 'jobqueue.test.js:13'
+    await localQueue.enqueue(queueId, { foo: 'bar' })
+    const { jobId } = await localQueue.dequeue(queueId, JOB_RUNNER_ID)
+    await assert.doesNotReject(
+      localQueue.retryAfter(jobId, JOB_RUNNER_ID, NaN, 'nan delay'),
+      'retryAfter must not reject on NaN delay'
+    )
+    await assertRetryAfterIsValid(jobId, 'NaN delay')
+  })
+
+  it('retryAfter() with an Infinity delay does not poison retry_after with "Invalid date"', async () => {
+    const localQueue = new JobQueue(connection, logger)
+    const queueId = 'jobqueue.test.js:14'
+    await localQueue.enqueue(queueId, { foo: 'bar' })
+    const { jobId } = await localQueue.dequeue(queueId, JOB_RUNNER_ID)
+    await assert.doesNotReject(
+      localQueue.retryAfter(jobId, JOB_RUNNER_ID, Infinity, 'infinity delay'),
+      'retryAfter must not reject on Infinity delay'
+    )
+    await assertRetryAfterIsValid(jobId, 'Infinity delay')
+  })
+
+  it('retryAfter() with an astronomically large delay does not poison retry_after', async () => {
+    const localQueue = new JobQueue(connection, logger)
+    const queueId = 'jobqueue.test.js:15'
+    await localQueue.enqueue(queueId, { foo: 'bar' })
+    const { jobId } = await localQueue.dequeue(queueId, JOB_RUNNER_ID)
+    // The waitTime value seen in the production crash: ~6.8e19 ms.
+    // Date.now() + this overflows JS Date, producing "Invalid Date".
+    await assert.doesNotReject(
+      localQueue.retryAfter(jobId, JOB_RUNNER_ID, 6.8e19, 'astronomical delay'),
+      'retryAfter must not reject on astronomical delay'
+    )
+    await assertRetryAfterIsValid(jobId, 'astronomical delay')
   })
 })
