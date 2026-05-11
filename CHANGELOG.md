@@ -9,6 +9,16 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.16] - 2026-05-11
+
+### Changed
+
+- Bumped nanoid, rate-limit-redis.
+
+### Removed
+
+- Removed unused lru-cache.
+
 ## [0.45.15] - 2026-05-11
 
 ### Fixed
