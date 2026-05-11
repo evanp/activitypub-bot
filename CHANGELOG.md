@@ -9,6 +9,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.15] - 2026-05-11
+
+### Fixed
+
+- Heuristic to check if an integer in X-RateLimit-Reset is probably an offset or
+  probably a Unix epoch in seconds. Anything less than 30 days is treated as an
+  offset; otherwise it's an epoch.
+- Fix job queue to clamp job retry delays between 0 and 30 days.
+- Fix workers to continue operating even if retry or fail calls
+  fail.
+
 ## [0.45.14] - 2026-05-10
 
 ### Changed
