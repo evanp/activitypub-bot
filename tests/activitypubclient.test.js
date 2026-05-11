@@ -54,6 +54,9 @@ describe('ActivityPubClient', async () => {
   const LEGACY_RFC9421_HOST = 'legacy-rfc9421.activitypubclient.test'
   const LEGACY_RFC9421_POST_HOST = 'legacy-rfc9421-post.activitypubclient.test'
   const FALLBACK_BODY_POST_HOST = 'fallback-body-post.activitypubclient.test'
+  const AUTH_404_HOST = 'auth-404.activitypubclient.test'
+  const AUTH_410_HOST = 'auth-410.activitypubclient.test'
+  const UNSIGNED_410_HOST = 'unsigned-410.activitypubclient.test'
   const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
   const LOCAL_SIGNING_USER = 'activitypubclienttestfoobot'
   const REMOTE_PROFILE_USER = 'activitypubclientevan'
@@ -179,7 +182,10 @@ describe('ActivityPubClient', async () => {
         BAD_REQUEST_POST_HOST,
         LEGACY_RFC9421_HOST,
         LEGACY_RFC9421_POST_HOST,
-        FALLBACK_BODY_POST_HOST
+        FALLBACK_BODY_POST_HOST,
+        AUTH_404_HOST,
+        AUTH_410_HOST,
+        UNSIGNED_410_HOST
       ]
     })
     keyStorage = new KeyStorage(connection, logger)
@@ -244,7 +250,10 @@ describe('ActivityPubClient', async () => {
         BAD_REQUEST_POST_HOST,
         LEGACY_RFC9421_HOST,
         LEGACY_RFC9421_POST_HOST,
-        FALLBACK_BODY_POST_HOST
+        FALLBACK_BODY_POST_HOST,
+        AUTH_404_HOST,
+        AUTH_410_HOST,
+        UNSIGNED_410_HOST
       ]
     })
     await connection.close()
@@ -506,7 +515,7 @@ describe('ActivityPubClient', async () => {
       .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
       .reply(function () {
         requests.push(normalizeHeaders(this.req.headers))
-        return [404, 'not found']
+        return [500, 'internal server error']
       })
 
     try {
@@ -514,7 +523,7 @@ describe('ActivityPubClient', async () => {
       assert.fail('should have thrown')
     } catch (error) {
       assert.ok(error)
-      assert.equal(error.status, 404)
+      assert.equal(error.status, 500)
     }
 
     assert.strictEqual(requests.length, 1)
@@ -694,7 +703,7 @@ describe('ActivityPubClient', async () => {
       .get('/user/activitypubclientevan/note/107')
       .reply(function () {
         requests.push(normalizeHeaders(this.req.headers))
-        return [404, 'not found']
+        return [500, 'internal server error']
       })
 
     try {
@@ -702,7 +711,7 @@ describe('ActivityPubClient', async () => {
       assert.fail('should have thrown')
     } catch (error) {
       assert.ok(error)
-      assert.equal(error.status, 404)
+      assert.equal(error.status, 500)
     }
 
     assert.strictEqual(requests.length, 1)
@@ -1268,5 +1277,128 @@ describe('ActivityPubClient', async () => {
       `retry body should preserve the original actor, got ${JSON.stringify(second)}`
     )
     assert.deepStrictEqual(second, first)
+  })
+
+  it('falls back to draft-cavage-12 when RFC 9421 signed getKey returns 404', async () => {
+    const id = `https://${AUTH_404_HOST}/user/${REMOTE_PROFILE_USER}/publickey`
+    const keyBody = JSON.stringify({
+      '@context': [
+        'https://www.w3.org/ns/activitystreams',
+        'https://w3id.org/security/v1'
+      ],
+      id,
+      owner: `https://${AUTH_404_HOST}/user/${REMOTE_PROFILE_USER}`,
+      type: 'CryptographicKey'
+    })
+    const requests = []
+    let requestNumber = 0
+
+    nock(`https://${AUTH_404_HOST}`)
+      .get(`/user/${REMOTE_PROFILE_USER}/publickey`)
+      .times(3)
+      .reply(function () {
+        requestNumber += 1
+        requests.push(normalizeHeaders(this.req.headers))
+        if (requestNumber < 3) {
+          return [
+            404,
+            '{"success":false,"error":"Not found"}',
+            { 'Content-Type': 'application/json' }
+          ]
+        }
+        return [
+          200,
+          keyBody,
+          { 'Content-Type': 'application/activity+json' }
+        ]
+      })
+
+    const obj = await client.getKey(id)
+    assert.ok(obj)
+    assert.strictEqual(requests.length, 3)
+    assert.equal(requests[0].signature, undefined)
+    assert.equal(requests[0]['signature-input'], undefined)
+    assertRfc9421GetHeaders(requests[1], LOCAL_HOST)
+    assertDraftCavageGetHeaders(requests[2], LOCAL_HOST)
+  })
+
+  it('falls back to draft-cavage-12 when RFC 9421 signed getKey returns 410', async () => {
+    const id = `https://${AUTH_410_HOST}/user/${REMOTE_PROFILE_USER}/publickey`
+    const keyBody = JSON.stringify({
+      '@context': [
+        'https://www.w3.org/ns/activitystreams',
+        'https://w3id.org/security/v1'
+      ],
+      id,
+      owner: `https://${AUTH_410_HOST}/user/${REMOTE_PROFILE_USER}`,
+      type: 'CryptographicKey'
+    })
+    const requests = []
+    let requestNumber = 0
+
+    nock(`https://${AUTH_410_HOST}`)
+      .get(`/user/${REMOTE_PROFILE_USER}/publickey`)
+      .times(3)
+      .reply(function () {
+        requestNumber += 1
+        requests.push(normalizeHeaders(this.req.headers))
+        if (requestNumber === 1) {
+          return [401, 'unauthorized', { 'Content-Type': 'text/plain' }]
+        }
+        if (requestNumber === 2) {
+          return [410, 'gone', { 'Content-Type': 'text/plain' }]
+        }
+        return [
+          200,
+          keyBody,
+          { 'Content-Type': 'application/activity+json' }
+        ]
+      })
+
+    const obj = await client.getKey(id)
+    assert.ok(obj)
+    assert.strictEqual(requests.length, 3)
+    assert.equal(requests[0].signature, undefined)
+    assert.equal(requests[0]['signature-input'], undefined)
+    assertRfc9421GetHeaders(requests[1], LOCAL_HOST)
+    assertDraftCavageGetHeaders(requests[2], LOCAL_HOST)
+  })
+
+  it('retries signed when unsigned getKey returns 410', async () => {
+    const id = `https://${UNSIGNED_410_HOST}/user/${REMOTE_PROFILE_USER}/publickey`
+    const keyBody = JSON.stringify({
+      '@context': [
+        'https://www.w3.org/ns/activitystreams',
+        'https://w3id.org/security/v1'
+      ],
+      id,
+      owner: `https://${UNSIGNED_410_HOST}/user/${REMOTE_PROFILE_USER}`,
+      type: 'CryptographicKey'
+    })
+    const requests = []
+    let requestNumber = 0
+
+    nock(`https://${UNSIGNED_410_HOST}`)
+      .get(`/user/${REMOTE_PROFILE_USER}/publickey`)
+      .twice()
+      .reply(function () {
+        requestNumber += 1
+        requests.push(normalizeHeaders(this.req.headers))
+        if (requestNumber === 1) {
+          return [410, 'gone', { 'Content-Type': 'text/plain' }]
+        }
+        return [
+          200,
+          keyBody,
+          { 'Content-Type': 'application/activity+json' }
+        ]
+      })
+
+    const obj = await client.getKey(id)
+    assert.ok(obj)
+    assert.strictEqual(requests.length, 2)
+    assert.equal(requests[0].signature, undefined)
+    assert.equal(requests[0]['signature-input'], undefined)
+    assertRfc9421GetHeaders(requests[1], LOCAL_HOST)
   })
 })
