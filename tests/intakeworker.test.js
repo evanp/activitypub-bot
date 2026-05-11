@@ -22,7 +22,6 @@ import { EndpointCache } from '../lib/endpointcache.js'
 import { ActivityDeliverer } from '../lib/activitydeliverer.js'
 import { ActivityHandler } from '../lib/activityhandler.js'
 import { Authorizer } from '../lib/authorizer.js'
-import { ObjectCache } from '../lib/objectcache.js'
 import { DeliveryWorker } from '../lib/deliveryworker.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
@@ -77,7 +76,7 @@ describe('IntakeWorker', async () => {
     const endpointCache = new EndpointCache(connection, logger)
     const distributor = new ActivityDistributor(client, formatter, actorStorage, logger, queue, endpointCache)
     const authz = new Authorizer(actorStorage, formatter, client)
-    const cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
+    const cache = new RemoteObjectCache(connection, logger)
     const handler = new ActivityHandler(
       actorStorage,
       objectStorage,

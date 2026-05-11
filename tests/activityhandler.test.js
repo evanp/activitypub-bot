@@ -21,7 +21,6 @@ import { ActivityDistributor } from '../lib/activitydistributor.js'
 import { EndpointCache } from '../lib/endpointcache.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { Authorizer } from '../lib/authorizer.js'
-import { ObjectCache } from '../lib/objectcache.js'
 import as2 from '../lib/activitystreams.js'
 import { Digester } from '../lib/digester.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
@@ -117,7 +116,7 @@ describe('ActivityHandler', () => {
     fanoutWorker = new FanoutWorker(jobQueue, logger, { distributor })
     fanoutWorkerRun = fanoutWorker.run()
     authz = new Authorizer(actorStorage, formatter, client)
-    cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
+    cache = new RemoteObjectCache(connection, logger)
     transformer = new Transformer(`${origin}/tag/`, client)
     bot = new OKBot(botName)
     lb = new EventLoggingBot(loggerBotName)
@@ -210,8 +209,8 @@ describe('ActivityHandler', () => {
       to: 'as:Public'
     })
     await handler.handleActivity(bot, activity)
-    const cached = await cache.get(activity.object?.first.id)
-    assert.equal(cached.content, 'Hello, world!')
+    const cached = await cache.get(activity.object?.first.id, bot.username)
+    assert.equal(cached?.object?.content, 'Hello, world!')
   })
   it('can handle a create activity with a reply', async () => {
     const oid = formatter.format({
@@ -280,8 +279,8 @@ describe('ActivityHandler', () => {
       to: 'as:Public'
     })
     await handler.handleActivity(bot, activity)
-    const cached = await cache.get(activity.object?.first.id)
-    assert.equal(cached.content, 'Hello, world! (updated)')
+    const cached = await cache.get(activity.object?.first.id, bot.username)
+    assert.equal(cached, null)
   })
   it('can handle a delete activity', async () => {
     const activity = await as2.import({
@@ -292,8 +291,8 @@ describe('ActivityHandler', () => {
       to: 'as:Public'
     })
     await handler.handleActivity(bot, activity)
-    const cached = await cache.get(activity.object?.first.id)
-    assert.equal(cached, undefined)
+    const cached = await cache.get(activity.object?.first.id, bot.username)
+    assert.equal(cached, null)
   })
   it('can handle an add activity', async () => {
     const activity = await as2.import({
@@ -315,10 +314,10 @@ describe('ActivityHandler', () => {
       to: 'as:Public'
     })
     await handler.handleActivity(bot, activity)
-    const cached = await cache.get(activity.object?.first.id)
-    assert.equal(cached.id, activity.object?.first.id)
-    const cached2 = await cache.get(activity.target?.first.id)
-    assert.equal(cached2.id, activity.target?.first.id)
+    const cached = await cache.get(activity.object?.first.id, bot.username)
+    assert.equal(cached, null)
+    const cached2 = await cache.get(activity.target?.first.id, bot.username)
+    assert.equal(cached2, null)
   })
 
   it('can handle a remove activity', async () => {
@@ -341,10 +340,10 @@ describe('ActivityHandler', () => {
       to: 'as:Public'
     })
     await handler.handleActivity(bot, activity)
-    const cached = await cache.get(activity.object?.first.id)
-    assert.equal(cached.id, activity.object?.first.id)
-    const cached2 = await cache.get(activity.target?.first.id)
-    assert.equal(cached2.id, activity.target?.first.id)
+    const cached = await cache.get(activity.object?.first.id, bot.username)
+    assert.equal(cached, null)
+    const cached2 = await cache.get(activity.target?.first.id, bot.username)
+    assert.equal(cached2, null)
   })
   it('can handle a follow activity', async () => {
     const actor = await makeActor('follower1')

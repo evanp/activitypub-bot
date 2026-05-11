@@ -30,7 +30,6 @@ import { DeliveryWorker } from '../lib/deliveryworker.js'
 import { FanoutWorker } from '../lib/fanoutworker.js'
 import { ActivityHandler } from '../lib/activityhandler.js'
 import { Authorizer } from '../lib/authorizer.js'
-import { ObjectCache } from '../lib/objectcache.js'
 import as2 from '../lib/activitystreams.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
@@ -116,7 +115,7 @@ describe('MastodonRelayClientBot', () => {
     fanoutWorkerRun = fanoutWorker.run()
     transformer = new Transformer(`${LOCAL_ORIGIN}/tag/`, client)
     authz = new Authorizer(actorStorage, formatter, client)
-    cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
+    cache = new RemoteObjectCache(connection, logger)
     handler = new ActivityHandler(
       actorStorage,
       objectStorage,

@@ -30,7 +30,6 @@ import { Digester } from '../lib/digester.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { DistributionWorker } from '../lib/distributionworker.js'
 import { DeliveryWorker } from '../lib/deliveryworker.js'
-import { ObjectCache } from '../lib/objectcache.js'
 import { EndpointCache } from '../lib/endpointcache.js'
 import { ObjectStorage } from '../lib/objectstorage.js'
 import { Authorizer } from '../lib/authorizer.js'
@@ -132,7 +131,7 @@ describe('ActivityDistributor', () => {
     distributionWorker = new DistributionWorker(jobQueue, logger, { client })
     distributionWorkerRun = distributionWorker.run()
     authz = new Authorizer(actorStorage, formatter, client)
-    cache = new ObjectCache({ longTTL: 3600 * 1000, shortTTL: 300 * 1000, maxItems: 1000 })
+    cache = new RemoteObjectCache(connection, logger)
     endpointCache = new EndpointCache(connection, logger)
     const actor2 = await as2.import({
       id: nockFormat({ domain: SOCIAL_HOST, username: LOCAL_USER1 })
