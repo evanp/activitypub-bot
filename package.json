@@ -1,6 +1,6 @@
 {
   "name": "@evanp/activitypub-bot",
-  "version": "0.45.17",
+  "version": "0.45.18",
   "description": "server-side ActivityPub bot framework",
   "type": "module",
   "main": "lib/index.js",
