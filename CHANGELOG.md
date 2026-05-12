@@ -9,6 +9,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.18] - 2026-05-12
+
+### Fixed
+
+- Changed how AbortSignal is used in JobQueue to prevent
+  memory leak.
+
 ## [0.45.17] - 2026-05-11
 
 ### Changed
