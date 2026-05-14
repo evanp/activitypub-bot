@@ -9,6 +9,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Use AbortSignal.timeout() in fetch() in ActivityPubClient instead of obsolete
+  and ignored `timeout` option.
+
 ## [0.45.18] - 2026-05-12
 
 ### Fixed
