@@ -19,6 +19,8 @@ describe('RequestThrottler', async () => {
   const RETRY_AFTER_DATE_HOST = 'retry-after-date.requestthrottler.test'
   const RETRY_AFTER_OVERRIDE_HOST = 'retry-after-override.requestthrottler.test'
   const RETRY_AFTER_GARBAGE_HOST = 'retry-after-garbage.requestthrottler.test'
+  const RESET_EPOCH_MS_HOST = 'reset-epoch-ms.requestthrottler.test'
+  const RESET_OFFSET_MS_HOST = 'reset-offset-ms.requestthrottler.test'
 
   let logger
   let connection
@@ -32,14 +34,14 @@ describe('RequestThrottler', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST, RESET_OFFSET_HOST, RESET_EPOCH_HOST, RETRY_AFTER_SECONDS_HOST, RETRY_AFTER_DATE_HOST, RETRY_AFTER_OVERRIDE_HOST, RETRY_AFTER_GARBAGE_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST, RESET_OFFSET_HOST, RESET_EPOCH_HOST, RETRY_AFTER_SECONDS_HOST, RETRY_AFTER_DATE_HOST, RETRY_AFTER_OVERRIDE_HOST, RETRY_AFTER_GARBAGE_HOST, RESET_EPOCH_MS_HOST, RESET_OFFSET_MS_HOST]
     })
   })
 
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST, RESET_OFFSET_HOST, RESET_EPOCH_HOST, RETRY_AFTER_SECONDS_HOST, RETRY_AFTER_DATE_HOST, RETRY_AFTER_OVERRIDE_HOST, RETRY_AFTER_GARBAGE_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST, RESET_OFFSET_HOST, RESET_EPOCH_HOST, RETRY_AFTER_SECONDS_HOST, RETRY_AFTER_DATE_HOST, RETRY_AFTER_OVERRIDE_HOST, RETRY_AFTER_GARBAGE_HOST, RESET_EPOCH_MS_HOST, RESET_OFFSET_MS_HOST]
     })
     await connection.close()
   })
@@ -314,6 +316,50 @@ describe('RequestThrottler', async () => {
     assert.ok(
       offset > 25_000 && offset < 35_000,
       `expected reset ~30s from now (fallback default), got offset=${offset}ms (reset=${limits[0].reset.toISOString()})`
+    )
+  })
+
+  it('treats numeric x-ratelimit-reset that looks like epoch milliseconds as epoch milliseconds', async () => {
+    // Some servers send X-Ratelimit-Reset as epoch milliseconds instead of seconds.
+    // Without recovery, parsing as epoch seconds gives a date ~55,000 years out,
+    // which poisons the rate_limit row.
+    const targetMs = Date.now() + 60_000
+    const epochMs = String(targetMs)
+    const headers = new Headers()
+    headers.set('x-ratelimit-limit', 1000)
+    headers.set('x-ratelimit-remaining', 100)
+    headers.set('x-ratelimit-reset', epochMs)
+    await throttler.update(RESET_EPOCH_MS_HOST, headers)
+
+    const limits = await throttler.peek(RESET_EPOCH_MS_HOST)
+    assert.strictEqual(limits.length, 1)
+    assert.ok(limits[0].reset instanceof Date)
+    const drift = Math.abs(limits[0].reset.getTime() - targetMs)
+    assert.ok(
+      drift < 5000,
+      `expected reset within 5s of epoch-ms-derived target ${new Date(targetMs).toISOString()}, got reset=${limits[0].reset.toISOString()} (drift=${drift}ms)`
+    )
+  })
+
+  it('treats a numeric x-ratelimit-reset between 30d-in-seconds and 30d-in-ms as a millisecond offset', async () => {
+    // The "offset in ms" recovery branch: too big to be seconds-offset (>30d in s)
+    // and too small to be a plausible recent epoch (in either s or ms).
+    const offsetMs = 60 * 60 * 1000 // 1 hour
+    const beforeUpdate = Date.now()
+    const headers = new Headers()
+    headers.set('x-ratelimit-limit', 1000)
+    headers.set('x-ratelimit-remaining', 100)
+    headers.set('x-ratelimit-reset', String(offsetMs))
+    await throttler.update(RESET_OFFSET_MS_HOST, headers)
+
+    const limits = await throttler.peek(RESET_OFFSET_MS_HOST)
+    assert.strictEqual(limits.length, 1)
+    assert.ok(limits[0].reset instanceof Date)
+    const expected = beforeUpdate + offsetMs
+    const drift = Math.abs(limits[0].reset.getTime() - expected)
+    assert.ok(
+      drift < 5000,
+      `expected reset within 5s of now+${offsetMs}ms, got reset=${limits[0].reset.toISOString()} (drift=${drift}ms)`
     )
   })
 })
