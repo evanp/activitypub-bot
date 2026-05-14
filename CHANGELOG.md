@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.19] - 2026-05-14
+
+### Changed
+
+- Use connection keep-alive for outgoing requests in SafeAgent.
+
 ### Fixed
 
 - Use AbortSignal.timeout() in fetch() in ActivityPubClient instead of obsolete
