@@ -9,6 +9,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.45.20] - 2026-05-14
+
+### Fixed
+
+- Handle some pathological formats for request throttle resets -- epoch in
+  ms and offset in ms.
+
 ## [0.45.19] - 2026-05-14
 
 ### Changed
