@@ -248,6 +248,12 @@ Alternatively, you can implement a whole class of bots with the [BotFactory](#bo
 
 Bots will receive a [BotContext](#botcontext) object at initialization. The BotContext is the main way to access data or execute activities.
 
+It's important to remember that the bot may run on many different physical
+machines in a multi-server deployment. Don't keep volatile state for the bot in
+memory; it will get out of sync between servers, and will be lost between server
+restarts. Instead, use the `getData()`/`setData()` (see below) interfaces to
+save named data items into the database.
+
 ### Bot
 
 The Bot interface has the following methods.
