@@ -15,6 +15,10 @@ describe('RequestThrottler', async () => {
   const SHED_HOST = 'shed.requestthrottler.test'
   const RESET_OFFSET_HOST = 'reset-offset.requestthrottler.test'
   const RESET_EPOCH_HOST = 'reset-epoch.requestthrottler.test'
+  const RETRY_AFTER_SECONDS_HOST = 'retry-after-seconds.requestthrottler.test'
+  const RETRY_AFTER_DATE_HOST = 'retry-after-date.requestthrottler.test'
+  const RETRY_AFTER_OVERRIDE_HOST = 'retry-after-override.requestthrottler.test'
+  const RETRY_AFTER_GARBAGE_HOST = 'retry-after-garbage.requestthrottler.test'
 
   let logger
   let connection
@@ -28,14 +32,14 @@ describe('RequestThrottler', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST, RESET_OFFSET_HOST, RESET_EPOCH_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST, RESET_OFFSET_HOST, RESET_EPOCH_HOST, RETRY_AFTER_SECONDS_HOST, RETRY_AFTER_DATE_HOST, RETRY_AFTER_OVERRIDE_HOST, RETRY_AFTER_GARBAGE_HOST]
     })
   })
 
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST, RESET_OFFSET_HOST, RESET_EPOCH_HOST]
+      remoteDomains: [REMOTE_HOST, THIRD_HOST, MASTODON_HOST, SHED_HOST, RESET_OFFSET_HOST, RESET_EPOCH_HOST, RETRY_AFTER_SECONDS_HOST, RETRY_AFTER_DATE_HOST, RETRY_AFTER_OVERRIDE_HOST, RETRY_AFTER_GARBAGE_HOST]
     })
     await connection.close()
   })
@@ -227,6 +231,89 @@ describe('RequestThrottler', async () => {
     assert.ok(
       drift < 5000,
       `expected reset within 5s of epoch-derived target ${new Date(targetMs).toISOString()}, got reset=${limits[0].reset.toISOString()} (drift=${drift}ms)`
+    )
+  })
+
+  it('treats Retry-After as delay-seconds, zeroing remaining and setting reset to that offset', async () => {
+    const retryAfterSeconds = 45
+    const beforeUpdate = Date.now()
+    const headers = new Headers()
+    headers.set('retry-after', String(retryAfterSeconds))
+    await throttler.update(RETRY_AFTER_SECONDS_HOST, headers)
+
+    const limits = await throttler.peek(RETRY_AFTER_SECONDS_HOST)
+    assert.strictEqual(limits.length, 1)
+    assert.strictEqual(limits[0].remaining, 0)
+    assert.ok(limits[0].reset instanceof Date)
+    const expected = beforeUpdate + retryAfterSeconds * 1000
+    const drift = Math.abs(limits[0].reset.getTime() - expected)
+    assert.ok(
+      drift < 5000,
+      `expected reset within 5s of now+${retryAfterSeconds}s, got drift=${drift}ms (reset=${limits[0].reset.toISOString()})`
+    )
+  })
+
+  it('treats Retry-After as HTTP-date, zeroing remaining and setting reset to that date', async () => {
+    const targetMs = Date.now() + 90_000
+    const httpDate = new Date(targetMs).toUTCString()
+    const headers = new Headers()
+    headers.set('retry-after', httpDate)
+    await throttler.update(RETRY_AFTER_DATE_HOST, headers)
+
+    const limits = await throttler.peek(RETRY_AFTER_DATE_HOST)
+    assert.strictEqual(limits.length, 1)
+    assert.strictEqual(limits[0].remaining, 0)
+    assert.ok(limits[0].reset instanceof Date)
+    // HTTP-date precision is whole seconds, so allow ~1s drift.
+    const drift = Math.abs(limits[0].reset.getTime() - new Date(httpDate).getTime())
+    assert.ok(
+      drift < 2000,
+      `expected reset within 2s of ${httpDate}, got reset=${limits[0].reset.toISOString()} (drift=${drift}ms)`
+    )
+  })
+
+  it('lets Retry-After override x-ratelimit-* headers when both are present', async () => {
+    const retryAfterSeconds = 120
+    const beforeUpdate = Date.now()
+    const headers = new Headers()
+    headers.set('x-ratelimit-limit', 1000)
+    headers.set('x-ratelimit-remaining', 500)
+    headers.set('x-ratelimit-reset', (new Date(Date.now() + 1000)).toISOString())
+    headers.set('retry-after', String(retryAfterSeconds))
+    await throttler.update(RETRY_AFTER_OVERRIDE_HOST, headers)
+
+    const limits = await throttler.peek(RETRY_AFTER_OVERRIDE_HOST)
+    assert.strictEqual(limits.length, 1)
+    assert.strictEqual(limits[0].remaining, 0)
+    assert.ok(limits[0].reset instanceof Date)
+    const expected = beforeUpdate + retryAfterSeconds * 1000
+    const drift = Math.abs(limits[0].reset.getTime() - expected)
+    assert.ok(
+      drift < 5000,
+      `expected reset within 5s of now+${retryAfterSeconds}s (Retry-After should win), got drift=${drift}ms (reset=${limits[0].reset.toISOString()})`
+    )
+  })
+
+  it('falls back to a sane default when Retry-After is unparseable', async () => {
+    const beforeUpdate = Date.now()
+    const headers = new Headers()
+    headers.set('retry-after', 'not a date')
+    await throttler.update(RETRY_AFTER_GARBAGE_HOST, headers)
+
+    const limits = await throttler.peek(RETRY_AFTER_GARBAGE_HOST)
+    assert.strictEqual(limits.length, 1)
+    assert.strictEqual(limits[0].remaining, 0)
+    assert.ok(limits[0].reset instanceof Date)
+    assert.ok(
+      !Number.isNaN(limits[0].reset.getTime()),
+      `expected a valid reset Date, got ${limits[0].reset}`
+    )
+    // Fallback should be ~30s out. Anything < ~5s means the DB silently substituted
+    // CURRENT_TIMESTAMP for an Invalid Date binding — the real fallback didn't fire.
+    const offset = limits[0].reset.getTime() - beforeUpdate
+    assert.ok(
+      offset > 25_000 && offset < 35_000,
+      `expected reset ~30s from now (fallback default), got offset=${offset}ms (reset=${limits[0].reset.toISOString()})`
     )
   })
 })
