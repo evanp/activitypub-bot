@@ -1184,4 +1184,10 @@ describe('BotContext', () => {
     }
     assert.strictEqual(count, 0)
   })
+
+  it('toActorId resolves a local webfinger without doing an HTTP fetch', async () => {
+    const webfinger = `${BOT_USERNAME}@${LOCAL_HOST}`
+    const actorId = await context.toActorId(webfinger)
+    assert.strictEqual(actorId, `${LOCAL_ORIGIN}/user/${BOT_USERNAME}`)
+  })
 })
