@@ -24,6 +24,7 @@ and this project adheres to
 - Use SafeFetcher in ActivityPubClient
 - Use SafeFetcher in Transformer
 - Use SafeFetcher in BotContext
+- Encode HTML entities in Transformer.transform()
 
 ## [0.45.20] - 2026-05-14
 

@@ -150,4 +150,25 @@ describe('microsyntax', async () => {
       assert.equal(tag[0].href, 'https://local.microsyntax.test/profile/neighbor')
     })
   })
+
+  describe('escape HTML in plain text', async () => {
+    const text = 'Hello <script>alert(1)</script> & "friends"'
+    const { html, tag } = await transformer.transform(text)
+    it('has html output', () => {
+      assert.ok(html)
+    })
+    it('does not pass through a raw <script> tag', () => {
+      assert.ok(!html.toLowerCase().includes('<script'))
+      assert.ok(!html.toLowerCase().includes('</script'))
+    })
+    it('escapes <, >, &, and "', () => {
+      assert.equal(
+        html,
+        '<p>Hello &lt;script&gt;alert(1)&lt;/script&gt; &amp; &quot;friends&quot;</p>'
+      )
+    })
+    it('produces no tags', () => {
+      assert.equal(tag.length, 0)
+    })
+  })
 })
