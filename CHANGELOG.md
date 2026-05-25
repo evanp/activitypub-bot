@@ -22,6 +22,7 @@ and this project adheres to
 
 - Name of package in nodeinfo from `activitypub-bot` to `activitypub-dot-bot` to
   avoid a naming conflict with another package.
+- Use URLFormatter in Transformer to short-circuit Webfinger self-request
 
 ## [0.45.20] - 2026-05-14
 
