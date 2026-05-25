@@ -15,6 +15,8 @@ and this project adheres to
 - ActorStorage method for checking active users.
 - nodeinfo properties for monthly active and half-yearly active users.
 - SafeFetcher service class for all outbound HTTP requests
+- Use SafeFetcher in ActivityPubClient
+- Use SafeFetcher in Transformer
 
 ### Changed
 

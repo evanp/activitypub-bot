@@ -126,7 +126,8 @@ describe('BotContext', () => {
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher())
+    const safeFetcher = new SafeFetcher()
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, safeFetcher)
     jobQueue = new JobQueue(connection, logger)
     const endpointCache = new EndpointCache(connection, logger)
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue, endpointCache)
@@ -148,7 +149,7 @@ describe('BotContext', () => {
     )
     deliveryWorker = new DeliveryWorker(jobQueue, logger, { actorStorage, activityHandler: handler, bots })
     deliveryWorkerRun = deliveryWorker.run()
-    transformer = new Transformer(`${LOCAL_ORIGIN}/tag/`, client)
+    transformer = new Transformer(`${LOCAL_ORIGIN}/tag/`, client, safeFetcher, formatter)
     await objectStorage.create(
       await as2.import({
         id: formatter.format({

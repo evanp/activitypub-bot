@@ -38,8 +38,9 @@ describe('microsyntax', async () => {
   const throttler = new RequestThrottler(connection, logger)
   const remoteObjectCache = new RemoteObjectCache(connection, logger)
   const policyStorage = new SignaturePolicyStorage(connection, logger)
-  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher())
-  const transformer = new Transformer(tagNamespace, client)
+  const safeFetcher = new SafeFetcher()
+  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, safeFetcher)
+  const transformer = new Transformer(tagNamespace, client, safeFetcher, formatter)
 
   it('has transformer', () => {
     assert.ok(transformer)
@@ -127,6 +128,26 @@ describe('microsyntax', async () => {
       assert.equal(tag[0].type, 'Mention')
       assert.equal(tag[0].name, '@world@social.microsyntax.test')
       assert.equal(tag[0].href, 'https://social.microsyntax.test/profile/world')
+    })
+  })
+
+  describe('transform local mention', async () => {
+    const text = 'Hello, @neighbor@local.microsyntax.test !'
+    const { html, tag } = await transformer.transform(text)
+    it('has html output', () => {
+      assert.ok(html)
+    })
+    it('has tag', () => {
+      assert.ok(tag)
+    })
+    it('has correct html', () => {
+      assert.equal(html, '<p>Hello, <a href="https://local.microsyntax.test/profile/neighbor">@neighbor@local.microsyntax.test</a> !</p>')
+    })
+    it('has correct tag', () => {
+      assert.equal(tag.length, 1)
+      assert.equal(tag[0].type, 'Mention')
+      assert.equal(tag[0].name, '@neighbor@local.microsyntax.test')
+      assert.equal(tag[0].href, 'https://local.microsyntax.test/profile/neighbor')
     })
   })
 })
