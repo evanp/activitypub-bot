@@ -217,4 +217,25 @@ describe('microsyntax', async () => {
         `html should not contain "javascript:": ${html}`)
     })
   })
+
+  describe('transform url with query string', async () => {
+    const text = 'Visit https://example.com/?a=b&c=d for info.'
+    const { html, tag } = await transformer.transform(text)
+    it('has html output', () => {
+      assert.ok(html)
+    })
+    it('does not double-escape the & in the query string', () => {
+      assert.ok(!html.includes('&amp;amp;'),
+        `html should not contain "&amp;amp;": ${html}`)
+    })
+    it('has correct html', () => {
+      assert.equal(
+        html,
+        '<p>Visit <a href="https://example.com/?a=b&amp;c=d">https://example.com/?a=b&amp;c=d</a> for info.</p>'
+      )
+    })
+    it('has no tag', () => {
+      assert.equal(tag.length, 0)
+    })
+  })
 })
