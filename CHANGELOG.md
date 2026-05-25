@@ -9,6 +9,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Better escaping for Webfinger, Hashtags, and URLs in HTML output
+
 ## [0.46.0] - 2026-05-25
 
 ### Added

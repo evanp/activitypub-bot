@@ -2,6 +2,7 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert'
 
 import Logger from 'pino'
+import nock from 'nock'
 import { nockSetup } from '@evanp/activitypub-nock'
 
 import { Transformer } from '../lib/microsyntax.js'
@@ -169,6 +170,51 @@ describe('microsyntax', async () => {
     })
     it('produces no tags', () => {
       assert.equal(tag.length, 0)
+    })
+  })
+
+  describe('mention of an actor with a malicious url href', async () => {
+    const evilDomain = 'evil.microsyntax.test'
+    const evilUser = 'hacker'
+    const evilActorId = `https://${evilDomain}/user/${evilUser}`
+    nock(`https://${evilDomain}`)
+      .persist()
+      .get(/^\/\.well-known\/webfinger/)
+      .reply(
+        200,
+        JSON.stringify({
+          subject: `acct:${evilUser}@${evilDomain}`,
+          links: [{
+            rel: 'self',
+            type: 'application/activity+json',
+            href: evilActorId
+          }]
+        }),
+        { 'Content-Type': 'application/jrd+json' }
+      )
+    nock(`https://${evilDomain}`)
+      .persist()
+      .get(`/user/${evilUser}`)
+      .reply(
+        200,
+        JSON.stringify({
+          '@context': 'https://www.w3.org/ns/activitystreams',
+          id: evilActorId,
+          type: 'Person',
+          preferredUsername: evilUser,
+          url: {
+            type: 'Link',
+            mediaType: 'text/html',
+            href: 'javascript:alert(1)'
+          }
+        }),
+        { 'Content-Type': 'application/activity+json' }
+      )
+    const text = `Hi @${evilUser}@${evilDomain} !`
+    const { html } = await transformer.transform(text)
+    it('does not interpolate a javascript: URL into the href', () => {
+      assert.ok(!html.toLowerCase().includes('javascript:'),
+        `html should not contain "javascript:": ${html}`)
     })
   })
 })
