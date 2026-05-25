@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.46.3] - 2026-05-25
+
+### Fixed
+
+- Inefficient index on actorcollectionpage.
+
 ## [0.46.2] - 2026-05-25
 
 ### Fixed
