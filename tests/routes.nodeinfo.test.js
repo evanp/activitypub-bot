@@ -60,6 +60,22 @@ describe('nodeinfo routes', async () => {
       )
       assert.ok(link.href.startsWith(origin), `href ${link.href} should start with ${origin}`)
     })
+    it('should include a link with rel for nodeinfo 2.1', async () => {
+      const link = response.body.links.find(
+        l => l.rel === 'http://nodeinfo.diaspora.software/ns/schema/2.1'
+      )
+      assert.ok(link, 'expected a link with rel for schema 2.1')
+      assert.strictEqual(typeof link.href, 'string')
+      assert.ok(link.href.startsWith(origin), `href ${link.href} should start with ${origin}`)
+    })
+    it('should include a link with rel for nodeinfo 2.2', async () => {
+      const link = response.body.links.find(
+        l => l.rel === 'http://nodeinfo.diaspora.software/ns/schema/2.2'
+      )
+      assert.ok(link, 'expected a link with rel for schema 2.2')
+      assert.strictEqual(typeof link.href, 'string')
+      assert.ok(link.href.startsWith(origin), `href ${link.href} should start with ${origin}`)
+    })
   })
 
   describe('GET the 2.0 document the discovery doc links to', async () => {
@@ -140,4 +156,41 @@ describe('nodeinfo routes', async () => {
       assert.strictEqual(response.body.software.name, 'activitypub-dot-bot')
     })
   })
+
+  for (const v of ['2.1', '2.2']) {
+    describe(`GET the ${v} document the discovery doc links to`, async () => {
+      let response = null
+      it('should work without an error', async () => {
+        const discovery = await request(app).get('/.well-known/nodeinfo')
+        const link = discovery.body.links.find(
+          l => l.rel === `http://nodeinfo.diaspora.software/ns/schema/${v}`
+        )
+        const path = new URL(link.href).pathname
+        response = await request(app).get(path)
+      })
+      it('should return 200 OK', async () => {
+        assert.strictEqual(response.status, 200)
+      })
+      it('should return JSON', async () => {
+        assert.strictEqual(response.type, 'application/json')
+      })
+      it(`should return an object with version "${v}"`, async () => {
+        assert.strictEqual(response.body.version, v)
+      })
+      it('should return software.name as "activitypub-dot-bot"', async () => {
+        assert.strictEqual(response.body.software.name, 'activitypub-dot-bot')
+      })
+      it('should return software.version as a string', async () => {
+        assert.strictEqual(typeof response.body.software.version, 'string')
+      })
+      it('should include "activitypub" in the protocols array', async () => {
+        assert.ok(response.body.protocols.includes('activitypub'))
+      })
+      it('should return usage.users.total as a non-negative integer', async () => {
+        assert.strictEqual(typeof response.body.usage.users.total, 'number')
+        assert.ok(Number.isInteger(response.body.usage.users.total))
+        assert.ok(response.body.usage.users.total >= 0)
+      })
+    })
+  }
 })

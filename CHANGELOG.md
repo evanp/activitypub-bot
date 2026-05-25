@@ -9,6 +9,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Support for nodeinfo 2.1 and 2.2.
+
 ### Changed
 
 - Name of package in nodeinfo from `activitypub-bot` to `activitypub-dot-bot` to
