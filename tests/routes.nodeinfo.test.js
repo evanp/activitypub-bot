@@ -155,6 +155,22 @@ describe('nodeinfo routes', async () => {
     it('should return software.name as "activitypub-dot-bot"', async () => {
       assert.strictEqual(response.body.software.name, 'activitypub-dot-bot')
     })
+
+    it('should return usage.users.activeMonth as a non-negative integer', async () => {
+      assert.strictEqual(typeof response.body.usage.users.activeMonth, 'number')
+      assert.ok(Number.isInteger(response.body.usage.users.activeMonth))
+      assert.ok(response.body.usage.users.activeMonth >= 0)
+    })
+
+    it('should return usage.users.activeHalfyear as a non-negative integer', async () => {
+      assert.strictEqual(typeof response.body.usage.users.activeHalfyear, 'number')
+      assert.ok(Number.isInteger(response.body.usage.users.activeHalfyear))
+      assert.ok(response.body.usage.users.activeHalfyear >= 0)
+    })
+
+    it('should have activeHalfyear >= activeMonth', async () => {
+      assert.ok(response.body.usage.users.activeHalfyear >= response.body.usage.users.activeMonth)
+    })
   })
 
   for (const v of ['2.1', '2.2']) {
@@ -190,6 +206,19 @@ describe('nodeinfo routes', async () => {
         assert.strictEqual(typeof response.body.usage.users.total, 'number')
         assert.ok(Number.isInteger(response.body.usage.users.total))
         assert.ok(response.body.usage.users.total >= 0)
+      })
+      it('should return usage.users.activeMonth as a non-negative integer', async () => {
+        assert.strictEqual(typeof response.body.usage.users.activeMonth, 'number')
+        assert.ok(Number.isInteger(response.body.usage.users.activeMonth))
+        assert.ok(response.body.usage.users.activeMonth >= 0)
+      })
+      it('should return usage.users.activeHalfyear as a non-negative integer', async () => {
+        assert.strictEqual(typeof response.body.usage.users.activeHalfyear, 'number')
+        assert.ok(Number.isInteger(response.body.usage.users.activeHalfyear))
+        assert.ok(response.body.usage.users.activeHalfyear >= 0)
+      })
+      it('should have activeHalfyear >= activeMonth', async () => {
+        assert.ok(response.body.usage.users.activeHalfyear >= response.body.usage.users.activeMonth)
       })
     })
   }
