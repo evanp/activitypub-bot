@@ -9,6 +9,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Name of package in nodeinfo from `activitypub-bot` to `activitypub-dot-bot` to
+  avoid a naming conflict with another package.
+
 ## [0.45.20] - 2026-05-14
 
 ### Fixed

@@ -135,5 +135,9 @@ describe('nodeinfo routes', async () => {
       assert.ok(response.body.metadata !== null)
       assert.ok(!Array.isArray(response.body.metadata))
     })
+
+    it('should return software.name as "activitypub-dot-bot"', async () => {
+      assert.strictEqual(response.body.software.name, 'activitypub-dot-bot')
+    })
   })
 })
