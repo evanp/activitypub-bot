@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.46.5] - 2026-05-25
+
+### Fixed
+
+- Several ownership checks in ActivityHandler
+
 ## [0.46.4] - 2026-05-25
 
 ### Added
