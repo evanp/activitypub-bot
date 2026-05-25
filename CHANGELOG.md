@@ -9,6 +9,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- server_stats table to cache the calculations for nodeinfo.
+
 ## [0.46.3] - 2026-05-25
 
 ### Fixed
