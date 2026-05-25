@@ -18,6 +18,10 @@ const LIKED_USER_D = 'actorstoragetest7'
 const CUSTOM_USER = 'actorstoragetest8'
 const LAST_ACTIVITY_USER = 'actorstoragetest16'
 const FOLLOWING_USERS = Array.from({ length: 5 }, (_, i) => `actorstoragetest${101 + i}`)
+const ACTIVE_RECENT_A = 'actorstoragetestactive1'
+const ACTIVE_RECENT_B = 'actorstoragetestactive2'
+const ACTIVE_OLDER = 'actorstoragetestactive3'
+const ACTIVE_ANCIENT = 'actorstoragetestactive4'
 const TEST_USERNAMES = [
   LOCAL_USER,
   FOLLOWERS_USER,
@@ -27,6 +31,10 @@ const TEST_USERNAMES = [
   LIKED_USER_D,
   CUSTOM_USER,
   LAST_ACTIVITY_USER,
+  ACTIVE_RECENT_A,
+  ACTIVE_RECENT_B,
+  ACTIVE_OLDER,
+  ACTIVE_ANCIENT,
   ...FOLLOWING_USERS
 ]
 
@@ -373,6 +381,81 @@ describe('ActorStorage', () => {
         object
       )
       assert.ok(!result)
+    })
+  })
+
+  describe('activeUsers', async () => {
+    let baseline30 = null
+    let baseline180 = null
+
+    it('returns a non-negative integer for 30 days', async () => {
+      baseline30 = await storage.activeUsers(30)
+      assert.strictEqual(typeof baseline30, 'number')
+      assert.ok(Number.isInteger(baseline30))
+      assert.ok(baseline30 >= 0)
+    })
+
+    it('returns a non-negative integer for 180 days', async () => {
+      baseline180 = await storage.activeUsers(180)
+      assert.strictEqual(typeof baseline180, 'number')
+      assert.ok(Number.isInteger(baseline180))
+      assert.ok(baseline180 >= 0)
+    })
+
+    it('180-day count is greater than or equal to 30-day count', async () => {
+      assert.ok(baseline180 >= baseline30)
+    })
+
+    it('counts users with recent outbox entries within 30 days', async () => {
+      const before = await storage.activeUsers(30)
+      const object = await as2.import({
+        id: `https://social.actorstorage.test/user/${ACTIVE_RECENT_A}/note/1`,
+        type: 'Note',
+        content: 'fresh note'
+      })
+      await storage.addToCollection(ACTIVE_RECENT_A, 'outbox', object)
+      const after = await storage.activeUsers(30)
+      assert.strictEqual(after, before + 1)
+    })
+
+    it('does not count users whose only outbox entry is older than the window', async () => {
+      const object = await as2.import({
+        id: `https://social.actorstorage.test/user/${ACTIVE_OLDER}/note/1`,
+        type: 'Note',
+        content: 'older note'
+      })
+      await storage.addToCollection(ACTIVE_OLDER, 'outbox', object)
+      const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
+      await connection.query(
+        `UPDATE actorcollectionpage SET createdat = ? WHERE username = ? AND property = 'outbox'`,
+        { replacements: [sixtyDaysAgo, ACTIVE_OLDER] }
+      )
+      const count30 = await storage.activeUsers(30)
+      const count180 = await storage.activeUsers(180)
+      assert.ok(count180 > count30, `expected 180d (${count180}) > 30d (${count30})`)
+    })
+
+    it('does not count users whose only outbox entry is older than 180 days', async () => {
+      const object = await as2.import({
+        id: `https://social.actorstorage.test/user/${ACTIVE_ANCIENT}/note/1`,
+        type: 'Note',
+        content: 'ancient note'
+      })
+      await storage.addToCollection(ACTIVE_ANCIENT, 'outbox', object)
+      const twoHundredDaysAgo = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000)
+      await connection.query(
+        `UPDATE actorcollectionpage SET createdat = ? WHERE username = ? AND property = 'outbox'`,
+        { replacements: [twoHundredDaysAgo, ACTIVE_ANCIENT] }
+      )
+      const before = await storage.activeUsers(180)
+      const object2 = await as2.import({
+        id: `https://social.actorstorage.test/user/${ACTIVE_RECENT_B}/note/1`,
+        type: 'Note',
+        content: 'recent note'
+      })
+      await storage.addToCollection(ACTIVE_RECENT_B, 'outbox', object2)
+      const after = await storage.activeUsers(180)
+      assert.strictEqual(after, before + 1, `expected delta of 1 (the recent user); ancient user should not be counted`)
     })
   })
 })

@@ -12,6 +12,7 @@ and this project adheres to
 ### Added
 
 - Support for nodeinfo 2.1 and 2.2.
+- ActorStorage method for checking active users.
 
 ### Changed
 
