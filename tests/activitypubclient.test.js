@@ -23,6 +23,7 @@ import { Digester } from '../lib/digester.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 import { SafeAgent } from '../lib/safeagent.js'
+import { SafeFetcher } from '../lib/safefetcher.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
@@ -150,7 +151,7 @@ describe('ActivityPubClient', async () => {
   let throttler = null
   let policyStorage = null
   let remoteObjectCache = null
-  let agent = null
+  let safeFetcher = null
 
   before(async () => {
     logger = new Logger({
@@ -193,7 +194,7 @@ describe('ActivityPubClient', async () => {
     throttler = new RequestThrottler(connection, logger)
     policyStorage = new SignaturePolicyStorage(connection, logger)
     remoteObjectCache = new RemoteObjectCache(connection, logger)
-    agent = new SafeAgent()
+    safeFetcher = new SafeFetcher(new SafeAgent())
     client = new ActivityPubClient(
       keyStorage,
       formatter,
@@ -204,7 +205,7 @@ describe('ActivityPubClient', async () => {
       remoteObjectCache,
       messageSigner,
       policyStorage,
-      agent
+      safeFetcher
     )
 
     nockSetup(REMOTE_HOST, logger)
@@ -980,10 +981,11 @@ describe('ActivityPubClient', async () => {
     )
   })
 
-  describe('without SafeAgent', async () => {
+  describe('with allowPrivate SafeFetcher', async () => {
     let unsafeClient = null
 
     before(() => {
+      const permissiveFetcher = new SafeFetcher(new SafeAgent(), { allowPrivate: true })
       unsafeClient = new ActivityPubClient(
         keyStorage,
         formatter,
@@ -993,7 +995,8 @@ describe('ActivityPubClient', async () => {
         throttler,
         remoteObjectCache,
         messageSigner,
-        policyStorage
+        policyStorage,
+        permissiveFetcher
       )
     })
 

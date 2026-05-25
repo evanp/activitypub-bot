@@ -113,4 +113,21 @@ describe('SafeFetcher', () => {
       )
     })
   })
+
+  describe('allowPrivateNetworkRequests', () => {
+    it('is false when constructed without allowPrivate', () => {
+      const fetcher = new SafeFetcher(new SafeAgent())
+      assert.strictEqual(fetcher.allowPrivateNetworkRequests, false)
+    })
+
+    it('is false when constructed with allowPrivate: false', () => {
+      const fetcher = new SafeFetcher(new SafeAgent(), { allowPrivate: false })
+      assert.strictEqual(fetcher.allowPrivateNetworkRequests, false)
+    })
+
+    it('is true when constructed with allowPrivate: true', () => {
+      const fetcher = new SafeFetcher(new SafeAgent(), { allowPrivate: true })
+      assert.strictEqual(fetcher.allowPrivateNetworkRequests, true)
+    })
+  })
 })
