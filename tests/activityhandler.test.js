@@ -16,7 +16,6 @@ import { ObjectStorage } from '../lib/objectstorage.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
-import { SafeAgent } from '../lib/safeagent.js'
 import { SafeFetcher } from '../lib/safefetcher.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
 import { EndpointCache } from '../lib/endpointcache.js'
@@ -108,7 +107,7 @@ describe('ActivityHandler', () => {
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher(new SafeAgent()))
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher())
     jobQueue = new JobQueue(connection, logger)
     const endpointCache = new EndpointCache(connection, logger)
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue, endpointCache)

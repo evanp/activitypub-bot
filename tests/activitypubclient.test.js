@@ -22,7 +22,6 @@ import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
-import { SafeAgent } from '../lib/safeagent.js'
 import { SafeFetcher } from '../lib/safefetcher.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
@@ -194,7 +193,7 @@ describe('ActivityPubClient', async () => {
     throttler = new RequestThrottler(connection, logger)
     policyStorage = new SignaturePolicyStorage(connection, logger)
     remoteObjectCache = new RemoteObjectCache(connection, logger)
-    safeFetcher = new SafeFetcher(new SafeAgent())
+    safeFetcher = new SafeFetcher()
     client = new ActivityPubClient(
       keyStorage,
       formatter,
@@ -985,7 +984,7 @@ describe('ActivityPubClient', async () => {
     let unsafeClient = null
 
     before(() => {
-      const permissiveFetcher = new SafeFetcher(new SafeAgent(), { allowPrivate: true })
+      const permissiveFetcher = new SafeFetcher({ allowPrivate: true })
       unsafeClient = new ActivityPubClient(
         keyStorage,
         formatter,

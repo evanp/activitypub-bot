@@ -22,7 +22,6 @@ import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
-import { SafeAgent } from '../lib/safeagent.js'
 import { SafeFetcher } from '../lib/safefetcher.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
@@ -127,7 +126,7 @@ describe('ActivityDistributor', () => {
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher(new SafeAgent()))
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher())
     jobQueue = new JobQueue(connection, logger)
     distributionWorker = new DistributionWorker(jobQueue, logger, { client })
     distributionWorkerRun = distributionWorker.run()

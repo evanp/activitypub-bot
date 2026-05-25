@@ -10,7 +10,6 @@ import { ActorStorage } from '../lib/actorstorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
-import { SafeAgent } from '../lib/safeagent.js'
 import { SafeFetcher } from '../lib/safefetcher.js'
 import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
@@ -99,7 +98,7 @@ describe('Authorizer', () => {
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher(new SafeAgent()))
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher())
     nockSetup(REMOTE_HOST)
     nockSetup(THIRD_HOST)
     actor1 = await actorStorage.getActor(LOCAL_USER_1)

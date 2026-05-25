@@ -3,7 +3,6 @@ import assert from 'node:assert'
 import dns from 'node:dns'
 import dnsPromises from 'node:dns/promises'
 
-import { SafeAgent } from '../lib/safeagent.js'
 import { SafeFetcher } from '../lib/safefetcher.js'
 
 function mockDns (address) {
@@ -30,8 +29,8 @@ describe('SafeFetcher', () => {
     dnsPromises.lookup = originalPromiseLookup
   })
 
-  it('can be constructed with a SafeAgent', () => {
-    const fetcher = new SafeFetcher(new SafeAgent())
+  it('can be constructed with no arguments', () => {
+    const fetcher = new SafeFetcher()
     assert.ok(fetcher)
   })
 
@@ -42,31 +41,31 @@ describe('SafeFetcher', () => {
 
   it('rejects a fetch when the hostname resolves to a private IP', async () => {
     mockDns('192.168.1.1')
-    const fetcher = new SafeFetcher(new SafeAgent())
+    const fetcher = new SafeFetcher()
     await assert.rejects(fetcher.fetch('https://evil.example'), isPrivateNetworkError)
   })
 
   it('rejects a fetch when the hostname resolves to a loopback address', async () => {
     mockDns('127.0.0.1')
-    const fetcher = new SafeFetcher(new SafeAgent())
+    const fetcher = new SafeFetcher()
     await assert.rejects(fetcher.fetch('https://evil.example'), isPrivateNetworkError)
   })
 
   it('rejects a fetch when the hostname resolves to a link-local address', async () => {
     mockDns('169.254.1.1')
-    const fetcher = new SafeFetcher(new SafeAgent())
+    const fetcher = new SafeFetcher()
     await assert.rejects(fetcher.fetch('https://evil.example'), isPrivateNetworkError)
   })
 
   it('rejects a fetch when DNS lookup fails', async () => {
     mockDnsError(new Error('ENOTFOUND'))
-    const fetcher = new SafeFetcher(new SafeAgent())
+    const fetcher = new SafeFetcher()
     await assert.rejects(fetcher.fetch('https://nonexistent.example'))
   })
 
   it('rejects an http: URL that resolves to a public IP', async () => {
     mockDns('93.184.216.34')
-    const fetcher = new SafeFetcher(new SafeAgent())
+    const fetcher = new SafeFetcher()
     await assert.rejects(
       fetcher.fetch('http://example.com'),
       err => err.name === 'ProtocolError'
@@ -74,7 +73,7 @@ describe('SafeFetcher', () => {
   })
 
   it('rejects an unsupported protocol', async () => {
-    const fetcher = new SafeFetcher(new SafeAgent())
+    const fetcher = new SafeFetcher()
     await assert.rejects(
       fetcher.fetch('ftp://example.com'),
       err => err.name === 'ProtocolError'
@@ -84,10 +83,7 @@ describe('SafeFetcher', () => {
   describe('with allowPrivate: true', () => {
     it('does not reject a private IP on the safety check', async () => {
       mockDns('192.168.1.1')
-      const fetcher = new SafeFetcher(new SafeAgent(), { allowPrivate: true })
-      // Should NOT reject with PrivateNetworkError. The fetch itself may still
-      // fail (network unreachable, ECONNREFUSED, etc.) — we just assert it
-      // doesn't reject for the private-network reason.
+      const fetcher = new SafeFetcher({ allowPrivate: true })
       await assert.rejects(
         fetcher.fetch('https://evil.example'),
         err => err.name !== 'PrivateNetworkError' &&
@@ -97,7 +93,7 @@ describe('SafeFetcher', () => {
 
     it('accepts an http: URL that resolves to a private IP', async () => {
       mockDns('192.168.1.1')
-      const fetcher = new SafeFetcher(new SafeAgent(), { allowPrivate: true })
+      const fetcher = new SafeFetcher({ allowPrivate: true })
       await assert.rejects(
         fetcher.fetch('http://misskey.test'),
         err => err.name !== 'ProtocolError'
@@ -106,7 +102,7 @@ describe('SafeFetcher', () => {
 
     it('still rejects an http: URL that resolves to a public IP', async () => {
       mockDns('93.184.216.34')
-      const fetcher = new SafeFetcher(new SafeAgent(), { allowPrivate: true })
+      const fetcher = new SafeFetcher({ allowPrivate: true })
       await assert.rejects(
         fetcher.fetch('http://example.com'),
         err => err.name === 'ProtocolError'
@@ -115,18 +111,18 @@ describe('SafeFetcher', () => {
   })
 
   describe('allowPrivateNetworkRequests', () => {
-    it('is false when constructed without allowPrivate', () => {
-      const fetcher = new SafeFetcher(new SafeAgent())
+    it('is false when constructed with no arguments', () => {
+      const fetcher = new SafeFetcher()
       assert.strictEqual(fetcher.allowPrivateNetworkRequests, false)
     })
 
     it('is false when constructed with allowPrivate: false', () => {
-      const fetcher = new SafeFetcher(new SafeAgent(), { allowPrivate: false })
+      const fetcher = new SafeFetcher({ allowPrivate: false })
       assert.strictEqual(fetcher.allowPrivateNetworkRequests, false)
     })
 
     it('is true when constructed with allowPrivate: true', () => {
-      const fetcher = new SafeFetcher(new SafeAgent(), { allowPrivate: true })
+      const fetcher = new SafeFetcher({ allowPrivate: true })
       assert.strictEqual(fetcher.allowPrivateNetworkRequests, true)
     })
   })
