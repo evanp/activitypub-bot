@@ -15,14 +15,15 @@ and this project adheres to
 - ActorStorage method for checking active users.
 - nodeinfo properties for monthly active and half-yearly active users.
 - SafeFetcher service class for all outbound HTTP requests
-- Use SafeFetcher in ActivityPubClient
-- Use SafeFetcher in Transformer
 
 ### Changed
 
 - Name of package in nodeinfo from `activitypub-bot` to `activitypub-dot-bot` to
   avoid a naming conflict with another package.
 - Use URLFormatter in Transformer to short-circuit Webfinger self-request
+- Use SafeFetcher in ActivityPubClient
+- Use SafeFetcher in Transformer
+- Use SafeFetcher in BotContext
 
 ## [0.45.20] - 2026-05-14
 

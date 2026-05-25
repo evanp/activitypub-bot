@@ -68,6 +68,7 @@ describe('MastodonRelayClientBot', () => {
   let distributor = null
   let context = null
   let transformer = null
+  let safeFetcher = null
   let logger = null
   let MastodonRelayClientBot = null
   let relay = null
@@ -105,7 +106,7 @@ describe('MastodonRelayClientBot', () => {
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    const safeFetcher = new SafeFetcher()
+    safeFetcher = new SafeFetcher()
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, safeFetcher)
     jobQueue = new JobQueue(connection, logger)
     const endpointCache = new EndpointCache(connection, logger)
@@ -139,7 +140,8 @@ describe('MastodonRelayClientBot', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
     nockSetup(REMOTE_HOST)
     relay = nockFormat({ username: RELAY_USERNAME, domain: REMOTE_HOST })
@@ -290,7 +292,8 @@ describe('MastodonRelayClientBot', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
     const followingBot = new MastodonRelayClientBot(followingBotName, {
       relay: followingRelay
@@ -353,7 +356,8 @@ describe('MastodonRelayClientBot', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
     const announceBot = new MastodonRelayClientBot(announceBotName, {
       relay: announceRelay
@@ -444,7 +448,8 @@ describe('MastodonRelayClientBot', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
     const multiBot = new MastodonRelayClientBot(multiBotName, {
       relay: [multiA, multiB]
@@ -488,7 +493,8 @@ describe('MastodonRelayClientBot', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
 
     let diffBot = new MastodonRelayClientBot(diffBotName, {
@@ -558,7 +564,8 @@ describe('MastodonRelayClientBot', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
     const stableBot = new MastodonRelayClientBot(stableBotName, {
       relay: [stableRelay]

@@ -90,6 +90,7 @@ describe('BotContext', () => {
   let actor6 = null
   let note = null
   let transformer = null
+  let safeFetcher = null
   let logger = null
   const botName = BOT_USERNAME
   let jobQueue
@@ -126,7 +127,7 @@ describe('BotContext', () => {
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    const safeFetcher = new SafeFetcher()
+    safeFetcher = new SafeFetcher()
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, safeFetcher)
     jobQueue = new JobQueue(connection, logger)
     const endpointCache = new EndpointCache(connection, logger)
@@ -192,7 +193,8 @@ describe('BotContext', () => {
         formatter,
         transformer,
         logger,
-        bots
+        bots,
+        safeFetcher
       )
       assert.ok(true)
     } catch (err) {
@@ -1011,7 +1013,8 @@ describe('BotContext', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
     let count = 0
     for await (const _ of emptyContext.following()) {
@@ -1046,7 +1049,8 @@ describe('BotContext', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
     let count = 0
     for await (const _ of emptyContext.followers()) {
@@ -1143,7 +1147,8 @@ describe('BotContext', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
     const followA = { id: `${formatter.format({ username: pendingBotName })}/follow/pendinggen-a` }
     const followB = { id: `${formatter.format({ username: pendingBotName })}/follow/pendinggen-b` }
@@ -1170,7 +1175,8 @@ describe('BotContext', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
     let count = 0
     for await (const _ of emptyContext.pendingFollowing()) {

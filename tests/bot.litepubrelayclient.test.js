@@ -68,6 +68,7 @@ describe('LitePubRelayClientBot', () => {
   let distributor = null
   let context = null
   let transformer = null
+  let safeFetcher = null
   let logger = null
   let LitePubRelayClientBot = null
   let relay = null
@@ -105,7 +106,7 @@ describe('LitePubRelayClientBot', () => {
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    const safeFetcher = new SafeFetcher()
+    safeFetcher = new SafeFetcher()
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, safeFetcher)
     jobQueue = new JobQueue(connection, logger)
     const endpointCache = new EndpointCache(connection, logger)
@@ -139,7 +140,8 @@ describe('LitePubRelayClientBot', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
     nockSetup(REMOTE_HOST)
     relay = nockFormat({ username: RELAY_USERNAME, domain: REMOTE_HOST })
@@ -649,7 +651,8 @@ describe('LitePubRelayClientBot', () => {
       formatter,
       transformer,
       logger,
-      bots
+      bots,
+      safeFetcher
     )
 
     await fanoutBot.initialize(fanoutContext)
