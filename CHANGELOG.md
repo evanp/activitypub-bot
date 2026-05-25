@@ -13,6 +13,11 @@ and this project adheres to
 
 - server_stats table to cache the calculations for nodeinfo.
 
+### Changed
+
+- nodeinfo uses cached server stats
+  when available.
+
 ## [0.46.3] - 2026-05-25
 
 ### Fixed
