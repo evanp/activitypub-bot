@@ -9,6 +9,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-05-25
+
 ### Added
 
 - Support for nodeinfo 2.1 and 2.2.
