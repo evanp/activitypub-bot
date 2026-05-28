@@ -9,6 +9,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.48.0] - 2026-05-28
+
 ### Added
 
 - /favicon.ico with a little robot head emoji
