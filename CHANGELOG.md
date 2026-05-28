@@ -9,6 +9,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+- Missing required `instance` property in /nodeinfo/2.2.
+
 ## [0.48.1] - 2026-05-28
 
 - 401 Unauthorized for authentication errors

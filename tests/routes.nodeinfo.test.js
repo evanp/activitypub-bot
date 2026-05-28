@@ -171,6 +171,9 @@ describe('nodeinfo routes', async () => {
     it('should have activeHalfyear >= activeMonth', async () => {
       assert.ok(response.body.usage.users.activeHalfyear >= response.body.usage.users.activeMonth)
     })
+    it('should not have an instance property', async () => {
+      assert.strictEqual(response.body.instance, undefined)
+    })
   })
 
   for (const v of ['2.1', '2.2']) {
@@ -222,4 +225,36 @@ describe('nodeinfo routes', async () => {
       })
     })
   }
+
+  describe('GET the 2.1 document instance property', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      const discovery = await request(app).get('/.well-known/nodeinfo')
+      const link = discovery.body.links.find(
+        l => l.rel === 'http://nodeinfo.diaspora.software/ns/schema/2.1'
+      )
+      const path = new URL(link.href).pathname
+      response = await request(app).get(path)
+    })
+    it('should not have an instance property', async () => {
+      assert.strictEqual(response.body.instance, undefined)
+    })
+  })
+
+  describe('GET the 2.2 document instance property', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      const discovery = await request(app).get('/.well-known/nodeinfo')
+      const link = discovery.body.links.find(
+        l => l.rel === 'http://nodeinfo.diaspora.software/ns/schema/2.2'
+      )
+      const path = new URL(link.href).pathname
+      response = await request(app).get(path)
+    })
+    it('should return an instance object', async () => {
+      assert.strictEqual(typeof response.body.instance, 'object')
+      assert.ok(response.body.instance !== null)
+      assert.ok(!Array.isArray(response.body.instance))
+    })
+  })
 })
