@@ -9,6 +9,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- getLastActivity() method on BotContext
+
 ## [0.46.5] - 2026-05-25
 
 ### Fixed

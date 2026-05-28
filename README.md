@@ -517,6 +517,12 @@ bot can forward a public activity it received through a side-channel
 (e.g. a relay-forwarded `Announce`) to all local bots. Errors in any
 individual bot's `onPublic` are logged and do not interrupt the fanout.
 
+#### async getLastActivity (type, object)
+
+Get the id of the last activity that has the type `type` and the object
+`object`. Great for double-checking if an object has been `Announce`d or
+`Follow`ed before.
+
 #### async onIdle ()
 
 Resolves when the background distribution queue has drained. Intended for test code that needs to wait for outbound activities to finish being delivered before asserting on their effects.

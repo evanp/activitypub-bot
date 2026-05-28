@@ -1190,4 +1190,29 @@ describe('BotContext', () => {
     const actorId = await context.toActorId(webfinger)
     assert.strictEqual(actorId, `${LOCAL_ORIGIN}/user/${BOT_USERNAME}`)
   })
+
+  describe('getLastActivity', async () => {
+    let obj = null
+
+    before(async () => {
+      obj = await makeObjectDefault('botcontextlastactivity', 'Note', 1)
+    })
+
+    it('returns null when the bot has not done that activity on the object', async () => {
+      const result = await context.getLastActivity('Announce', obj)
+      assert.strictEqual(result, null)
+    })
+
+    it('returns the activity id after the bot announces the object', async () => {
+      const announce = await context.announceObject(obj)
+      const result = await context.getLastActivity('Announce', obj)
+      assert.strictEqual(typeof result, 'string')
+      assert.strictEqual(result, announce.id)
+    })
+
+    it('returns null for a different activity type on the same object', async () => {
+      const result = await context.getLastActivity('Like', obj)
+      assert.strictEqual(result, null)
+    })
+  })
 })
