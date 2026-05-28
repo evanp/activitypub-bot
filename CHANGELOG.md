@@ -11,6 +11,7 @@ and this project adheres to
 
 ### Added
 
+- /favicon.ico with a little robot head emoji
 - very permissive /robots.txt
 
 ## [0.47.1] - 2026-05-28
