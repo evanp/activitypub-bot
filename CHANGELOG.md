@@ -9,6 +9,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.47.0] - 2026-05-28
+
 ### Added
 
 - getLastActivity() method on BotContext
