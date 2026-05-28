@@ -9,9 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.47.1] - 2026-05-28
+
 ### Fixed
 
 - GroupBot, GroupBotFactory exported from module
+- Unhandled jobs in BotContext, LitePubRelayClient tests
 
 ## [0.47.0] - 2026-05-28
 

@@ -11,6 +11,7 @@ import {
 import Logger from 'pino'
 
 import { BotContext } from '../lib/botcontext.js'
+import DoNothingBot from '../lib/bots/donothing.js'
 import { BotDataStorage } from '../lib/botdatastorage.js'
 import { ObjectStorage } from '../lib/objectstorage.js'
 import { KeyStorage } from '../lib/keystorage.js'
@@ -80,7 +81,13 @@ describe('LitePubRelayClientBot', () => {
   let fanoutWorkerRun
   let deliveryWorker
   let deliveryWorkerRun
-  const bots = {}
+  const bots = {
+    botlitepubrelayclientauthor1: new DoNothingBot('botlitepubrelayclientauthor1'),
+    botlitepubrelayclientauthor2: new DoNothingBot('botlitepubrelayclientauthor2'),
+    botlitepubrelayclientauthor3: new DoNothingBot('botlitepubrelayclientauthor3'),
+    botlitepubfollowerauthor: new DoNothingBot('botlitepubfollowerauthor'),
+    botlitepubfollowonlyauthor: new DoNothingBot('botlitepubfollowonlyauthor')
+  }
   let authz
   let cache
   let handler

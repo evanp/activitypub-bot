@@ -1205,6 +1205,7 @@ describe('BotContext', () => {
 
     it('returns the activity id after the bot announces the object', async () => {
       const announce = await context.announceObject(obj)
+      await context.onIdle()
       const result = await context.getLastActivity('Announce', obj)
       assert.strictEqual(typeof result, 'string')
       assert.strictEqual(result, announce.id)
