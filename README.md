@@ -246,6 +246,23 @@ A *GroupBot* is a simple [FEP
 1b12](https://codeberg.org/fediverse/fep/src/branch/main/fep/1b12/fep-1b12.md)-compatible
 group object. When mentioned, it will boost the mentioning object to all its followers.
 
+### Pre-installed factory classes
+
+A [BotFactory](#botfactory) lets you create a whole class of bots that are
+magically created as needed.
+
+#### GroupBotFactory
+
+This factory class lets you add a lot of groups at once. Just include this line
+in your bot config:
+
+```javascript
+   '*': new GroupBotFactory()
+```
+
+Any bot names that don't match one of the other lines in the bot config will be
+passed to the group bot factory.
+
 ## API
 
 Custom bots can implement the [Bot](#bot) interface, which is easiest if you inherit from the `Bot` class.
