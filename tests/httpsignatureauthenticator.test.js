@@ -67,7 +67,7 @@ describe('HTTPSignatureAuthenticator', async () => {
   }
   const failNext = (err) => {
     if (err) {
-      assert.ok(true, 'Failed successfully')
+      assert.strictEqual(err.status, 401, `expected status 401, got ${err.status}`)
     } else {
       assert.fail('Passed through an incorrect request')
     }
