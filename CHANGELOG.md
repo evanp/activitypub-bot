@@ -9,6 +9,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- very permissive /robots.txt
+
 ## [0.47.1] - 2026-05-28
 
 ### Fixed
