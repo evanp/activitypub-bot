@@ -269,4 +269,18 @@ describe('RemoteKeyStorage', async () => {
     assert.equal(remote.publicKeyPem, publicKeyPem)
     assert.equal(remote.owner, actorId)
   })
+
+  it('returns null when the key URL fetch fails with 410 Gone', async () => {
+    const domain = 'gone.remotekeystorage.test'
+    const username = 'remotekeystoragegone1'
+    const keyId = `https://${domain}/user/${username}/publickey`
+
+    nock(`https://${domain}`)
+      .persist()
+      .get(`/user/${username}/publickey`)
+      .reply(410, JSON.stringify({ error: 'Gone' }), { 'Content-Type': 'application/json' })
+
+    const result = await remoteKeyStorage.getPublicKey(keyId)
+    assert.equal(result, null)
+  })
 })

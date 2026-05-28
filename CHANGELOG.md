@@ -10,6 +10,8 @@ and this project adheres to
 ## [Unreleased]
 
 - 401 Unauthorized for authentication errors
+- 401 Unauthorized when actor has been
+  deleted
 
 ## [0.48.0] - 2026-05-28
 
