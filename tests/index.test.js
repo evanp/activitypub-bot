@@ -74,4 +74,14 @@ describe('package exports', () => {
     const LoggingBot = module.LoggingBot
     assert.equal(typeof LoggingBot, 'function')
   })
+
+  it('exports GroupBot', async () => {
+    const GroupBot = module.GroupBot
+    assert.equal(typeof GroupBot, 'function')
+  })
+
+  it('exports GroupBotFactory', async () => {
+    const GroupBotFactory = module.GroupBotFactory
+    assert.equal(typeof GroupBotFactory, 'function')
+  })
 })

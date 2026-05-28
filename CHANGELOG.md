@@ -9,6 +9,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- GroupBot, GroupBotFactory exported from module
+
 ## [0.47.0] - 2026-05-28
 
 ### Added
