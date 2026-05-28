@@ -12,6 +12,7 @@ and this project adheres to
 ### Added
 
 - getLastActivity() method on BotContext
+- GroupBot class
 
 ## [0.46.5] - 2026-05-25
 

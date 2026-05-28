@@ -240,6 +240,12 @@ A *LitePubRelayClientBot* can be the client of a LitePub (Pleroma) relay.
 
 A *LitePubRelayServerBot* will act as a relay server for remote Pleroma servers and other LitePub-relay-compliant servers.
 
+#### GroupBot
+
+A *GroupBot* is a simple [FEP
+1b12](https://codeberg.org/fediverse/fep/src/branch/main/fep/1b12/fep-1b12.md)-compatible
+group object. When mentioned, it will boost the mentioning object to all its followers.
+
 ## API
 
 Custom bots can implement the [Bot](#bot) interface, which is easiest if you inherit from the `Bot` class.
