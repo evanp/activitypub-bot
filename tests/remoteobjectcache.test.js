@@ -54,7 +54,7 @@ describe('RemoteObjectCache', async () => {
     assert.ok(Math.abs(result.expiry.getTime() - expectedExpiry) < 1000)
   })
 
-  it('set with no caching headers then get uses type-based default expiry', async () => {
+  it('set with no caching headers and an object with an inbox expires immediately', async () => {
     const actorObject = { id: REMOTE_ACTOR_ID, type: 'Person', name: 'Test Actor', inbox: `${REMOTE_ACTOR_ID}/inbox` }
     await cache.set(REMOTE_ACTOR_ID, TEST_USERNAME, actorObject, new Headers())
 
@@ -62,8 +62,7 @@ describe('RemoteObjectCache', async () => {
     assert.ok(result)
     assert.deepEqual(result.object, actorObject)
     assert.ok(result.expiry instanceof Date)
-    const expectedExpiry = Date.now() + 30 * 60 * 1000 // Actor default: 30 minutes
-    assert.ok(Math.abs(result.expiry.getTime() - expectedExpiry) < 1000)
+    assert.ok(result.expiry.getTime() < Date.now())
   })
 
   it('set with Expires header then get returns object with header-derived expiry', async () => {
@@ -264,4 +263,5 @@ describe('RemoteObjectCache', async () => {
     const id = `https://${REMOTE_HOST}/user/testuser/note/never-cached`
     await assert.doesNotReject(cache.clear(id))
   })
+
 })

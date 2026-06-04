@@ -11,6 +11,10 @@ and this project adheres to
 
 - Missing required `instance` property in /nodeinfo/2.2.
 
+## [0.48.2] - 2026-06-04
+
+- Immediate expiry for actors.
+
 ## [0.48.1] - 2026-05-28
 
 - 401 Unauthorized for authentication errors
