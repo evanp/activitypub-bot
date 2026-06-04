@@ -14,6 +14,7 @@ and this project adheres to
 ## [0.48.2] - 2026-06-04
 
 - Immediate expiry for actors.
+- Include required 'instance' property in nodeinfo 2.2.
 
 ## [0.48.1] - 2026-05-28
 
