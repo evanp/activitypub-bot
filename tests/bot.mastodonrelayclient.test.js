@@ -598,4 +598,166 @@ describe('MastodonRelayClientBot', () => {
       're-initializing with the same config should not send extra Follows'
     )
   })
+
+  it('can be constructed with a forceUnsubscribe option', async () => {
+    const forceBotName = 'botmastodonrelayclienttestforce'
+    const forceRelay = nockFormat({
+      username: 'botmastodonrelayforce',
+      domain: REMOTE_HOST
+    })
+    const forceUnsub = nockFormat({
+      username: 'botmastodonrelayforceunsub',
+      domain: REMOTE_HOST
+    })
+    const forceBot = new MastodonRelayClientBot(forceBotName, {
+      relay: [forceRelay],
+      forceUnsubscribe: [forceUnsub]
+    })
+    assert.ok(forceBot)
+  })
+
+  it('throws when a relay appears in both relay and forceUnsubscribe', async () => {
+    const sharedRelay = nockFormat({
+      username: 'botmastodonrelayshared',
+      domain: REMOTE_HOST
+    })
+    assert.throws(() => {
+      // eslint-disable-next-line no-new
+      new MastodonRelayClientBot('botmastodonrelayclienttestshared', {
+        relay: [sharedRelay],
+        forceUnsubscribe: [sharedRelay]
+      })
+    })
+  })
+
+  it('sends an Undo referencing the stored Follow for a forceUnsubscribe relay with a stored Follow', async () => {
+    const fuBotName = 'botmastodonrelayclienttestfu'
+    const pendingRelay = nockFormat({
+      username: 'botmastodonrelaypending',
+      domain: REMOTE_HOST
+    })
+    const liveRelay = nockFormat({
+      username: 'botmastodonrelaylive',
+      domain: REMOTE_HOST
+    })
+    TEST_USERNAMES.push(fuBotName)
+
+    const fuContext = new BotContext(
+      fuBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      bots,
+      safeFetcher
+    )
+
+    // First run: subscribe so the Follow activity is stored. No Accept arrives,
+    // so the relay is a pending subscription that never enters `following`.
+    let fuBot = new MastodonRelayClientBot(fuBotName, { relay: [pendingRelay] })
+    bots[fuBotName] = fuBot
+    await fuBot.initialize(fuContext)
+    await fuContext.onIdle()
+
+    let followId = null
+    for await (const item of actorStorage.items(fuBotName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (!isRelayFollow(activity)) continue
+      if (activity.to?.first?.id === pendingRelay) {
+        followId = activity.id?.first?.id ?? activity.id
+        break
+      }
+    }
+    assert.ok(followId, 'first initialize should have stored a Follow to the relay')
+
+    // Second run: keep a separate live relay, force-unsubscribe the pending one.
+    fuBot = new MastodonRelayClientBot(fuBotName, {
+      relay: [liveRelay],
+      forceUnsubscribe: [pendingRelay]
+    })
+    bots[fuBotName] = fuBot
+    await fuBot.initialize(fuContext)
+    await fuContext.onIdle()
+
+    let undo = null
+    for await (const item of actorStorage.items(fuBotName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (!isRelayUnfollow(activity)) continue
+      if (activity.to?.first?.id === pendingRelay) {
+        undo = activity
+        break
+      }
+    }
+    assert.ok(
+      undo,
+      'should have sent an Undo addressed to the forceUnsubscribe relay'
+    )
+    assert.strictEqual(
+      undo.object.first.id,
+      followId,
+      'the Undo should reference the original stored Follow activity'
+    )
+  })
+
+  it('sends a best-effort Undo with no Follow id when a forceUnsubscribe relay has no stored Follow', async () => {
+    const neverBotName = 'botmastodonrelayclienttestnever'
+    const neverRelay = nockFormat({
+      username: 'botmastodonrelaynever',
+      domain: REMOTE_HOST
+    })
+    const liveRelay = nockFormat({
+      username: 'botmastodonrelayneverlive',
+      domain: REMOTE_HOST
+    })
+    TEST_USERNAMES.push(neverBotName)
+
+    const neverContext = new BotContext(
+      neverBotName,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      bots,
+      safeFetcher
+    )
+    const neverBot = new MastodonRelayClientBot(neverBotName, {
+      relay: [liveRelay],
+      forceUnsubscribe: [neverRelay]
+    })
+    bots[neverBotName] = neverBot
+
+    await neverBot.initialize(neverContext)
+    await neverContext.onIdle()
+
+    let undo = null
+    for await (const item of actorStorage.items(neverBotName, 'outbox')) {
+      const activity = await objectStorage.read(item.id)
+      if (!isRelayUnfollow(activity)) continue
+      if (activity.to?.first?.id === neverRelay) {
+        undo = activity
+        break
+      }
+    }
+    assert.ok(
+      undo,
+      'should have sent a best-effort Undo addressed to the forceUnsubscribe relay'
+    )
+    assert.ok(
+      !undo.object.first.id,
+      'the best-effort Undo should embed a Follow with no id'
+    )
+    assert.strictEqual(
+      undo.object.first.actor?.first?.id,
+      formatter.format({ username: neverBotName }),
+      'the embedded Follow should identify the bot as the actor'
+    )
+  })
 })

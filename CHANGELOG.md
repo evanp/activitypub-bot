@@ -9,6 +9,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+- New forceUnsubscribe argument for MastodonRelayClient, to force it
+  to unsubscribe unconditionally to an array of actors.
 - Missing required `instance` property in /nodeinfo/2.2.
 
 ## [0.48.2] - 2026-06-04
