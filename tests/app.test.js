@@ -1,5 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 
 import request from 'supertest'
 
@@ -7,6 +9,9 @@ import { makeApp } from '../lib/app.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
 
 const UUID_REGEXP = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -29,7 +34,8 @@ describe('app', async () => {
       origin,
       bots: testBots,
       logLevel: 'silent',
-      redisUrl
+      redisUrl,
+      domainBlockFileName: BASIC_BLOCKLIST
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
@@ -154,5 +160,24 @@ describe('app', async () => {
       })
       await overrideApp.cleanup()
     }
+  })
+
+  it('puts a domain blocker on app.locals', async () => {
+    assert.strictEqual(typeof app.locals.domainBlocker, 'object')
+    assert.ok(app.locals.domainBlocker)
+  })
+
+  it('has initialized the domain blocker from the file', async () => {
+    assert.strictEqual(
+      await app.locals.domainBlocker.isBlocked('https://blocked-one.test/users/alice'),
+      true
+    )
+  })
+
+  it('does not block domains absent from the blocklist file', async () => {
+    assert.strictEqual(
+      await app.locals.domainBlocker.isBlocked('https://allowed.test/users/carol'),
+      false
+    )
   })
 })

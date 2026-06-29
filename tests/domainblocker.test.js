@@ -158,4 +158,24 @@ describe('DomainBlocker', async () => {
       true
     )
   })
+
+  it('with no file, skips the sync and keeps the existing domain blocks', async () => {
+    const connection = await migratedConnection()
+    await connection.query(
+      'INSERT INTO domain_block (domain_name) VALUES (?)',
+      { replacements: ['preexisting.test'] }
+    )
+
+    const blocker = new DomainBlocker(null, connection, logger)
+    await blocker.initialize()
+
+    assert.strictEqual(
+      await blocker.isBlocked('https://preexisting.test/users/heidi'),
+      true
+    )
+    assert.strictEqual(
+      await blocker.isBlocked('https://allowed.test/users/ivan'),
+      false
+    )
+  })
 })
