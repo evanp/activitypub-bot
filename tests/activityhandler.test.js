@@ -21,6 +21,7 @@ import { ActivityDistributor } from '../lib/activitydistributor.js'
 import { EndpointCache } from '../lib/endpointcache.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { Authorizer } from '../lib/authorizer.js'
+import { DomainBlocker } from '../lib/domainblocker.js'
 import as2 from '../lib/activitystreams.js'
 import { Digester } from '../lib/digester.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
@@ -116,7 +117,7 @@ describe('ActivityHandler', () => {
     distributionWorkerRun = distributionWorker.run()
     fanoutWorker = new FanoutWorker(jobQueue, logger, { distributor })
     fanoutWorkerRun = fanoutWorker.run()
-    authz = new Authorizer(actorStorage, formatter, client)
+    authz = new Authorizer(actorStorage, formatter, client, new DomainBlocker(null, connection, logger))
     cache = new RemoteObjectCache(connection, logger)
     transformer = new Transformer(`${origin}/tag/`, client, safeFetcher, formatter)
     bot = new OKBot(botName)

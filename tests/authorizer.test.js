@@ -1,11 +1,14 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 
 import { nanoid } from 'nanoid'
 import Logger from 'pino'
 import { nockSetup, nockFormat, addFollower, addFollowing, addToCollection, makeActor } from '@evanp/activitypub-nock'
 
 import { Authorizer } from '../lib/authorizer.js'
+import { DomainBlocker } from '../lib/domainblocker.js'
 import { ActorStorage } from '../lib/actorstorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { KeyStorage } from '../lib/keystorage.js'
@@ -21,12 +24,17 @@ import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
+
 describe('Authorizer', () => {
   const LOCAL_HOST = 'local.authorizer.test'
   const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
   const REMOTE_HOST = 'remote.authorizer.test'
   const REMOTE_ORIGIN = `https://${REMOTE_HOST}`
   const THIRD_HOST = 'third.authorizer.test'
+  const BLOCKED_HOST = 'blocked-one.test'
+  const BLOCKED_ORIGIN = `https://${BLOCKED_HOST}`
   const LOCAL_USER_1 = 'authorizertest1'
   const LOCAL_USER_2 = 'authorizertest2'
   const LOCAL_USER_3 = 'authorizertest3'
@@ -60,6 +68,7 @@ describe('Authorizer', () => {
 
   const TEST_USERNAMES = [LOCAL_USER_1, LOCAL_USER_2, LOCAL_USER_3, LOCAL_USER_4, LOCAL_USER_5, LOCAL_USER_6, LOCAL_USER_7, LOCAL_USER_8, LOCAL_USER_9, LOCAL_USER_10, LOCAL_USER_11, LOCAL_USER_12, LOCAL_USER_13, LOCAL_USER_14, LOCAL_USER_15]
 
+  let domainBlocker = null
   let authorizer = null
   let actorStorage = null
   let formatter = null
@@ -90,6 +99,8 @@ describe('Authorizer', () => {
       localDomain: LOCAL_HOST,
       remoteDomains: [REMOTE_HOST]
     })
+    domainBlocker = new DomainBlocker(BASIC_BLOCKLIST, connection, logger)
+    await domainBlocker.initialize()
     actorStorage = new ActorStorage(connection, formatter)
     keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)
@@ -194,7 +205,7 @@ describe('Authorizer', () => {
 
   it('can be instantiated', async () => {
     try {
-      authorizer = new Authorizer(actorStorage, formatter, client)
+      authorizer = new Authorizer(actorStorage, formatter, client, domainBlocker)
       assert.strictEqual(typeof authorizer, 'object')
     } catch (error) {
       assert.fail(error)
@@ -516,5 +527,25 @@ describe('Authorizer', () => {
     })
 
     assert.strictEqual(true, await authorizer.canRead(actor2, obj))
+  })
+
+  it('cannot read a public local object when the actor is on a blocked domain', async () => {
+    const blockedActor = await as2.import({
+      id: `${BLOCKED_ORIGIN}/user/blocky`,
+      type: 'Person',
+      preferredUsername: 'blocky',
+      to: 'as:Public'
+    })
+    assert.strictEqual(false, await authorizer.canRead(blockedActor, publicObject))
+  })
+
+  it('can read a public local object when the actor is not on a blocked domain', async () => {
+    const allowedActor = await as2.import({
+      id: `${REMOTE_ORIGIN}/user/notblocked`,
+      type: 'Person',
+      preferredUsername: 'notblocked',
+      to: 'as:Public'
+    })
+    assert.strictEqual(true, await authorizer.canRead(allowedActor, publicObject))
   })
 })

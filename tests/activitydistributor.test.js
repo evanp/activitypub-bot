@@ -33,6 +33,7 @@ import { DeliveryWorker } from '../lib/deliveryworker.js'
 import { EndpointCache } from '../lib/endpointcache.js'
 import { ObjectStorage } from '../lib/objectstorage.js'
 import { Authorizer } from '../lib/authorizer.js'
+import { DomainBlocker } from '../lib/domainblocker.js'
 import { ActivityHandler } from '../lib/activityhandler.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
@@ -130,7 +131,7 @@ describe('ActivityDistributor', () => {
     jobQueue = new JobQueue(connection, logger)
     distributionWorker = new DistributionWorker(jobQueue, logger, { client })
     distributionWorkerRun = distributionWorker.run()
-    authz = new Authorizer(actorStorage, formatter, client)
+    authz = new Authorizer(actorStorage, formatter, client, new DomainBlocker(null, connection, logger))
     cache = new RemoteObjectCache(connection, logger)
     endpointCache = new EndpointCache(connection, logger)
     const actor2 = await as2.import({

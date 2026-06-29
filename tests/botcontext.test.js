@@ -33,6 +33,7 @@ import { DeliveryWorker } from '../lib/deliveryworker.js'
 import { FanoutWorker } from '../lib/fanoutworker.js'
 import { ActivityHandler } from '../lib/activityhandler.js'
 import { Authorizer } from '../lib/authorizer.js'
+import { DomainBlocker } from '../lib/domainblocker.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import OKBot from '../lib/bots/ok.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
@@ -136,7 +137,7 @@ describe('BotContext', () => {
     distributionWorkerRun = distributionWorker.run()
     fanoutWorker = new FanoutWorker(jobQueue, logger, { distributor })
     fanoutWorkerRun = fanoutWorker.run()
-    const authz = new Authorizer(actorStorage, formatter, client)
+    const authz = new Authorizer(actorStorage, formatter, client, new DomainBlocker(null, connection, logger))
     const cache = new RemoteObjectCache(connection, logger)
     const handler = new ActivityHandler(
       actorStorage,

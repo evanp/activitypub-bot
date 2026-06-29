@@ -17,6 +17,7 @@ import { Digester } from '../lib/digester.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
 import { EndpointCache } from '../lib/endpointcache.js'
 import { Authorizer } from '../lib/authorizer.js'
+import { DomainBlocker } from '../lib/domainblocker.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
@@ -65,7 +66,7 @@ describe('DeliveryWorker', async () => {
     client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher())
     const endpointCache = new EndpointCache(connection, logger)
     const distributor = new ActivityDistributor(client, formatter, actorStorage, logger, JobQueue, endpointCache)
-    const authz = new Authorizer(actorStorage, formatter, client)
+    const authz = new Authorizer(actorStorage, formatter, client, new DomainBlocker(null, connection, logger))
     const cache = new RemoteObjectCache(connection, logger)
     handler = new ActivityHandler(
       actorStorage,

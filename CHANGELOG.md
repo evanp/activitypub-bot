@@ -19,6 +19,7 @@ and this project adheres to
 
 - Web interface rejects GET or POST requests with signatures by keys in
   blocked domains.
+- Authorizer.canRead() checks domain blocklist
 
 ## [0.49.1] - 2026-06-28
 
