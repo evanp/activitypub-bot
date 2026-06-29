@@ -6,6 +6,7 @@ import { dirname, resolve } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BIN = resolve(__dirname, '..', 'bin', 'activitypub-bot.js')
+const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
 const TEST_PORT = 9099
 const TEST_ORIGIN = `http://localhost:${TEST_PORT}`
 
@@ -62,6 +63,7 @@ describe('activitypub-bot CLI', () => {
       assert.match(result.stdout, /--delivery/)
       assert.match(result.stdout, /--distribution/)
       assert.match(result.stdout, /--index-file/)
+      assert.match(result.stdout, /--domain-block-list/)
     })
   })
 
@@ -96,6 +98,61 @@ describe('activitypub-bot CLI', () => {
 
     it('should respond to readyz', async () => {
       const res = await fetch(`http://localhost:${TEST_PORT}/readyz`)
+      assert.strictEqual(res.status, 200)
+    })
+
+    it('should shut down gracefully on SIGTERM', async () => {
+      const exitPromise = new Promise((resolve) => proc.on('close', resolve))
+      proc.kill('SIGTERM')
+      const exitCode = await exitPromise
+      assert.strictEqual(exitCode, 0)
+      proc = null
+    })
+  })
+
+  describe('with a domain block list file', () => {
+    const port = 9100
+    const origin = `http://localhost:${port}`
+    let proc = null
+
+    it('should start when --domain-block-list is passed', async () => {
+      proc = spawn(
+        process.execPath,
+        [BIN, '--port', String(port), '--origin', origin, '--domain-block-list', BASIC_BLOCKLIST],
+        { env: { ...process.env, NODE_ENV: 'test', LOG_LEVEL: 'info' } }
+      )
+      proc.stderr.on('data', () => {})
+      await waitForServer(port)
+      const res = await fetch(`http://localhost:${port}/livez`)
+      assert.strictEqual(res.status, 200)
+    })
+
+    it('should shut down gracefully on SIGTERM', async () => {
+      const exitPromise = new Promise((resolve) => proc.on('close', resolve))
+      proc.kill('SIGTERM')
+      const exitCode = await exitPromise
+      assert.strictEqual(exitCode, 0)
+      proc = null
+    })
+  })
+
+  // Smoke/regression: with no enforcement path yet, this boots whether or not
+  // DOMAIN_BLOCK_LIST is wired, so it guards against a crash rather than acting
+  // as a TDD red.
+  describe('with a DOMAIN_BLOCK_LIST env var', () => {
+    const port = 9101
+    const origin = `http://localhost:${port}`
+    let proc = null
+
+    it('should start when DOMAIN_BLOCK_LIST is set', async () => {
+      proc = spawn(
+        process.execPath,
+        [BIN, '--port', String(port), '--origin', origin],
+        { env: { ...process.env, NODE_ENV: 'test', LOG_LEVEL: 'info', DOMAIN_BLOCK_LIST: BASIC_BLOCKLIST } }
+      )
+      proc.stderr.on('data', () => {})
+      await waitForServer(port)
+      const res = await fetch(`http://localhost:${port}/livez`)
       assert.strictEqual(res.status, 200)
     })
 

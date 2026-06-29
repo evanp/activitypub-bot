@@ -11,6 +11,8 @@ and this project adheres to
 
 ### Added
 
+- --domain-block-list file argument
+- DOMAIN_BLOCKLIST environment variable
 - DomainBlocker class to manage domain blocks.
 
 ## [0.49.1] - 2026-06-28

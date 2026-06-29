@@ -21,6 +21,7 @@ const { values } = parseArgs({
     'allow-private': { type: 'boolean' },
     'redis-url': { type: 'string' },
     'trust-proxy': { type: 'string' },
+    'domain-block-list': { type: 'string' },
     help: { type: 'boolean', short: 'h' }
   },
   allowPositionals: false
@@ -30,21 +31,22 @@ if (values.help) {
   console.log(`Usage: activitypub-bot [options]
 
 Options:
-  --database-url <url>       Database connection URL
-  --origin <url>             Public origin URL for the server
-  --port <number>            Port to listen on
-  --bots-config-file <path>  Path to bots config module
-  --log-level <level>        Log level (e.g., info, debug)
-  --delivery <number>        Number of background delivery workers
-  --distribution <number>    Number of background distribution workers
-  --fanout <number>          Number of background fanout workers
-  --intake <number>          Number of background intake workers
-  --index-file <path>        HTML page to show at root path
-  --profile-file <path>      HTML page to show for bot profiles
-  --allow-private            flag to allow private network requests
-  --redis-url <url>          Redis connection URL for rate limiting
-  --trust-proxy <value>      Express 'trust proxy' setting (e.g. "1", "loopback", "true")
-  -h, --help                 Show this help
+  --database-url <url>        Database connection URL
+  --origin <url>              Public origin URL for the server
+  --port <number>             Port to listen on
+  --bots-config-file <path>   Path to bots config module
+  --log-level <level>         Log level (e.g., info, debug)
+  --delivery <number>         Number of background delivery workers
+  --distribution <number>     Number of background distribution workers
+  --fanout <number>           Number of background fanout workers
+  --intake <number>           Number of background intake workers
+  --index-file <path>         HTML page to show at root path
+  --profile-file <path>       HTML page to show for bot profiles
+  --allow-private             Flag to allow private network requests
+  --redis-url <url>           Redis connection URL for rate limiting
+  --trust-proxy <value>       Express 'trust proxy' setting (e.g. "1", "loopback", "true")
+  --domain-block-list <value> Filename of blocklist CSV
+  -h, --help                  Show this help
 `)
   process.exit(0)
 }
@@ -98,6 +100,9 @@ const ALLOW_PRIVATE = values['allow-private'] ||
   ('ALLOW_PRIVATE' in process.env)
   ? parseBoolean(process.env.ALLOW_PRIVATE)
   : false
+const DOMAIN_BLOCK_LIST = values['domain-block-list'] ||
+  process.env.DOMAIN_BLOCK_LIST ||
+  null
 
 const bots = (await import(BOTS_CONFIG_FILE)).default
 
@@ -114,7 +119,8 @@ const app = await makeApp({
   profileFileName: PROFILE_FILE,
   allowPrivateNetworkRequests: ALLOW_PRIVATE,
   redisUrl: REDIS_URL,
-  trustProxy: TRUST_PROXY
+  trustProxy: TRUST_PROXY,
+  domainBlockFileName: DOMAIN_BLOCK_LIST
 })
 
 const server = app.listen(parseInt(PORT), () => {
