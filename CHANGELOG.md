@@ -15,6 +15,11 @@ and this project adheres to
 - DOMAIN_BLOCKLIST environment variable
 - DomainBlocker class to manage domain blocks.
 
+### Changed
+
+- Web interface rejects GET or POST requests with signatures by keys in
+  blocked domains.
+
 ## [0.49.1] - 2026-06-28
 
 ### Added

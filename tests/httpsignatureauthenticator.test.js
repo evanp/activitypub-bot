@@ -24,8 +24,12 @@ import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 describe('HTTPSignatureAuthenticator', async () => {
   const LOCAL_HOST = 'local.httpsignatureauthenticator.test'
   const REMOTE_HOST = 'social.httpsignatureauthenticator.test'
+  const BLOCKED_HOST = 'blocked.httpsignatureauthenticator.test'
   const origin = `https://${LOCAL_HOST}`
   const LOCAL_USER = 'httpsignatureauthtestlocal'
+  const BLOCKED_USER_1 = 'httpsignatureauthblocked1'
+  const BLOCKED_USER_2 = 'httpsignatureauthblocked2'
+  const BLOCKED_USER_3 = 'httpsignatureauthblocked3'
   const REMOTE_USER_1 = 'httpsignatureauthremote1'
   const REMOTE_USER_2 = 'httpsignatureauthremote2'
   const REMOTE_USER_3 = 'httpsignatureauthremote3'
@@ -72,6 +76,16 @@ describe('HTTPSignatureAuthenticator', async () => {
       assert.fail('Passed through an incorrect request')
     }
   }
+  const blockedNext = (err) => {
+    if (err) {
+      assert.strictEqual(err.status, 403, `expected status 403, got ${err.status}`)
+    } else {
+      assert.fail('Passed through a request from a blocked domain')
+    }
+  }
+  const domainBlocker = {
+    isBlocked: async (url) => String(url).includes(BLOCKED_HOST)
+  }
   before(async () => {
     logger = Logger({
       level: 'silent'
@@ -80,7 +94,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, BLOCKED_HOST]
     })
     signer = new HTTPSignature(logger)
     messageSigner = new HTTPMessageSignature(logger)
@@ -93,13 +107,14 @@ describe('HTTPSignatureAuthenticator', async () => {
     const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher())
     remoteKeyStorage = new RemoteKeyStorage(client, connection, logger)
     nockSetup(REMOTE_HOST)
+    nockSetup(BLOCKED_HOST)
   })
 
   after(async () => {
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, BLOCKED_HOST]
     })
     await connection.close()
   })
@@ -136,7 +151,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -165,7 +180,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -193,7 +208,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
     await nockKeyRotateDefault(username)
@@ -215,7 +230,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req2, res, next)
   })
@@ -254,7 +269,7 @@ describe('HTTPSignatureAuthenticator', async () => {
         return this.headers[name.toLowerCase()]
       },
       rawBodyText,
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -275,7 +290,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -303,7 +318,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -342,7 +357,7 @@ describe('HTTPSignatureAuthenticator', async () => {
         return this.headers[name.toLowerCase()]
       },
       rawBodyText,
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, failNext)
   })
@@ -378,7 +393,7 @@ describe('HTTPSignatureAuthenticator', async () => {
         return this.headers[name.toLowerCase()]
       },
       rawBodyText,
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, failNext)
   })
@@ -405,7 +420,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, failNext)
   })
@@ -432,7 +447,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, failNext)
   })
@@ -461,7 +476,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, failNext)
   })
@@ -488,7 +503,8 @@ describe('HTTPSignatureAuthenticator', async () => {
           origin,
           bots: {
             [username]: { checkSignature: false }
-          }
+          },
+          domainBlocker
         }
       }
     }
@@ -521,7 +537,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -562,7 +578,7 @@ describe('HTTPSignatureAuthenticator', async () => {
         return this.headers[name.toLowerCase()]
       },
       rawBodyText,
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
   })
@@ -586,7 +602,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
     await nockKeyRotateDefault(username)
@@ -604,7 +620,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req2, res, next)
   })
@@ -634,7 +650,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
     await nockKeyRotateDefault(username)
@@ -656,7 +672,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req2, res, next)
   })
@@ -685,8 +701,153 @@ describe('HTTPSignatureAuthenticator', async () => {
       get: function (name) {
         return this.headers[name.toLowerCase()]
       },
-      app: { locals: { formatter, origin, bots: {} } }
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, failNext)
+  })
+
+  it('refuses a GET request signed by a blocked domain', async () => {
+    const username = BLOCKED_USER_1
+    const date = new Date().toUTCString()
+    const signature = await nockSignature({
+      url: OUTBOX_URL,
+      date,
+      username,
+      domain: BLOCKED_HOST
+    })
+    const headers = {
+      date,
+      signature,
+      host: URL.parse(origin).host
+    }
+    const res = {}
+    const req = {
+      headers,
+      originalUrl: OUTBOX_PATH,
+      method: 'GET',
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
+    }
+    await authenticator.authenticate(req, res, blockedNext)
+  })
+
+  it('refuses a POST request signed by a blocked domain', async () => {
+    const username = BLOCKED_USER_2
+    const type = 'Activity'
+    const activity = await as2.import({
+      id: nockFormat({ username, type, domain: BLOCKED_HOST }),
+      type
+    })
+    const rawBodyText = await activity.write()
+    const digest = await digester.digest(rawBodyText)
+    const date = new Date().toUTCString()
+    const method = 'POST'
+    const originalUrl = INBOX_PATH
+    const signature = await nockSignature({
+      username,
+      url: `${origin}${originalUrl}`,
+      date,
+      digest,
+      method,
+      domain: BLOCKED_HOST
+    })
+    const headers = {
+      date,
+      signature,
+      host: URL.parse(origin).host,
+      digest
+    }
+    const res = {}
+    const req = {
+      headers,
+      originalUrl,
+      method,
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      rawBodyText,
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
+    }
+    await authenticator.authenticate(req, res, blockedNext)
+  })
+
+  it('refuses an RFC 9421 GET request signed by a blocked domain', async () => {
+    const username = BLOCKED_USER_3
+    const keyId = nockFormat({ username, key: true, domain: BLOCKED_HOST })
+    const url = OUTBOX_URL
+    const { 'signature-input': signatureInput, signature } = await nockMessageSignature({
+      url,
+      username,
+      keyId,
+      domain: BLOCKED_HOST
+    })
+    const headers = {
+      'signature-input': signatureInput,
+      signature,
+      host: URL.parse(origin).host
+    }
+    const res = {}
+    const req = {
+      headers,
+      originalUrl: OUTBOX_PATH,
+      method: 'GET',
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
+    }
+    await authenticator.authenticate(req, res, blockedNext)
+  })
+
+  it('refuses a blocked domain before fetching its key', async () => {
+    const date = new Date().toUTCString()
+    const keyId = `https://${BLOCKED_HOST}/users/nokey#main-key`
+    const signature =
+      `keyId="${keyId}",algorithm="rsa-sha256",` +
+      'headers="(request-target) host date",signature="bm90LWEtc2lnbmF0dXJl"'
+    const headers = {
+      date,
+      signature,
+      host: URL.parse(origin).host
+    }
+    const res = {}
+    const req = {
+      headers,
+      originalUrl: OUTBOX_PATH,
+      method: 'GET',
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
+    }
+    await authenticator.authenticate(req, res, blockedNext)
+  })
+
+  it('allows a request from a non-blocked domain when a domain blocker is present', async () => {
+    const username = REMOTE_USER_1
+    const date = new Date().toUTCString()
+    const signature = await nockSignatureDefault({
+      url: OUTBOX_URL,
+      date,
+      username
+    })
+    const headers = {
+      date,
+      signature,
+      host: URL.parse(origin).host
+    }
+    const res = {}
+    const req = {
+      headers,
+      originalUrl: OUTBOX_PATH,
+      method: 'GET',
+      get: function (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: { locals: { formatter, origin, bots: {}, domainBlocker } }
+    }
+    await authenticator.authenticate(req, res, next)
   })
 })
