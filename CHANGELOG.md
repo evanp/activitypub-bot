@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.49.1] - 2026-06-28
+
+### Added
+
+- Log subject in inbox and shared inbox
+
 ## [0.49.0] - 2026-06-28
 
 - New forceUnsubscribe argument for MastodonRelayClient, to force it
