@@ -1,0 +1,7 @@
+#domain,#severity,#reject_media,#reject_reports,#public_comment,#obfuscate
+blocked-one.test,suspend,true,false,"flagged, see report",false
+blocked-two.test,suspend,false,false,,false
+Mixed-Case.test,suspend,false,false,,false
+silenced.test,silence,false,false,,false
+noop-domain.test,noop,false,false,,false
+mas*ed.test,suspend,false,false,,true
