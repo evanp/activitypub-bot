@@ -1,7 +1,10 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 
 import request from 'supertest'
+import nock from 'nock'
 import {
   nockSetup,
   nockFormat
@@ -10,6 +13,10 @@ import {
 import { makeApp } from '../lib/app.js'
 
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
+const BLOCKED_HOST = 'blocked-one.test'
 
 describe('proxy for remote objects', async () => {
   const LOCAL_HOST = 'local.routes-proxy.test'
@@ -23,7 +30,7 @@ describe('proxy for remote objects', async () => {
   before(async () => {
     await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots, logLevel, redisUrl: getTestRedisUrl()
+      databaseUrl, origin, bots, logLevel, redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST
     })
     await cleanupTestData(app.locals.connection, {
       localDomain: LOCAL_HOST,
@@ -112,6 +119,33 @@ describe('proxy for remote objects', async () => {
     it('should return an object with the right type', async () => {
       assert.strictEqual(typeof response.body.type, 'string')
       assert.strictEqual(response.body.type, 'about:blank')
+    })
+  })
+
+  describe('request a remote object whose content is on a blocked domain', async () => {
+    let response
+    const id = `https://${REMOTE_HOST}/object/blocked-embed`
+    before(() => {
+      nock(`https://${REMOTE_HOST}`)
+        .get('/object/blocked-embed')
+        .reply(
+          200,
+          {
+            '@context': 'https://www.w3.org/ns/activitystreams',
+            id,
+            type: 'Announce',
+            attributedTo: nockFormat({ username: 'remote0', domain: REMOTE_HOST }),
+            object: `https://${BLOCKED_HOST}/notes/1`,
+            to: 'as:Public'
+          },
+          { 'Content-Type': 'application/activity+json' }
+        )
+    })
+    it('should work without an error', async () => {
+      response = await request(app).post('/shared/proxy').type('form').send({ id })
+    })
+    it('should return a 403 status', async () => {
+      assert.strictEqual(response.status, 403)
     })
   })
 })

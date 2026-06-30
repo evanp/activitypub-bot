@@ -1,5 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 
 import request from 'supertest'
 import { nockSetup, nockFormat, nockSignature, makeActor } from '@evanp/activitypub-nock'
@@ -9,6 +11,10 @@ import OKBot from '../lib/bots/ok.js'
 import as2 from '../lib/activitystreams.js'
 
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
+const BLOCKED_HOST = 'blocked-one.test'
 
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
 
@@ -40,11 +46,21 @@ describe('object collection routes', async () => {
   let share = null
   let privateObj = null
   const privateNanoid = 'Ic3Sa_0xOQKvlPsWU16as'
+  let blockedAnnounce = null
+  const blockedNanoid = 'Bl0ckedAnn0unceTest12'
+  let subObj = null
+  const subNanoid = 'SubObjF0rB10ckTest123'
+  let subNormalReply = null
+  let subBlockedReply = null
+  let subNormalLike = null
+  let subBlockedLike = null
+  let subNormalShare = null
+  let subBlockedShare = null
 
   before(async () => {
     await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
@@ -132,6 +148,79 @@ describe('object collection routes', async () => {
       to: formatter.format({ username, collection: 'followers' })
     })
     await objectStorage.create(privateObj)
+    blockedAnnounce = await as2.import({
+      id: formatter.format({ username, type, nanoid: blockedNanoid }),
+      type: 'Announce',
+      attributedTo: formatter.format({ username }),
+      object: `https://${BLOCKED_HOST}/notes/1`,
+      to: ['as:Public']
+    })
+    await objectStorage.create(blockedAnnounce)
+    subObj = await as2.import({
+      id: formatter.format({ username, type, nanoid: subNanoid }),
+      type: uppercase(type),
+      attributedTo: formatter.format({ username }),
+      replies: formatter.format({ username, type, nanoid: subNanoid, collection: 'replies' }),
+      likes: formatter.format({ username, type, nanoid: subNanoid, collection: 'likes' }),
+      shares: formatter.format({ username, type, nanoid: subNanoid, collection: 'shares' }),
+      to: ['as:Public']
+    })
+    await objectStorage.create(subObj)
+    await objectStorage.addToCollection(subObj.id, 'thread', subObj)
+    subNormalReply = await as2.import({
+      id: nockFormat({ domain: remote, username: 'subnormalreplier', type: 'note', num: 1 }),
+      type: 'Note',
+      attributedTo: nockFormat({ domain: remote, username: 'subnormalreplier' }),
+      content: 'A normal reply',
+      inReplyTo: subObj.id,
+      to: ['as:Public']
+    })
+    subBlockedReply = await as2.import({
+      id: `https://${BLOCKED_HOST}/users/breplier/note/1`,
+      type: 'Note',
+      attributedTo: `https://${BLOCKED_HOST}/users/breplier`,
+      content: 'A blocked-domain reply',
+      inReplyTo: subObj.id,
+      to: ['as:Public']
+    })
+    for (const r of [subNormalReply, subBlockedReply]) {
+      await objectStorage.addToCollection(subObj.id, 'replies', r)
+      await objectStorage.addToCollection(subObj.id, 'thread', r)
+    }
+    subNormalLike = await as2.import({
+      id: nockFormat({ domain: remote, username: 'subnormalliker', type: 'like', num: 1, obj: subObj.id }),
+      type: 'Like',
+      attributedTo: nockFormat({ domain: remote, username: 'subnormalliker' }),
+      object: subObj.id,
+      to: ['as:Public']
+    })
+    subBlockedLike = await as2.import({
+      id: `https://${BLOCKED_HOST}/users/bliker/like/1`,
+      type: 'Like',
+      attributedTo: `https://${BLOCKED_HOST}/users/bliker`,
+      object: subObj.id,
+      to: ['as:Public']
+    })
+    for (const l of [subNormalLike, subBlockedLike]) {
+      await objectStorage.addToCollection(subObj.id, 'likes', l)
+    }
+    subNormalShare = await as2.import({
+      id: nockFormat({ domain: remote, username: 'subnormalsharer', type: 'announce', num: 1, obj: subObj.id }),
+      type: 'Announce',
+      attributedTo: nockFormat({ domain: remote, username: 'subnormalsharer' }),
+      object: subObj.id,
+      to: ['as:Public']
+    })
+    subBlockedShare = await as2.import({
+      id: `https://${BLOCKED_HOST}/users/bsharer/announce/1`,
+      type: 'Announce',
+      attributedTo: `https://${BLOCKED_HOST}/users/bsharer`,
+      object: subObj.id,
+      to: ['as:Public']
+    })
+    for (const s of [subNormalShare, subBlockedShare]) {
+      await objectStorage.addToCollection(subObj.id, 'shares', s)
+    }
     const follower = await makeActor(REMOTE_FOLLOWER_USERNAME, remote)
     await actorStorage.addToCollection(
       username,
@@ -587,6 +676,93 @@ describe('object collection routes', async () => {
       assert.strictEqual(response.body.items.length, 2)
       assert.strictEqual(response.body.items[0], reply.id)
       assert.strictEqual(response.body.items[1], obj.id)
+    })
+  })
+
+  describe('Get an announce of blocked-domain content anonymously', async () => {
+    let response = null
+    const url = `/user/${username}/${type}/${blockedNanoid}`
+    it('should work without an error', async () => {
+      response = await request(app)
+        .get(url)
+    })
+    it('should return a 403 status', async () => {
+      assert.strictEqual(response.status, 403)
+    })
+  })
+
+  const itemIds = (body) =>
+    (body.items || body.orderedItems || []).map(i => (typeof i === 'string' ? i : i.id))
+
+  describe('GET replies excludes a reply from a blocked domain', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/replies/1`)
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should not include the blocked-domain reply', async () => {
+      const items = itemIds(response.body)
+      assert.ok(!items.includes(subBlockedReply.id), `blocked reply should be excluded; got ${JSON.stringify(items)}`)
+    })
+    it('should still include the non-blocked reply', async () => {
+      const items = itemIds(response.body)
+      assert.ok(items.includes(subNormalReply.id), `normal reply should be present; got ${JSON.stringify(items)}`)
+    })
+  })
+
+  describe('GET likes excludes a like from a blocked domain', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/likes/1`)
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should not include the blocked-domain like', async () => {
+      const items = itemIds(response.body)
+      assert.ok(!items.includes(subBlockedLike.id), `blocked like should be excluded; got ${JSON.stringify(items)}`)
+    })
+    it('should still include the non-blocked like', async () => {
+      const items = itemIds(response.body)
+      assert.ok(items.includes(subNormalLike.id), `normal like should be present; got ${JSON.stringify(items)}`)
+    })
+  })
+
+  describe('GET shares excludes a share from a blocked domain', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/shares/1`)
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should not include the blocked-domain share', async () => {
+      const items = itemIds(response.body)
+      assert.ok(!items.includes(subBlockedShare.id), `blocked share should be excluded; got ${JSON.stringify(items)}`)
+    })
+    it('should still include the non-blocked share', async () => {
+      const items = itemIds(response.body)
+      assert.ok(items.includes(subNormalShare.id), `normal share should be present; got ${JSON.stringify(items)}`)
+    })
+  })
+
+  describe('GET thread excludes a reply from a blocked domain', async () => {
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/thread/1`)
+    })
+    it('should return a 200 status', async () => {
+      assert.strictEqual(response.status, 200)
+    })
+    it('should not include the blocked-domain reply', async () => {
+      const items = itemIds(response.body)
+      assert.ok(!items.includes(subBlockedReply.id), `blocked reply should be excluded from thread; got ${JSON.stringify(items)}`)
+    })
+    it('should still include the non-blocked reply', async () => {
+      const items = itemIds(response.body)
+      assert.ok(items.includes(subNormalReply.id), `normal reply should be present in thread; got ${JSON.stringify(items)}`)
     })
   })
 })
