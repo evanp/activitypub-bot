@@ -20,6 +20,8 @@ and this project adheres to
 - Web interface rejects GET or POST requests with signatures by keys in
   blocked domains.
 - Authorizer.canRead() checks domain blocklist
+- inbox and shared inbox drop activities with ids from blocked domains
+- distributor drops recipients and inboxes from blocked domains
 
 ## [0.49.1] - 2026-06-28
 
