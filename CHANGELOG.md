@@ -9,6 +9,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.50.0] 2026-06-30
+
 ### Added
 
 - --domain-block-list file argument
