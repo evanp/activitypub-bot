@@ -1,5 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 
 import crypto from 'node:crypto'
 import request from 'supertest'
@@ -21,6 +23,9 @@ import DoNothingBot from '../lib/bots/donothing.js'
 import { makeDigest } from './utils/digest.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
 
 describe('routes.sharedinbox', async () => {
   const LOCAL_HOST = 'local.routes-sharedinbox.test'
@@ -58,6 +63,8 @@ describe('routes.sharedinbox', async () => {
   const REMOTE_ACTOR_11 = 'routesharedinboxtestactor11'
   const BOT_EXTENDED_CONTEXT = 'routesharedinboxtestextctx'
   const REMOTE_ACTOR_12 = 'routesharedinboxtestactor12'
+  const BOT_BLOCKED = 'routesharedinboxtestblocked'
+  const REMOTE_ACTOR_BLOCKED = 'routesharedinboxtestactorblk'
   const BOT_NAMES_FOLLOWERS_ONLY = [BOT_FOLLOWERS_ONLY_1, BOT_FOLLOWERS_ONLY_2]
   const BOT_NAMES_LOCAL_FOLLOWERS = [BOT_LOCAL_FOLLOWERS_1, BOT_LOCAL_FOLLOWERS_2, BOT_LOCAL_FOLLOWERS_3]
   const BOT_NAMES_LOCAL_FOLLOWING = [BOT_LOCAL_FOLLOWING_1, BOT_LOCAL_FOLLOWING_2]
@@ -75,7 +82,8 @@ describe('routes.sharedinbox', async () => {
     ...BOT_NAMES_REMOTE_COLLECTION,
     BOT_FOLLOW_NO_RECIPIENTS,
     BOT_RFC9421,
-    BOT_EXTENDED_CONTEXT
+    BOT_EXTENDED_CONTEXT,
+    BOT_BLOCKED
   ]
   const TEST_USERNAMES = [...doNothingBotUsernames, LOGGING_BOT]
   const loggingBot = new EventLoggingBot(LOGGING_BOT)
@@ -120,7 +128,7 @@ describe('routes.sharedinbox', async () => {
     nockSetup(remoteHost)
     await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST
     })
     formatter = app.locals.formatter
     actorStorage = app.locals.actorStorage
@@ -859,6 +867,58 @@ describe('routes.sharedinbox', async () => {
     it('should appear in the inbox', async () => {
       assert.strictEqual(
         true,
+        await actorStorage.isInCollection(botName, 'inbox', activity)
+      )
+    })
+  })
+
+  describe('drops a directly addressed activity with blocked-domain content', async () => {
+    const username = REMOTE_ACTOR_BLOCKED
+    const botName = BOT_BLOCKED
+    const path = '/shared/inbox'
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    let response = null
+    let signature = null
+    let body = null
+    let digest = null
+    let activity = null
+    before(async () => {
+      activity = await as2.import({
+        type: 'Activity',
+        actor: nockFormatDefault({ username }),
+        id: nockFormatDefault({ username, type: 'activity', num: 1 }),
+        to: formatter.format({ username: botName }),
+        object: 'https://blocked-one.test/notes/1'
+      })
+      body = await activity.write()
+      digest = makeDigest(body)
+      signature = await nockSignatureDefault({
+        method: 'POST',
+        username,
+        url,
+        digest,
+        date
+      })
+    })
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
+    })
+    it('should not appear in the inbox', async () => {
+      assert.strictEqual(
+        false,
         await actorStorage.isInCollection(botName, 'inbox', activity)
       )
     })

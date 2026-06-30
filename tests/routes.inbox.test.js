@@ -1,5 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 
 import crypto from 'node:crypto'
 import request from 'supertest'
@@ -13,6 +15,9 @@ import { makeDigest } from './utils/digest.js'
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
+
 describe('routes.inbox', async () => {
   const LOCAL_HOST = 'local.routes-inbox.test'
   const REMOTE_HOST = 'remote.routes-inbox.test'
@@ -25,6 +30,7 @@ describe('routes.inbox', async () => {
   const INBOX_BOT_6 = 'routesinboxtest6'
   const INBOX_BOT_7 = 'routesinboxtest7'
   const INBOX_BOT_8 = 'routesinboxtest8'
+  const INBOX_BOT_BLOCKED = 'routesinboxtestblocked'
   const LOGGING_BOT = 'routesinboxtestlogging1'
   const REMOTE_ACTOR_1 = 'routesinboxtestactor1'
   const REMOTE_ACTOR_2 = 'routesinboxtestactor2'
@@ -33,7 +39,8 @@ describe('routes.inbox', async () => {
   const REMOTE_ACTOR_5 = 'routesinboxtestactor5'
   const REMOTE_ACTOR_6 = 'routesinboxtestactor6'
   const REMOTE_ACTOR_7 = 'routesinboxtestactor7'
-  const TEST_USERNAMES = [BOT_USERNAME, INBOX_BOT_1, INBOX_BOT_2, INBOX_BOT_3, INBOX_BOT_4, INBOX_BOT_5, INBOX_BOT_6, INBOX_BOT_7, INBOX_BOT_8, LOGGING_BOT]
+  const REMOTE_ACTOR_BLOCKED = 'routesinboxtestactorblk'
+  const TEST_USERNAMES = [BOT_USERNAME, INBOX_BOT_1, INBOX_BOT_2, INBOX_BOT_3, INBOX_BOT_4, INBOX_BOT_5, INBOX_BOT_6, INBOX_BOT_7, INBOX_BOT_8, INBOX_BOT_BLOCKED, LOGGING_BOT]
   const host = LOCAL_HOST
   const origin = `https://${host}`
   const databaseUrl = getTestDatabaseUrl()
@@ -48,6 +55,7 @@ describe('routes.inbox', async () => {
     [INBOX_BOT_6]: new DoNothingBot(INBOX_BOT_6),
     [INBOX_BOT_7]: new DoNothingBot(INBOX_BOT_7),
     [INBOX_BOT_8]: new DoNothingBot(INBOX_BOT_8),
+    [INBOX_BOT_BLOCKED]: new DoNothingBot(INBOX_BOT_BLOCKED),
     [LOGGING_BOT]: lb
   }
 
@@ -65,7 +73,7 @@ describe('routes.inbox', async () => {
     nockSetup(REMOTE_HOST)
     await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
@@ -546,6 +554,52 @@ describe('routes.inbox', async () => {
       const activity = await as2.import(JSON.parse(body))
       assert.strictEqual(
         true,
+        await actorStorage.isInCollection(botName, 'inbox', activity)
+      )
+    })
+  })
+
+  describe('drops an incoming activity with blocked-domain content', async () => {
+    const username = REMOTE_ACTOR_BLOCKED
+    const botName = INBOX_BOT_BLOCKED
+    const path = `/user/${botName}/inbox`
+    const url = `${origin}${path}`
+    const date = new Date().toUTCString()
+    const activity = await as2.import({
+      type: 'Activity',
+      actor: nockFormatDefault({ username }),
+      id: nockFormatDefault({ username, type: 'activity', num: 1 }),
+      object: 'https://blocked-one.test/notes/1'
+    })
+    const body = await activity.write()
+    const digest = makeDigest(body)
+    const signature = await nockSignatureDefault({
+      method: 'POST',
+      username,
+      url,
+      digest,
+      date
+    })
+    let response = null
+    it('should work without an error', async () => {
+      response = await request(app)
+        .post(path)
+        .send(body)
+        .set('Signature', signature)
+        .set('Date', date)
+        .set('Host', host)
+        .set('Digest', digest)
+        .set('Content-Type', 'application/activity+json')
+      assert.ok(response)
+      await app.onIdle()
+    })
+    it('should return a 202 status', async () => {
+      assert.strictEqual(response.status, 202)
+    })
+    it('should not appear in the inbox', async () => {
+      const { actorStorage } = app.locals
+      assert.strictEqual(
+        false,
         await actorStorage.isInCollection(botName, 'inbox', activity)
       )
     })
