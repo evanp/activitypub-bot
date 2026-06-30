@@ -1,4 +1,4 @@
-import { describe, after, it } from 'node:test'
+import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
@@ -6,6 +6,7 @@ import { dirname, resolve } from 'node:path'
 import Logger from 'pino'
 
 import { DomainBlocker } from '../lib/domainblocker.js'
+import as2 from '../lib/activitystreams.js'
 import { createMigratedTestConnection } from './utils/db.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -177,5 +178,153 @@ describe('DomainBlocker', async () => {
       await blocker.isBlocked('https://allowed.test/users/ivan'),
       false
     )
+  })
+
+  describe('isBlockedObject', async () => {
+    let blocker = null
+
+    before(async () => {
+      const connection = await migratedConnection()
+      blocker = await initializedBlocker(BASIC, connection)
+    })
+
+    it('is true when the object\'s own id is blocked', async () => {
+      const obj = await as2.import({
+        id: 'https://blocked-one.test/notes/1',
+        type: 'Note'
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), true)
+    })
+
+    it('is true when the activity actor is blocked', async () => {
+      const obj = await as2.import({
+        id: 'https://allowed.test/activities/1',
+        type: 'Create',
+        actor: 'https://blocked-one.test/users/alice',
+        object: { id: 'https://allowed.test/notes/1', type: 'Note' }
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), true)
+    })
+
+    it('is true when a wrapped object is blocked', async () => {
+      const obj = await as2.import({
+        id: 'https://allowed.test/activities/2',
+        type: 'Announce',
+        actor: 'https://allowed.test/users/relay',
+        object: { id: 'https://blocked-two.test/notes/9', type: 'Note' }
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), true)
+    })
+
+    it('is true when attributedTo is blocked', async () => {
+      const obj = await as2.import({
+        id: 'https://allowed.test/notes/2',
+        type: 'Note',
+        attributedTo: 'https://blocked-one.test/users/bob'
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), true)
+    })
+
+    it('is true when inReplyTo is blocked', async () => {
+      const obj = await as2.import({
+        id: 'https://allowed.test/notes/3',
+        type: 'Note',
+        attributedTo: 'https://allowed.test/users/carol',
+        inReplyTo: 'https://blocked-one.test/notes/x'
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), true)
+    })
+
+    it('is true when context is blocked', async () => {
+      const obj = await as2.import({
+        id: 'https://allowed.test/notes/4',
+        type: 'Note',
+        context: 'https://blocked-two.test/contexts/y'
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), true)
+    })
+
+    it('is true for a deeply nested blocked object', async () => {
+      const obj = await as2.import({
+        id: 'https://allowed.test/activities/3',
+        type: 'Announce',
+        actor: 'https://allowed.test/users/relay',
+        object: {
+          id: 'https://allowed.test/activities/4',
+          type: 'Create',
+          actor: 'https://allowed.test/users/relay',
+          object: { id: 'https://blocked-one.test/notes/deep', type: 'Note' }
+        }
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), true)
+    })
+
+    it('is false when no id in the graph is blocked', async () => {
+      const obj = await as2.import({
+        id: 'https://allowed.test/activities/5',
+        type: 'Create',
+        actor: 'https://allowed.test/users/dave',
+        object: {
+          id: 'https://allowed.test/notes/5',
+          type: 'Note',
+          attributedTo: 'https://allowed.test/users/dave'
+        }
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), false)
+    })
+
+    it('is true for a Link whose href is blocked', async () => {
+      const link = await as2.import({
+        type: 'Link',
+        href: 'https://blocked-two.test/something'
+      })
+      assert.strictEqual(await blocker.isBlockedObject(link), true)
+    })
+
+    it('is true when a Mention tag href is blocked', async () => {
+      const obj = await as2.import({
+        id: 'https://allowed.test/notes/6',
+        type: 'Note',
+        attributedTo: 'https://allowed.test/users/carol',
+        tag: {
+          type: 'Mention',
+          href: 'https://blocked-one.test/users/victim',
+          name: '@victim@blocked-one.test'
+        }
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), true)
+    })
+
+    it('is false when a Mention tag href is not blocked', async () => {
+      const obj = await as2.import({
+        id: 'https://allowed.test/notes/7',
+        type: 'Note',
+        attributedTo: 'https://allowed.test/users/carol',
+        tag: {
+          type: 'Mention',
+          href: 'https://allowed.test/users/friend',
+          name: '@friend@allowed.test'
+        }
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), false)
+    })
+
+    it('is true when a Hashtag tag href is blocked', async () => {
+      const obj = await as2.import({
+        '@context': [
+          'https://www.w3.org/ns/activitystreams',
+          'https://purl.archive.org/miscellany'
+        ],
+        id: 'https://allowed.test/notes/8',
+        type: 'Note',
+        attributedTo: 'https://allowed.test/users/carol',
+        tag: {
+          type: 'Hashtag',
+          href: 'https://blocked-one.test/tags/example',
+          name: '#example'
+        }
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), true)
+    })
   })
 })
