@@ -1,7 +1,8 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 
-import { ObjectStorage, NoSuchObjectError } from '../lib/objectstorage.js'
+import { ObjectStorage } from '../lib/objectstorage.js'
+import { NoSuchObjectError } from '../lib/errors/nosuchobjecterror.js'
 import as2 from '../lib/activitystreams.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'

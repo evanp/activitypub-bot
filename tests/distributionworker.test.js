@@ -20,10 +20,11 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { JobQueue } from '../lib/jobqueue.js'
-import { RequestThrottler, ThrottleError } from '../lib/requestthrottler.js'
+import { RequestThrottler } from '../lib/requestthrottler.js'
+import { ThrottleError } from '../lib/errors/throttleerror.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
-import { RecoverableError } from '../lib/worker.js'
+import { RecoverableError } from '../lib/errors/recoverableerror.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 

@@ -169,8 +169,8 @@ describe('RequestThrottler', async () => {
 
   it('throws a ThrottleError when the wait would exceed the max wait time', async () => {
     assert.ok(throttler)
-    const { ThrottleError } = await import('../lib/requestthrottler.js')
-    assert.ok(ThrottleError, 'expected ThrottleError to be exported from requestthrottler.js')
+    const { ThrottleError } = await import('../lib/errors/throttleerror.js')
+    assert.ok(ThrottleError, 'expected ThrottleError to be exported from errors/throttleerror.js')
 
     const RESET_MS = 60000
     const MAX_WAIT = 30000

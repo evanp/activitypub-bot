@@ -1,22 +1,20 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
-import {
-  ProblemDetailsError,
-  UnsupportedTypeError,
-  ObjectDoesNotExistError,
-  DuplicateDeliveryError,
-  RedundantActivityError,
-  ApprovalRequiredError,
-  NotAnActorError,
-  PrincipalActorMismatchError,
-  ActorNotAuthorizedError,
-  PrincipalNotAuthorizedError,
-  ClientNotAuthorizedError,
-  UnsupportedMediaTypeError,
-  MediaTooLargeError,
-  NoApplicableAddresseesError,
-  RateLimitExceededError
-} from '../lib/errors.js'
+import { ProblemDetailsError } from '../lib/errors/problemdetailserror.js'
+import { UnsupportedTypeError } from '../lib/errors/unsupportedtypeerror.js'
+import { ObjectDoesNotExistError } from '../lib/errors/objectdoesnotexisterror.js'
+import { DuplicateDeliveryError } from '../lib/errors/duplicatedeliveryerror.js'
+import { RedundantActivityError } from '../lib/errors/redundantactivityerror.js'
+import { ApprovalRequiredError } from '../lib/errors/approvalrequirederror.js'
+import { NotAnActorError } from '../lib/errors/notanactorerror.js'
+import { PrincipalActorMismatchError } from '../lib/errors/principalactormismatcherror.js'
+import { ActorNotAuthorizedError } from '../lib/errors/actornotauthorizederror.js'
+import { PrincipalNotAuthorizedError } from '../lib/errors/principalnotauthorizederror.js'
+import { ClientNotAuthorizedError } from '../lib/errors/clientnotauthorizederror.js'
+import { UnsupportedMediaTypeError } from '../lib/errors/unsupportedmediatypeerror.js'
+import { MediaTooLargeError } from '../lib/errors/mediatoolargeerror.js'
+import { NoApplicableAddresseesError } from '../lib/errors/noapplicableaddresseeserror.js'
+import { RateLimitExceededError } from '../lib/errors/ratelimitexceedederror.js'
 
 const FEP_C180 = 'https://w3id.org/fep/c180'
 

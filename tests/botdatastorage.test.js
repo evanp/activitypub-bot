@@ -1,7 +1,8 @@
 import { describe, before, after, it } from 'node:test'
 import assert from 'node:assert'
 
-import { BotDataStorage, NoSuchValueError } from '../lib/botdatastorage.js'
+import { BotDataStorage } from '../lib/botdatastorage.js'
+import { NoSuchValueError } from '../lib/errors/nosuchvalueerror.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
