@@ -42,7 +42,7 @@
     "pino": "^10.1.1",
     "pino-http": "^11.0.0",
     "rate-limit-redis": "^5.0.0",
-    "redis": "^5.11.0",
+    "redis": "^6.0.1",
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
