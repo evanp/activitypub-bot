@@ -22,6 +22,7 @@ and this project adheres to
 - Authorizer.canRead() checks domain blocklist
 - inbox and shared inbox drop activities with ids from blocked domains
 - distributor drops recipients and inboxes from blocked domains
+- client short-circuits requests to blocked domains
 
 ## [0.49.1] - 2026-06-28
 
