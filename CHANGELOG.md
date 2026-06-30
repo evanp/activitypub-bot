@@ -14,7 +14,7 @@ and this project adheres to
 ### Added
 
 - --domain-block-list file argument
-- DOMAIN_BLOCKLIST environment variable
+- DOMAIN_BLOCK_LIST environment variable
 - DomainBlocker class to manage domain blocks.
 
 ### Changed
@@ -26,6 +26,9 @@ and this project adheres to
 - distributor drops recipients and inboxes from blocked domains
 - ActivityPubClient short-circuits requests to blocked domains
 - SafeFetcher stops all requests to blocked domains
+- Object endpoint fails if object refers to content on blocked domains
+- Collection read endpoints filter out content that refers to blocked
+  domains or objects from blocked domains
 
 ## [0.49.1] - 2026-06-28
 
