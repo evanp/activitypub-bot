@@ -9,6 +9,7 @@ import { Transformer } from '../lib/microsyntax.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
+import { DomainBlocker } from '../lib/domainblocker.js'
 import { SafeFetcher } from '../lib/safefetcher.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
@@ -40,7 +41,7 @@ describe('microsyntax', async () => {
   const remoteObjectCache = new RemoteObjectCache(connection, logger)
   const policyStorage = new SignaturePolicyStorage(connection, logger)
   const safeFetcher = new SafeFetcher()
-  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, safeFetcher)
+  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, safeFetcher, new DomainBlocker(null, connection, logger))
   const transformer = new Transformer(tagNamespace, client, safeFetcher, formatter)
 
   it('has transformer', () => {

@@ -9,6 +9,7 @@ import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
+import { DomainBlocker } from '../lib/domainblocker.js'
 import { SafeFetcher } from '../lib/safefetcher.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
@@ -58,7 +59,7 @@ describe('RemoteKeyStorage', async () => {
     throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher())
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher(), new DomainBlocker(null, connection, logger))
     nockSetup(REMOTE_HOST)
   })
 

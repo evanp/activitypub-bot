@@ -1,5 +1,7 @@
 import { describe, before, after, it, beforeEach } from 'node:test'
 import assert from 'node:assert'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 
 import nock from 'nock'
 import Logger from 'pino'
@@ -16,6 +18,7 @@ import {
 import { KeyStorage } from '../lib/keystorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
+import { DomainBlocker } from '../lib/domainblocker.js'
 import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
 import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
@@ -27,6 +30,9 @@ import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
+
 function escapeRegex (str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
@@ -36,6 +42,7 @@ const EPSILON = 100
 describe('ActivityPubClient', async () => {
   const LOCAL_HOST = 'local.activitypubclient.test'
   const REMOTE_HOST = 'social.activitypubclient.test'
+  const BLOCKED_HOST = 'blocked-one.test'
   const LIMITED_HOST = 'limited.activitypubclient.test'
   const RFC9421_HOST = 'rfc9421.activitypubclient.test'
   const DOUBLE_KNOCK_HOST = 'doubleknock.activitypubclient.test'
@@ -151,6 +158,7 @@ describe('ActivityPubClient', async () => {
   let policyStorage = null
   let remoteObjectCache = null
   let safeFetcher = null
+  let domainBlocker = null
 
   before(async () => {
     logger = new Logger({
@@ -194,6 +202,8 @@ describe('ActivityPubClient', async () => {
     policyStorage = new SignaturePolicyStorage(connection, logger)
     remoteObjectCache = new RemoteObjectCache(connection, logger)
     safeFetcher = new SafeFetcher()
+    domainBlocker = new DomainBlocker(BASIC_BLOCKLIST, connection, logger)
+    await domainBlocker.initialize()
     client = new ActivityPubClient(
       keyStorage,
       formatter,
@@ -204,7 +214,8 @@ describe('ActivityPubClient', async () => {
       remoteObjectCache,
       messageSigner,
       policyStorage,
-      safeFetcher
+      safeFetcher,
+      domainBlocker
     )
 
     nockSetup(REMOTE_HOST, logger)
@@ -995,7 +1006,8 @@ describe('ActivityPubClient', async () => {
         remoteObjectCache,
         messageSigner,
         policyStorage,
-        permissiveFetcher
+        permissiveFetcher,
+        domainBlocker
       )
     })
 
@@ -1402,5 +1414,49 @@ describe('ActivityPubClient', async () => {
     assert.equal(requests[0].signature, undefined)
     assert.equal(requests[0]['signature-input'], undefined)
     assertRfc9421GetHeaders(requests[1], LOCAL_HOST)
+  })
+
+  it('get() throws BlockedDomainError for a blocked domain', async () => {
+    await assert.rejects(
+      () => client.get(`https://${BLOCKED_HOST}/user/blocky/note/1`, LOCAL_SIGNING_USER),
+      (err) => {
+        assert.strictEqual(err.name, 'BlockedDomainError')
+        return true
+      }
+    )
+  })
+
+  it('getKey() throws BlockedDomainError for a blocked domain', async () => {
+    await assert.rejects(
+      () => client.getKey(`https://${BLOCKED_HOST}/user/blocky/publickey`),
+      (err) => {
+        assert.strictEqual(err.name, 'BlockedDomainError')
+        return true
+      }
+    )
+  })
+
+  it('post() throws BlockedDomainError for a blocked domain', async () => {
+    const obj = as2.note()
+      .content('test')
+      .publishedNow()
+      .get()
+    await assert.rejects(
+      () => client.post(`https://${BLOCKED_HOST}/user/blocky/inbox`, obj, LOCAL_SIGNING_USER),
+      (err) => {
+        assert.strictEqual(err.name, 'BlockedDomainError')
+        return true
+      }
+    )
+  })
+
+  it('items() throws BlockedDomainError for a blocked domain', async () => {
+    await assert.rejects(
+      () => client.items(`https://${BLOCKED_HOST}/user/blocky/collection/1`, LOCAL_SIGNING_USER).next(),
+      (err) => {
+        assert.strictEqual(err.name, 'BlockedDomainError')
+        return true
+      }
+    )
   })
 })

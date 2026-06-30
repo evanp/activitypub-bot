@@ -12,6 +12,7 @@ import { HTTPSignatureAuthenticator } from '../lib/httpsignatureauthenticator.js
 import { Digester } from '../lib/digester.js'
 import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
+import { DomainBlocker } from '../lib/domainblocker.js'
 import { SafeFetcher } from '../lib/safefetcher.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
@@ -104,7 +105,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher())
+    const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher(), new DomainBlocker(null, connection, logger))
     remoteKeyStorage = new RemoteKeyStorage(client, connection, logger)
     nockSetup(REMOTE_HOST)
     nockSetup(BLOCKED_HOST)

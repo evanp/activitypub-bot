@@ -109,7 +109,7 @@ describe('Authorizer', () => {
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher())
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher(), new DomainBlocker(null, connection, logger))
     nockSetup(REMOTE_HOST)
     nockSetup(THIRD_HOST)
     actor1 = await actorStorage.getActor(LOCAL_USER_1)
