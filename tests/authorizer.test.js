@@ -548,4 +548,37 @@ describe('Authorizer', () => {
     })
     assert.strictEqual(true, await authorizer.canRead(allowedActor, publicObject))
   })
+
+  it('cannot read a local object whose content is on a blocked domain', async () => {
+    const obj = await as2.import({
+      id: formatter.format({ username: LOCAL_USER_1, type: 'object', nanoid: nanoid() }),
+      type: 'Announce',
+      attributedTo: actor1.id,
+      to: 'as:Public',
+      object: `${BLOCKED_ORIGIN}/notes/123`
+    })
+    assert.strictEqual(false, await authorizer.canRead(remoteUnconnected, obj))
+  })
+
+  it('can read a local object whose content is not on a blocked domain', async () => {
+    const obj = await as2.import({
+      id: formatter.format({ username: LOCAL_USER_1, type: 'object', nanoid: nanoid() }),
+      type: 'Announce',
+      attributedTo: actor1.id,
+      to: 'as:Public',
+      object: `${REMOTE_ORIGIN}/notes/456`
+    })
+    assert.strictEqual(true, await authorizer.canRead(remoteUnconnected, obj))
+  })
+
+  it('cannot read a remote object whose content is on a blocked domain', async () => {
+    const obj = await as2.import({
+      id: `${REMOTE_ORIGIN}/notes/blockedcontent`,
+      type: 'Announce',
+      attributedTo: remoteUnconnected.id,
+      to: 'as:Public',
+      object: `${BLOCKED_ORIGIN}/notes/789`
+    })
+    assert.strictEqual(false, await authorizer.canRead(actor1, obj))
+  })
 })
