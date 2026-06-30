@@ -201,7 +201,7 @@ describe('ActivityPubClient', async () => {
     throttler = new RequestThrottler(connection, logger)
     policyStorage = new SignaturePolicyStorage(connection, logger)
     remoteObjectCache = new RemoteObjectCache(connection, logger)
-    safeFetcher = new SafeFetcher()
+    safeFetcher = new SafeFetcher(new DomainBlocker(null, connection, logger))
     domainBlocker = new DomainBlocker(BASIC_BLOCKLIST, connection, logger)
     await domainBlocker.initialize()
     client = new ActivityPubClient(
@@ -995,7 +995,7 @@ describe('ActivityPubClient', async () => {
     let unsafeClient = null
 
     before(() => {
-      const permissiveFetcher = new SafeFetcher({ allowPrivate: true })
+      const permissiveFetcher = new SafeFetcher(new DomainBlocker(null, connection, logger), { allowPrivate: true })
       unsafeClient = new ActivityPubClient(
         keyStorage,
         formatter,

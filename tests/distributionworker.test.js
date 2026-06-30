@@ -103,7 +103,7 @@ describe('DistributionWorker', async () => {
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher(), new DomainBlocker(null, connection, logger))
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher(new DomainBlocker(null, connection, logger)), new DomainBlocker(null, connection, logger))
     queue = new JobQueue(connection, logger)
     nockSetup(remoteHost)
   })
