@@ -9,6 +9,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.50.1] 2026-06-30
+
+### Fixed
+
+- DomainBlocker handles Delete activities with formerType properties
+  correctly
+- DomainBlocker ignores urls without a hostname part
+
 ## [0.50.0] 2026-06-30
 
 ### Added

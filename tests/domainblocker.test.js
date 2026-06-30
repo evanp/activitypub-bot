@@ -180,6 +180,13 @@ describe('DomainBlocker', async () => {
     )
   })
 
+  it('returns false (without throwing) for a non-URL id', async () => {
+    const connection = await migratedConnection()
+    const blocker = await initializedBlocker(BASIC, connection)
+    assert.strictEqual(await blocker.isBlocked('Note'), false)
+    assert.strictEqual(await blocker.isBlocked('_:blanknode'), false)
+  })
+
   describe('isBlockedObject', async () => {
     let blocker = null
 
@@ -323,6 +330,37 @@ describe('DomainBlocker', async () => {
           href: 'https://blocked-one.test/tags/example',
           name: '#example'
         }
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), true)
+    })
+
+    it('does not throw on a Delete of a Tombstone with a formerType', async () => {
+      const obj = await as2.import({
+        '@context': [
+          'https://www.w3.org/ns/activitystreams',
+          'https://purl.archive.org/miscellany'
+        ],
+        id: 'https://allowed.test/activities/del1',
+        type: 'Delete',
+        actor: 'https://allowed.test/users/alice',
+        object: {
+          type: 'Tombstone',
+          id: 'https://allowed.test/notes/1',
+          formerType: 'Note'
+        }
+      })
+      assert.strictEqual(await blocker.isBlockedObject(obj), false)
+    })
+
+    it('still blocks a Tombstone whose id is on a blocked domain', async () => {
+      const obj = await as2.import({
+        '@context': [
+          'https://www.w3.org/ns/activitystreams',
+          'https://purl.archive.org/miscellany'
+        ],
+        type: 'Tombstone',
+        id: 'https://blocked-one.test/notes/deleted',
+        formerType: 'Note'
       })
       assert.strictEqual(await blocker.isBlockedObject(obj), true)
     })
