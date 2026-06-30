@@ -1,5 +1,7 @@
 import { describe, it, before, after, beforeEach } from 'node:test'
 import assert from 'node:assert'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 
 import {
   nockSetup,
@@ -13,8 +15,10 @@ import {
   postSharedInbox,
   resetSharedInbox,
   addFollower,
-  addFollowing
+  addFollowing,
+  makeActor
 } from '@evanp/activitypub-nock'
+import nock from 'nock'
 import Logger from 'pino'
 
 import { ActorStorage } from '../lib/actorstorage.js'
@@ -43,6 +47,9 @@ import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
+
 const LOCAL_HOST = 'local.activitydistributor.test'
 const ORIGIN = `https://${LOCAL_HOST}`
 const SOCIAL_HOST = 'social.activitydistributor.test'
@@ -50,6 +57,7 @@ const OTHER_HOST = 'other.activitydistributor.test'
 const THIRD_HOST = 'third.activitydistributor.test'
 const SHARED_HOST = 'shared.activitydistributor.test'
 const FLAKY_HOST = 'flaky.activitydistributor.test'
+const BLOCKED_HOST = 'blocked-one.test'
 const LOCAL_USER0 = 'activitydistributortest0'
 const LOCAL_USER1 = 'activitydistributortest1'
 const LOCAL_USER2 = 'activitydistributortest2'
@@ -65,6 +73,7 @@ const REMOTE_USER4 = 'activitydistributorremote4'
 const REMOTE_USER5 = 'activitydistributorremote5'
 const REMOTE_USER6 = 'activitydistributorremote6'
 const REMOTE_USER7 = 'activitydistributorremote7'
+const BLOCKED_USER = 'activitydistributorblocked1'
 const SHARED_USER_PREFIX = 'activitydistributorsharedtest'
 const LOCAL_USERNAMES = [
   LOCAL_USER0,
@@ -88,6 +97,7 @@ describe('ActivityDistributor', () => {
   let formatter = null
   let client = null
   let distributor = null
+  let domainBlocker = null
   let logger = null
   let jobQueue = null
   let distributionWorker
@@ -109,7 +119,7 @@ describe('ActivityDistributor', () => {
     await cleanupTestData(connection, {
       usernames: LOCAL_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [SOCIAL_HOST, OTHER_HOST, THIRD_HOST, SHARED_HOST, FLAKY_HOST]
+      remoteDomains: [SOCIAL_HOST, OTHER_HOST, THIRD_HOST, SHARED_HOST, FLAKY_HOST, BLOCKED_HOST]
     })
   }
 
@@ -134,6 +144,8 @@ describe('ActivityDistributor', () => {
     authz = new Authorizer(actorStorage, formatter, client, new DomainBlocker(null, connection, logger))
     cache = new RemoteObjectCache(connection, logger)
     endpointCache = new EndpointCache(connection, logger)
+    domainBlocker = new DomainBlocker(BASIC_BLOCKLIST, connection, logger)
+    await domainBlocker.initialize()
     const actor2 = await as2.import({
       id: nockFormat({ domain: SOCIAL_HOST, username: LOCAL_USER1 })
     })
@@ -155,6 +167,7 @@ describe('ActivityDistributor', () => {
     nockSetup(THIRD_HOST)
     nockSetup(SHARED_HOST, { sharedInbox: true })
     nockSetup(FLAKY_HOST, { flaky: true })
+    nockSetup(BLOCKED_HOST)
     addFollower(REMOTE_USER1, nockFormat({ domain: SOCIAL_HOST, username: REMOTE_USER2 }), SOCIAL_HOST)
     addFollower(REMOTE_USER1, nockFormat({ domain: SOCIAL_HOST, username: REMOTE_USER3 }), SOCIAL_HOST)
     addFollower(REMOTE_USER1, nockFormat({ domain: SOCIAL_HOST, username: REMOTE_USER4 }), SOCIAL_HOST)
@@ -183,7 +196,7 @@ describe('ActivityDistributor', () => {
     resetSharedInbox()
   })
   it('can create an instance', () => {
-    distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue, endpointCache)
+    distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue, endpointCache, domainBlocker)
     assert.ok(distributor instanceof ActivityDistributor)
     handler = new ActivityHandler(
       actorStorage,
@@ -574,5 +587,54 @@ describe('ActivityDistributor', () => {
       `expected no direct delivery to ${REMOTE_USER3}; got count=${postInbox[REMOTE_USER3]}`)
     assert.ok(!postInbox[REMOTE_USER4],
       `expected no direct delivery to ${REMOTE_USER4}; got count=${postInbox[REMOTE_USER4]}`)
+  })
+
+  it('does not distribute to a recipient on a blocked domain', async () => {
+    const activity = await as2.import({
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/100',
+      type: 'IntransitiveActivity',
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
+      to: [`https://${BLOCKED_HOST}/user/${BLOCKED_USER}`]
+    })
+    await distributor.distribute(activity, 'activitydistributortest0')
+    await distributor.onIdle()
+    assert.ok(!postInbox[BLOCKED_USER], `expected no delivery to blocked ${BLOCKED_USER}; got count=${postInbox[BLOCKED_USER]}`)
+  })
+
+  it('distributes to allowed recipients but skips blocked-domain ones', async () => {
+    const activity = await as2.import({
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/101',
+      type: 'IntransitiveActivity',
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
+      to: [
+        'https://social.activitydistributor.test/user/activitydistributortest1',
+        `https://${BLOCKED_HOST}/user/${BLOCKED_USER}`
+      ]
+    })
+    await distributor.distribute(activity, 'activitydistributortest0')
+    await distributor.onIdle()
+    assert.ok(postInbox.activitydistributortest1, 'expected delivery to allowed recipient')
+    assert.ok(!postInbox[BLOCKED_USER], `expected no delivery to blocked ${BLOCKED_USER}; got count=${postInbox[BLOCKED_USER]}`)
+  })
+
+  it('does not distribute to a recipient whose inbox is on a blocked domain', async () => {
+    const endpointHost = 'endpoint.activitydistributor.test'
+    const actorId = `https://${endpointHost}/user/endpointtest1`
+    const actorObj = await makeActor('endpointtest1', endpointHost)
+    const actorJson = JSON.parse(await actorObj.write())
+    actorJson.inbox = `https://${BLOCKED_HOST}/user/endpointtest1/inbox`
+    nock(`https://${endpointHost}`)
+      .persist()
+      .get('/user/endpointtest1')
+      .reply(200, actorJson, { 'Content-Type': 'application/activity+json' })
+    const activity = await as2.import({
+      id: 'https://local.activitydistributor.test/user/activitydistributortest0/intransitiveactivity/102',
+      type: 'IntransitiveActivity',
+      actor: 'https://local.activitydistributor.test/user/activitydistributortest0',
+      to: [actorId]
+    })
+    await distributor.distribute(activity, 'activitydistributortest0')
+    await distributor.onIdle()
+    assert.ok(!postInbox.endpointtest1, `expected no delivery to inbox on blocked domain; got count=${postInbox.endpointtest1}`)
   })
 })
