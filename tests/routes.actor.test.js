@@ -362,5 +362,11 @@ describe('actor routes', async () => {
     it('should return HTML', async () => {
       assert.strictEqual(response.type, 'text/html')
     })
+    it('should set a robots meta tag with noindex, nofollow', async () => {
+      assert.match(
+        response.text,
+        /<meta[^>]+name="robots"[^>]+noindex,\s*nofollow/
+      )
+    })
   })
 })

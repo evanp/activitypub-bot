@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.50.2] 2026-07-02
+
+### Fixed
+
+- noindex,nofollow for profile pages
+
 ## [0.50.1] 2026-06-30
 
 ### Fixed
