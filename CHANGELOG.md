@@ -11,6 +11,10 @@ and this project adheres to
 
 ## [0.50.2] 2026-07-02
 
+### Updated
+
+- form data and redis dependencies
+
 ### Fixed
 
 - noindex,nofollow for profile pages
