@@ -5,5 +5,5 @@ docs/
 package-lock.json
 tests/
 CODE_OF_CONDUCT.md
-.eslintrc
+.eslint.config.js
 .markdownlint.json
