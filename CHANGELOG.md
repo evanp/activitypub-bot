@@ -9,6 +9,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.51.0] 2026-08-17
+
 ### Updated
 
 - activitystrea.ms 4.0.0
