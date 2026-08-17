@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.51.1] 2026-08-17
+
+### Updated
+
+- dependencies: nanoid, brace-expansion, body-parser, ip-address, tar
+
 ## [0.51.0] 2026-08-17
 
 ### Updated
