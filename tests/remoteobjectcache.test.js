@@ -263,5 +263,4 @@ describe('RemoteObjectCache', async () => {
     const id = `https://${REMOTE_HOST}/user/testuser/note/never-cached`
     await assert.doesNotReject(cache.clear(id))
   })
-
 })

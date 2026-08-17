@@ -13,6 +13,11 @@ and this project adheres to
 
 - activitystrea.ms 4.0.0
 - activitypub-nock 1.0.0
+- eslint 9.x
+
+### Replaced
+
+- eslint-config-standard with neostandard
 
 ## [0.50.2] 2026-07-02
 

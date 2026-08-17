@@ -427,7 +427,7 @@ describe('ActorStorage', () => {
       await storage.addToCollection(ACTIVE_OLDER, 'outbox', object)
       const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
       await connection.query(
-        `UPDATE actorcollectionpage SET createdat = ? WHERE username = ? AND property = 'outbox'`,
+        'UPDATE actorcollectionpage SET createdat = ? WHERE username = ? AND property = \'outbox\'',
         { replacements: [sixtyDaysAgo, ACTIVE_OLDER] }
       )
       const count30 = await storage.activeUsers(30)
@@ -444,7 +444,7 @@ describe('ActorStorage', () => {
       await storage.addToCollection(ACTIVE_ANCIENT, 'outbox', object)
       const twoHundredDaysAgo = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000)
       await connection.query(
-        `UPDATE actorcollectionpage SET createdat = ? WHERE username = ? AND property = 'outbox'`,
+        'UPDATE actorcollectionpage SET createdat = ? WHERE username = ? AND property = \'outbox\'',
         { replacements: [twoHundredDaysAgo, ACTIVE_ANCIENT] }
       )
       const before = await storage.activeUsers(180)
@@ -455,7 +455,7 @@ describe('ActorStorage', () => {
       })
       await storage.addToCollection(ACTIVE_RECENT_B, 'outbox', object2)
       const after = await storage.activeUsers(180)
-      assert.strictEqual(after, before + 1, `expected delta of 1 (the recent user); ancient user should not be counted`)
+      assert.strictEqual(after, before + 1, 'expected delta of 1 (the recent user); ancient user should not be counted')
     })
   })
 })

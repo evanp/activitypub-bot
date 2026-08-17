@@ -57,7 +57,7 @@ describe('ServerStats', async () => {
     await actorStorage.addToCollection(USER_B, 'outbox', old)
     const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
     await connection.query(
-      `UPDATE actorcollectionpage SET createdat = ? WHERE username = ? AND property = 'outbox'`,
+      'UPDATE actorcollectionpage SET createdat = ? WHERE username = ? AND property = \'outbox\'',
       { replacements: [sixtyDaysAgo, USER_B] }
     )
   })

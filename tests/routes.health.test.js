@@ -7,7 +7,6 @@ import { makeApp } from '../lib/app.js'
 
 import { getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
-
 describe('health check routes', async () => {
   const LOCAL_HOST = 'local.routes-health.test'
   const databaseUrl = getTestDatabaseUrl()
@@ -60,5 +59,4 @@ describe('health check routes', async () => {
       assert.strictEqual(response.text, 'OK')
     })
   })
-
 })

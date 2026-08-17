@@ -324,7 +324,6 @@ describe('FollowBack bot', async () => {
   describe('abandons stale pending Follows on initialize', async () => {
     const staleUsername = 'reconcilestale'
     const staleId = nockFormat({ username: staleUsername, domain: REMOTE_HOST })
-    const staleFollowId = `__set_in_before__`
     let stalePendingFollow
     let staleCountBefore
 
