@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.51.2] 2026-08-19
+
+### Updated
+
+- pre-cached `miscellany` context to 1.0.1.
+
 ## [0.51.1] 2026-08-17
 
 ### Updated
