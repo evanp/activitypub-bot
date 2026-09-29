@@ -9,6 +9,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Restored ESLint 9 compatibility with neostandard so `npm ci` can complete
+  in the release workflow.
+
 ## [0.51.3] 2026-09-29
 
 ### Updated
