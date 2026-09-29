@@ -1,6 +1,6 @@
 {
   "name": "@evanp/activitypub-bot",
-  "version": "0.51.3",
+  "version": "0.51.4",
   "description": "server-side ActivityPub bot framework",
   "type": "module",
   "main": "lib/index.js",
@@ -31,7 +31,7 @@
   "homepage": "https://github.com/evanp/activitypub-bot#readme",
   "dependencies": {
     "@isaacs/ttlcache": "^2.1.4",
-    "activitystrea.ms": "^4.0.0",
+    "activitystrea.ms": "^4.0.1",
     "csv-parse": "^7.0.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.2",

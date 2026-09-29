@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.51.4] 2026-09-29
+
+### Updated
+
+- activitystrea.ms to 4.0.1.
+
 ### Fixed
 
 - Restored ESLint 9 compatibility with neostandard so `npm ci` can complete
@@ -1657,7 +1663,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.51.3...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.51.4...HEAD
+[0.51.4]: https://github.com/evanp/activitypub-bot/compare/v0.51.3...v0.51.4
 [0.51.3]: https://github.com/evanp/activitypub-bot/compare/v0.51.2...v0.51.3
 [0.51.2]: https://github.com/evanp/activitypub-bot/compare/v0.51.1...v0.51.2
 [0.51.1]: https://github.com/evanp/activitypub-bot/compare/v0.51.0...v0.51.1
