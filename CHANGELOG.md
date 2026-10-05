@@ -9,6 +9,19 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Use activitypub-webfinger for actor ID discovery, mention resolution, and
+  reverse WebFinger lookup, with SafeFetcher.fetch bound once per instance.
+- Reverse WebFinger lookups now fetch directly through SafeFetcher instead of
+  the cached, signed ActivityPub client.
+- Return `null` on failed WebFinger discovery in `BotContext.toActorId()`.
+
+### Added
+
+- Regression tests for injected fetch usage, reverse WebFinger metadata, and
+  discovery failures.
+
 ## [0.51.4] 2026-09-29
 
 ### Updated

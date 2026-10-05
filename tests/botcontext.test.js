@@ -537,6 +537,43 @@ describe('BotContext', () => {
     assert.strictEqual(actorId, `${REMOTE_ORIGIN}/user/${REMOTE_USER_3}`)
   })
 
+  it('resolves actor IDs through the injected SafeFetcher', async (t) => {
+    t.mock.method(globalThis, 'fetch', () => { throw new Error('Unexpected global fetch') })
+    const fetch = t.mock.method(safeFetcher, 'fetch', async (url, options) => {
+      assert.strictEqual(new URL(url).searchParams.get('resource'), 'acct:user@lookup.example')
+      assert.ok(options.headers.Accept.includes('application/jrd+json'))
+      return Response.json({ links: [{ rel: 'self', type: 'application/activity+json', href: 'https://lookup.example/actor' }] })
+    })
+    const lookupContext = await context.duplicate(botName)
+    assert.strictEqual(await lookupContext.toActorId('user@lookup.example'), 'https://lookup.example/actor')
+    assert.strictEqual(fetch.mock.callCount(), 1)
+  })
+
+  it('resolves reverse WebFinger metadata through the injected SafeFetcher', async (t) => {
+    t.mock.method(globalThis, 'fetch', () => { throw new Error('Unexpected global fetch') })
+    const fetch = t.mock.method(safeFetcher, 'fetch', async (url, options) => {
+      assert.strictEqual(url, 'https://lookup.example/actor')
+      assert.ok(options.headers.Accept.includes('application/activity+json'))
+      return Response.json({
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        id: url,
+        type: 'Person',
+        preferredUsername: 'different',
+        'https://purl.archive.org/socialweb/webfinger#webfinger': 'acct:user@lookup.example'
+      })
+    })
+    const lookupContext = await context.duplicate(botName)
+    assert.strictEqual(await lookupContext.toWebfinger('https://lookup.example/actor'), 'user@lookup.example')
+    assert.strictEqual(fetch.mock.callCount(), 1)
+  })
+
+  it('returns null when WebFinger discovery fails', async (t) => {
+    t.mock.method(safeFetcher, 'fetch', async () => new Response('', { status: 404 }))
+    const lookupContext = await context.duplicate(botName)
+    assert.strictEqual(await lookupContext.toActorId('user@lookup.example'), null)
+    assert.strictEqual(await lookupContext.toWebfinger('https://lookup.example/actor'), null)
+  })
+
   it('can get a Webfinger ID from an actor ID', async () => {
     const actorId = `${REMOTE_ORIGIN}/user/${REMOTE_USER_4}`
     const webfinger = await context.toWebfinger(actorId)
