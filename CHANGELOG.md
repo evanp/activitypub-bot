@@ -9,6 +9,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.52.2] - 2026-10-05
+
 ### Fixed
 
 - Build Docker images from the local package instead of waiting for the new
@@ -1693,7 +1695,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.52.1...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.52.2...HEAD
+[0.52.2]: https://github.com/evanp/activitypub-bot/compare/v0.52.1...v0.52.2
 [0.52.1]: https://github.com/evanp/activitypub-bot/compare/v0.52.0...v0.52.1
 [0.52.0]: https://github.com/evanp/activitypub-bot/compare/v0.51.4...v0.52.0
 [0.51.4]: https://github.com/evanp/activitypub-bot/compare/v0.51.3...v0.51.4
