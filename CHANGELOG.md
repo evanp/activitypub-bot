@@ -9,6 +9,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.52.0] - 2026-10-05
+
+### Added
+
+- `GET /js/ap-components.min.js` to serve the installed ap-components bundle
+  locally, with cache revalidation.
+- Regression tests for local component serving, injected fetch usage, reverse
+  WebFinger metadata, and discovery failures.
+
 ### Changed
 
 - Serve ap-components from the installed npm dependency at
@@ -18,11 +27,6 @@ and this project adheres to
 - Reverse WebFinger lookups now fetch directly through SafeFetcher instead of
   the cached, signed ActivityPub client.
 - Return `null` on failed WebFinger discovery in `BotContext.toActorId()`.
-
-### Added
-
-- Regression tests for injected fetch usage, reverse WebFinger metadata, and
-  discovery failures.
 
 ## [0.51.4] 2026-09-29
 
@@ -1678,7 +1682,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.51.4...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.52.0...HEAD
+[0.52.0]: https://github.com/evanp/activitypub-bot/compare/v0.51.4...v0.52.0
 [0.51.4]: https://github.com/evanp/activitypub-bot/compare/v0.51.3...v0.51.4
 [0.51.3]: https://github.com/evanp/activitypub-bot/compare/v0.51.2...v0.51.3
 [0.51.2]: https://github.com/evanp/activitypub-bot/compare/v0.51.1...v0.51.2
