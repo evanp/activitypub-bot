@@ -11,6 +11,8 @@ and this project adheres to
 
 ### Changed
 
+- Serve ap-components from the installed npm dependency at
+  `/js/ap-components.min.js` instead of loading it from a CDN on profile pages.
 - Use activitypub-webfinger for actor ID discovery, mention resolution, and
   reverse WebFinger lookup, with SafeFetcher.fetch bound once per instance.
 - Reverse WebFinger lookups now fetch directly through SafeFetcher instead of

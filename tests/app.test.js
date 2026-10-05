@@ -1,5 +1,6 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
+import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
@@ -60,6 +61,26 @@ describe('app', async () => {
   })
   it('should return a function', async () => {
     assert.strictEqual(typeof app, 'function')
+  })
+  it('serves the installed component bundle with cache revalidation', async () => {
+    const response = await request(app).get('/js/ap-components.min.js').expect(200)
+    assert.match(response.headers['content-type'], /javascript/)
+    assert.match(response.headers['cache-control'], /max-age=0/)
+    assert.ok(response.headers.etag)
+    const source = await readFile(fileURLToPath(import.meta.resolve('@socialwebfoundation/ap-components/dist/ap-components.min.js')), 'utf8')
+    assert.strictEqual(response.text, source)
+    await request(app).get('/js/ap-components.min.js')
+      .set('If-None-Match', response.headers.etag).expect(304)
+  })
+  it('loads profile components from the local bundle', async () => {
+    const response = await request(app).get(`/profile/${BOT_USERNAME}`).expect(200)
+    assert.match(response.text, /import \{ ActivityPubElement \} from "\/js\/ap-components.min.js"/)
+    assert.doesNotMatch(response.text, /unpkg\.com|cdn\.jsdelivr\.net/)
+    assert.doesNotMatch(response.text, /<script[^>]+src=/)
+  })
+  it('does not expose other dependency files under /js/', async () => {
+    await request(app).get('/js/package.json').expect(404)
+    await request(app).get('/js/index.js').expect(404)
   })
   it('should not allow private network requests by default', async () => {
     assert.strictEqual(app.locals.client.allowPrivateNetworkRequests, false)
