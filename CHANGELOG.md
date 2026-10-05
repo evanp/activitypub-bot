@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.52.1] - 2026-10-05
+
+### Changed
+
+- Updated transitive dependencies: brace-expansion and http-cache-semantics.
+
 ## [0.52.0] - 2026-10-05
 
 ### Added
@@ -1682,7 +1688,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.52.0...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.52.1...HEAD
+[0.52.1]: https://github.com/evanp/activitypub-bot/compare/v0.52.0...v0.52.1
 [0.52.0]: https://github.com/evanp/activitypub-bot/compare/v0.51.4...v0.52.0
 [0.51.4]: https://github.com/evanp/activitypub-bot/compare/v0.51.3...v0.51.4
 [0.51.3]: https://github.com/evanp/activitypub-bot/compare/v0.51.2...v0.51.3
