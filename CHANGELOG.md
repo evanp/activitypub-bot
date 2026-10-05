@@ -9,6 +9,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Build Docker images from the local package instead of waiting for the new
+  release to become available on npm.
+
 ## [0.52.1] - 2026-10-05
 
 ### Changed
