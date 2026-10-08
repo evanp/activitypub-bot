@@ -9,6 +9,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade activitypub-webfinger to 0.3.0 and add BotContext tests for forward
+  and reverse discovery with non-ASCII usernames and domains (#282).
+
 ## [0.52.2] - 2026-10-05
 
 ### Fixed
