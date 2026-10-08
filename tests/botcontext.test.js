@@ -567,6 +567,63 @@ describe('BotContext', () => {
     assert.strictEqual(fetch.mock.callCount(), 1)
   })
 
+  for (const { label, username, domain, resource } of [
+    { label: 'non-ASCII username', username: 'zoë', domain: 'lookup.example', resource: 'acct:zo%C3%AB@lookup.example' },
+    { label: 'non-ASCII domain', username: 'user', domain: 'café.example', resource: 'acct:user@xn--caf-dma.example' },
+    { label: 'non-ASCII username and domain', username: 'zoë', domain: 'café.example', resource: 'acct:zo%C3%AB@xn--caf-dma.example' }
+  ]) {
+    it(`supports a ${label} in forward discovery`, async (t) => {
+      const handle = `${username}@${domain}`
+      const actorId = new URL(`/user/${username}`, `https://${domain}`).href
+      const fetch = t.mock.method(safeFetcher, 'fetch', async () => Response.json({
+        subject: `acct:${handle}`,
+        links: [{ rel: 'self', type: 'application/activity+json', href: actorId }]
+      }))
+      const lookupContext = await context.duplicate(botName)
+
+      assert.strictEqual(await lookupContext.toActorId(handle), actorId)
+      assert.strictEqual(fetch.mock.callCount(), 1)
+      const requestUrl = new URL(fetch.mock.calls[0].arguments[0])
+      assert.strictEqual(requestUrl.origin, new URL(`https://${domain}`).origin)
+      assert.strictEqual(requestUrl.pathname, '/.well-known/webfinger')
+      assert.strictEqual(requestUrl.searchParams.get('resource'), resource)
+    })
+
+    it(`supports a ${label} in reverse discovery`, async (t) => {
+      const handle = `${username}@${domain}`
+      const actorId = new URL(`/user/${username}`, `https://${domain}`).href
+      const fetch = t.mock.method(safeFetcher, 'fetch', async () => Response.json({
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        id: actorId,
+        type: 'Person',
+        preferredUsername: username,
+        'https://purl.archive.org/socialweb/webfinger#webfinger': `acct:${handle}`
+      }))
+      const lookupContext = await context.duplicate(botName)
+
+      assert.strictEqual(await lookupContext.toWebfinger(actorId), handle)
+      assert.strictEqual(fetch.mock.callCount(), 1)
+      assert.strictEqual(fetch.mock.calls[0].arguments[0], actorId)
+    })
+
+    it(`supports a ${label} in reverse discovery without WebFinger metadata`, async (t) => {
+      const handle = `${username}@${domain}`
+      const actorId = new URL(`/user/${username}`, `https://${domain}`).href
+      const fetch = t.mock.method(safeFetcher, 'fetch', async () => Response.json({
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        id: actorId,
+        type: 'Person',
+        preferredUsername: username
+      }))
+      const lookupContext = await context.duplicate(botName)
+
+      const discovered = await lookupContext.toWebfinger(actorId)
+      assert.strictEqual(fetch.mock.callCount(), 1)
+      assert.strictEqual(fetch.mock.calls[0].arguments[0], actorId)
+      assert.strictEqual(discovered, handle)
+    })
+  }
+
   it('returns null when WebFinger discovery fails', async (t) => {
     t.mock.method(safeFetcher, 'fetch', async () => new Response('', { status: 404 }))
     const lookupContext = await context.duplicate(botName)
