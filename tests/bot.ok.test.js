@@ -24,14 +24,21 @@ describe('OK bot', async () => {
   const LOCAL_HOST = 'local.bot-ok.test'
   const REMOTE_HOST = 'remote.bot-ok.test'
   const BOT_USERNAME = 'botoktest'
+  const FRENCH_BOT_USERNAME = 'botokfrenchtest'
   const REMOTE_ACTOR_DIRECT = 'botoktestactor1'
   const REMOTE_ACTOR_SHARED = 'botoktestactor2'
-  const TEST_USERNAMES = [BOT_USERNAME]
+  const TEST_USERNAMES = [BOT_USERNAME, FRENCH_BOT_USERNAME]
   const host = LOCAL_HOST
   const origin = `https://${host}`
   const databaseUrl = getTestDatabaseUrl()
   const testBots = {
-    [BOT_USERNAME]: new OKBot(BOT_USERNAME)
+    [BOT_USERNAME]: new OKBot(BOT_USERNAME),
+    [FRENCH_BOT_USERNAME]: new OKBot(FRENCH_BOT_USERNAME, {
+      content: ['Oui'],
+      language: 'fr-CA',
+      fullname: 'Boule magique',
+      description: 'Posez-moi une question.'
+    })
   }
   let app = null
 
@@ -140,12 +147,16 @@ describe('OK bot', async () => {
         const act = await objectStorage.read(item.id)
         const objects = Array.from(act.object)
         const note = await objectStorage.read(objects[0].id)
+        const exported = await note.export()
+        assert.ok(exported.content.endsWith(` ${BOT_USERNAME}</p>`), exported.content)
+        assert.equal(exported.contentMap, undefined)
         return Array.from(note.inReplyTo)[0].id === Array.from(activity.object)[0].id
       }))
     })
   })
 
   describe('responds to a mention in public inbox', async () => {
+    const BOT_USERNAME = FRENCH_BOT_USERNAME
     const username = REMOTE_ACTOR_SHARED
     const path = '/shared/inbox'
     const url = `${origin}${path}`
@@ -215,14 +226,19 @@ describe('OK bot', async () => {
     it('should have the reply in its outbox', async () => {
       const { actorStorage, objectStorage } = app.locals
       const outbox = await actorStorage.getCollection(BOT_USERNAME, 'outbox')
-      assert.strictEqual(outbox.totalItems, 2)
+      assert.strictEqual(outbox.totalItems, 1)
       const outboxPage = await actorStorage.getCollectionPage(BOT_USERNAME, 'outbox', 1)
-      assert.strictEqual(outboxPage.items.length, 2)
+      assert.strictEqual(outboxPage.items.length, 1)
       const arry = Array.from(outboxPage.items)
       assert.ok(await asyncSome(arry, async item => {
         const act = await objectStorage.read(item.id)
         const objects = Array.from(act.object)
         const note = await objectStorage.read(objects[0].id)
+        const exported = await note.export()
+        assert.ok(exported.contentMap?.['fr-ca']?.includes('Oui'), JSON.stringify(exported))
+        if (exported.content !== undefined) {
+          assert.equal(exported.content, exported.contentMap['fr-ca'])
+        }
         return Array.from(note.inReplyTo)[0].id === Array.from(activity.object)[0].id
       }))
     })

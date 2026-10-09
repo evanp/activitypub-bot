@@ -9,6 +9,26 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Configure OKBot with a fixed response or an array of randomly selected
+  responses, a content language, and custom fullname and description.
+- Support an optional `language` option in `BotContext.sendNote()` and a third
+  language argument in `sendReply()`. Notes always include `content` and also
+  include `contentMap` when a language is supplied.
+
+### Changed
+
+- Default OKBot replies to its username and fullname to its username followed
+  by " bot". The shipped `ok` bot now replies with "ok" instead of "OK" and
+  uses "ok bot" instead of "OK Bot" as its fullname. Default descriptions
+  reflect the configured response content.
+
+### Fixed
+
+- Keep single-language `contentMap` entries synchronized with `content` when
+  updating a Note through `BotContext.updateNote()`.
+
 ## [0.53.1] - 2026-10-09
 
 ### Security

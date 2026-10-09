@@ -1311,4 +1311,39 @@ describe('BotContext', () => {
       assert.strictEqual(result, null)
     })
   })
+
+  describe('content language', () => {
+    for (const method of ['sendNote', 'sendReply']) {
+      for (const language of [undefined, 'fr', 'fr-CA']) {
+        it(`${method} always emits content and emits contentMap only for ${language ?? 'no language'}`, async () => {
+          const content = `@${REMOTE_USER_5}@${REMOTE_HOST} Bonjour`
+          let sent
+          if (method === 'sendNote') {
+            sent = await context.sendNote(content, {
+              to: `${REMOTE_ORIGIN}/user/${REMOTE_USER_5}`,
+              ...(language === undefined ? {} : { language })
+            })
+          } else {
+            const original = await makeObjectDefault(REMOTE_USER_5, 'Note', 1)
+            sent = language === undefined
+              ? await context.sendReply(content, original)
+              : await context.sendReply(content, original, language)
+            assert.strictEqual(sent.inReplyTo.first.id, original.id)
+          }
+          await context.onIdle()
+          for (const object of [sent, await objectStorage.read(sent.id)]) {
+            const exported = await object.export()
+            assert.strictEqual(typeof exported.content, 'string')
+            assert.ok(exported.content.includes('<a href='), 'content must contain the rendered mention')
+            assert.ok(exported.content.includes('Bonjour'))
+            if (language === undefined) {
+              assert.strictEqual(exported.contentMap, undefined)
+            } else {
+              assert.deepStrictEqual(exported.contentMap, { [language.toLowerCase()]: exported.content })
+            }
+          }
+        })
+      }
+    }
+  })
 })

@@ -198,7 +198,35 @@ The following bot classes are pre-installed with the server.
 
 #### OKBot
 
-An *OKBot* instance will reply to any message that it's mentioned in with the constant string 'OK'.
+An *OKBot* instance replies when mentioned, using its username as the default
+response. The shipped `ok` bot replies with "ok" and has the fullname "ok bot".
+Each message receives at most one reply. When the author's WebFinger handle is
+available, the reply starts with a mention of that author.
+
+The constructor accepts a username and an optional options object:
+
+| Option | Behavior | Default |
+| --- | --- | --- |
+| `content` | A response string or a nonempty array of response strings. An array selects one response at random for each new mention; a string behaves like a one-element array. | The bot's username. |
+| `language` | A BCP 47 language tag, such as `fr` or `fr-CA`, for the outgoing Note's content. | Untagged. |
+| `fullname` | The bot's display name. | The username followed by " bot". |
+| `description` | The bot's profile description. | See below. |
+
+With default content or a configured string, the default description is
+`A bot that says "<response>" when mentioned.` With a configured array,
+including a one-element array, it is
+`A bot that says random things when mentioned.` An explicit description
+overrides either default.
+
+Outgoing Notes always include rendered HTML in `content`. When `language` is
+supplied, they also include the same HTML in `contentMap` under that language
+tag. Language keys are normalized to lowercase, so `fr-CA` is published as
+`fr-ca`.
+
+For a Magic 8-Ball-style bot, configure `content` with an array of answers such
+as "Yes", "No", and "Ask again later", and set `fullname` to "Magic 8-Ball".
+Other options supported by [Bot](#bot), such as `icon` and `image`, can also be
+supplied.
 
 #### DoNothingBot
 
