@@ -9,6 +9,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.54.2] - 2026-10-09
+
+### Fixed
+
+- Authenticate Docker Hub pulls for PostgreSQL and Redis service containers
+  in the release integration tests using repository secrets, avoiding the
+  unauthenticated pull rate limit.
+
 ## [0.54.1] - 2026-10-09
 
 ### Fixed
@@ -1751,7 +1759,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.54.1...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.54.2...HEAD
+[0.54.2]: https://github.com/evanp/activitypub-bot/compare/v0.54.1...v0.54.2
 [0.54.1]: https://github.com/evanp/activitypub-bot/compare/v0.54.0...v0.54.1
 [0.54.0]: https://github.com/evanp/activitypub-bot/compare/v0.53.1...v0.54.0
 [0.53.1]: https://github.com/evanp/activitypub-bot/compare/v0.53.0...v0.53.1
