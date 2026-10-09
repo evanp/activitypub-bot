@@ -9,6 +9,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.54.1] - 2026-10-09
+
+### Fixed
+
+- Restore "OK" as OKBot's default reply content and update the default
+  description to match. Custom response content remains configurable.
+- Update the actor route test to expect OKBot's fullname default of the
+  username followed by " bot".
+
 ## [0.54.0] - 2026-10-09
 
 ### Added
@@ -1742,7 +1751,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.54.0...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.54.1...HEAD
+[0.54.1]: https://github.com/evanp/activitypub-bot/compare/v0.54.0...v0.54.1
 [0.54.0]: https://github.com/evanp/activitypub-bot/compare/v0.53.1...v0.54.0
 [0.53.1]: https://github.com/evanp/activitypub-bot/compare/v0.53.0...v0.53.1
 [0.53.0]: https://github.com/evanp/activitypub-bot/compare/v0.52.2...v0.53.0

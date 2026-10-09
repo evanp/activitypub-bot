@@ -148,7 +148,7 @@ describe('OK bot', async () => {
         const objects = Array.from(act.object)
         const note = await objectStorage.read(objects[0].id)
         const exported = await note.export()
-        assert.ok(exported.content.endsWith(` ${BOT_USERNAME}</p>`), exported.content)
+        assert.ok(exported.content.endsWith(' OK</p>'), exported.content)
         assert.equal(exported.contentMap, undefined)
         return Array.from(note.inReplyTo)[0].id === Array.from(activity.object)[0].id
       }))

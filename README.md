@@ -198,8 +198,8 @@ The following bot classes are pre-installed with the server.
 
 #### OKBot
 
-An *OKBot* instance replies when mentioned, using its username as the default
-response. The shipped `ok` bot replies with "ok" and has the fullname "ok bot".
+An *OKBot* instance replies when mentioned, using "OK" as the default
+response. The shipped `ok` bot replies with "OK" and has the fullname "ok bot".
 Each message receives at most one reply. When the author's WebFinger handle is
 available, the reply starts with a mention of that author.
 
@@ -207,7 +207,7 @@ The constructor accepts a username and an optional options object:
 
 | Option | Behavior | Default |
 | --- | --- | --- |
-| `content` | A response string or a nonempty array of response strings. An array selects one response at random for each new mention; a string behaves like a one-element array. | The bot's username. |
+| `content` | A response string or a nonempty array of response strings. An array selects one response at random for each new mention; a string behaves like a one-element array. | `"OK"`. |
 | `language` | A BCP 47 language tag, such as `fr` or `fr-CA`, for the outgoing Note's content. | Untagged. |
 | `fullname` | The bot's display name. | The username followed by " bot". |
 | `description` | The bot's profile description. | See below. |
@@ -216,7 +216,8 @@ With default content or a configured string, the default description is
 `A bot that says "<response>" when mentioned.` With a configured array,
 including a one-element array, it is
 `A bot that says random things when mentioned.` An explicit description
-overrides either default.
+overrides either default. With no configured content, the description is
+`A bot that says "OK" when mentioned.`
 
 Outgoing Notes always include rendered HTML in `content`. When `language` is
 supplied, they also include the same HTML in `contentMap` under that language

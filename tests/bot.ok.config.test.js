@@ -42,7 +42,7 @@ describe('OKBot configuration', () => {
   })
 
   for (const [label, options, expected] of [
-    ['default content', {}, 'eightball'],
+    ['default content', {}, 'OK'],
     ['a string', { content: 'Oui' }, 'Oui'],
     ['a one-element array', { content: ['Oui'] }, 'Oui']
   ]) {

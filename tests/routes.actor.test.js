@@ -119,7 +119,7 @@ describe('actor routes', async () => {
       assert.strictEqual(typeof response.body.name, 'string')
     })
     it('should return an object with a name matching the request', async () => {
-      assert.strictEqual(response.body.name, 'OK Bot')
+      assert.strictEqual(response.body.name, `${BOT_USERNAME} bot`)
     })
     it('should return an object with a publicKey', async () => {
       assert.strictEqual(typeof response.body.publicKey, 'object')
