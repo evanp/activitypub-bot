@@ -15,6 +15,8 @@ describe('server on a Unicode domain', () => {
   const asciiOrigin = new URL(origin).origin
   const botName = 'unicodedomainokbot'
   const actorId = `${asciiOrigin}/user/${botName}`
+  const asciiDomain = new URL(origin).hostname
+  const serverActorId = `${asciiOrigin}/user/${asciiDomain}`
   const remoteDomain = 'remote.routes-domain.test'
   const remoteUsername = 'sender'
   const remoteActorId = nockFormat({ username: remoteUsername, domain: remoteDomain })
@@ -60,6 +62,44 @@ describe('server on a Unicode domain', () => {
     assert.strictEqual(response.status, 200)
     assert.strictEqual(response.body.subject, `acct:${botName}@${new URL(origin).hostname}`)
     assert.strictEqual(response.body.links.find(link => link.rel === 'self').href, actorId)
+  })
+
+  for (const { label, id, owner } of [
+    { label: 'actor public key', id: `${actorId}/publickey`, owner: actorId },
+    { label: 'server actor public key', id: `${serverActorId}/publickey`, owner: serverActorId }
+  ]) {
+    it(`serves GET ${label} with the correct id and owner`, async () => {
+      const response = await request(app)
+        .get(new URL(id).pathname)
+        .set('Host', asciiDomain)
+        .set('Accept', 'application/activity+json')
+      assert.strictEqual(response.status, 200)
+      assert.strictEqual(response.body.id, id)
+      assert.strictEqual(response.body.owner, owner)
+      assert.match(response.body.publicKeyPem, /-----BEGIN PUBLIC KEY-----/)
+    })
+  }
+
+  it('serves GET server actor with the correct id and public key', async () => {
+    const response = await request(app)
+      .get(new URL(serverActorId).pathname)
+      .set('Host', asciiDomain)
+      .set('Accept', 'application/activity+json')
+    assert.strictEqual(response.status, 200)
+    assert.strictEqual(response.body.id, serverActorId)
+    assert.strictEqual(response.body.publicKey.id, `${serverActorId}/publickey`)
+    assert.strictEqual(response.body.publicKey.owner, serverActorId)
+  })
+
+  it('serves server actor WebFinger with the correct subject and actor link', async () => {
+    const resource = `acct:${asciiDomain}@${asciiDomain}`
+    const response = await request(app)
+      .get('/.well-known/webfinger')
+      .query({ resource })
+      .set('Host', asciiDomain)
+    assert.strictEqual(response.status, 200)
+    assert.strictEqual(response.body.subject, resource)
+    assert.strictEqual(response.body.links.find(link => link.rel === 'self').href, serverActorId)
   })
 
   for (const collection of [null, 'followers', 'following', 'liked']) {
