@@ -14,6 +14,12 @@ and this project adheres to
 - Upgrade activitypub-webfinger to 0.3.0 and add BotContext tests for forward
   and reverse discovery with non-ASCII usernames and domains (#282).
 
+### Fixed
+
+- Linkify mentions with non-ASCII usernames and domains or ASCII punctuation
+  in usernames, preserving HTML escaping and URL fragments; add regression
+  tests for Unicode handles and username punctuation (#282).
+
 ## [0.52.2] - 2026-10-05
 
 ### Fixed

@@ -6,6 +6,7 @@ import nock from 'nock'
 import { nockSetup } from '@evanp/activitypub-nock'
 
 import { Transformer } from '../lib/microsyntax.js'
+import as2 from '../lib/activitystreams.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import { KeyStorage } from '../lib/keystorage.js'
 import { ActivityPubClient } from '../lib/activitypubclient.js'
@@ -132,6 +133,83 @@ describe('microsyntax', async () => {
       assert.equal(tag[0].href, 'https://social.microsyntax.test/profile/world')
     })
   })
+
+  for (const { label, username, domain, resource } of [
+    { label: 'non-ASCII username', username: 'zoë', domain: 'lookup.example', resource: 'acct:zo%C3%AB@lookup.example' },
+    { label: 'non-ASCII domain', username: 'user', domain: 'café.example', resource: 'acct:user@xn--caf-dma.example' },
+    { label: 'non-ASCII username and domain', username: 'zoë', domain: 'café.example', resource: 'acct:zo%C3%AB@xn--caf-dma.example' }
+  ]) {
+    it(`linkifies a handle with a ${label}`, async (t) => {
+      const mention = `@${username}@${domain}`
+      const actorId = new URL(`/user/${username}`, `https://${domain}`).href
+      const profileUrl = new URL(`/profile/${username}`, `https://${domain}`).href
+      const actor = await as2.import({
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        id: actorId,
+        type: 'Person',
+        preferredUsername: username,
+        url: profileUrl
+      })
+      const fetch = t.mock.method(safeFetcher, 'fetch', async () => Response.json({
+        subject: resource,
+        links: [{ rel: 'self', type: 'application/activity+json', href: actorId }]
+      }))
+      const get = t.mock.method(client, 'get', async () => actor)
+      const mentionTransformer = new Transformer(tagNamespace, client, safeFetcher, formatter)
+
+      const { html, tag } = await mentionTransformer.transform(`Hello, ${mention} !`)
+
+      assert.strictEqual(html, `<p>Hello, <a href="${profileUrl}">${mention}</a> !</p>`)
+      assert.deepStrictEqual(tag, [{ type: 'Mention', name: mention, href: profileUrl }])
+      assert.strictEqual(fetch.mock.callCount(), 1)
+      const requestUrl = new URL(fetch.mock.calls[0].arguments[0])
+      assert.strictEqual(requestUrl.origin, new URL(`https://${domain}`).origin)
+      assert.strictEqual(requestUrl.pathname, '/.well-known/webfinger')
+      assert.strictEqual(requestUrl.searchParams.get('resource'), resource)
+      assert.strictEqual(get.mock.callCount(), 1)
+      assert.strictEqual(get.mock.calls[0].arguments[0], actorId)
+    })
+  }
+
+  for (const { label, username, escapedUsername, resource } of [
+    { label: 'at-sign', username: 'a@b', escapedUsername: 'a@b', resource: 'acct:a%40b@lookup.example' },
+    { label: 'ampersand', username: 'a&b', escapedUsername: 'a&amp;b', resource: 'acct:a%26b@lookup.example' },
+    { label: 'less-than sign', username: 'a<b', escapedUsername: 'a&lt;b', resource: 'acct:a%3Cb@lookup.example' },
+    { label: 'greater-than sign', username: 'a>b', escapedUsername: 'a&gt;b', resource: 'acct:a%3Eb@lookup.example' },
+    { label: 'double quote', username: 'a"b', escapedUsername: 'a&quot;b', resource: 'acct:a%22b@lookup.example' },
+    { label: 'apostrophe', username: "a'b", escapedUsername: 'a&apos;b', resource: "acct:a'b@lookup.example" }
+  ]) {
+    it(`linkifies a username containing punctuation (${label}) without changing or double-escaping it`, async (t) => {
+      const mention = `@${username}@lookup.example`
+      const actorId = 'https://lookup.example/user/punctuation'
+      const profileUrl = 'https://lookup.example/profile/punctuation'
+      const actor = await as2.import({
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        id: actorId,
+        type: 'Person',
+        preferredUsername: username,
+        url: profileUrl
+      })
+      const fetch = t.mock.method(safeFetcher, 'fetch', async () => Response.json({
+        subject: resource,
+        links: [{ rel: 'self', type: 'application/activity+json', href: actorId }]
+      }))
+      const get = t.mock.method(client, 'get', async () => actor)
+      const mentionTransformer = new Transformer(tagNamespace, client, safeFetcher, formatter)
+
+      const { html, tag } = await mentionTransformer.transform(`Hello, ${mention} !`)
+
+      assert.strictEqual(html, `<p>Hello, <a href="${profileUrl}">@${escapedUsername}@lookup.example</a> !</p>`)
+      assert.deepStrictEqual(tag, [{ type: 'Mention', name: mention, href: profileUrl }])
+      assert.strictEqual(fetch.mock.callCount(), 1)
+      const requestUrl = new URL(fetch.mock.calls[0].arguments[0])
+      assert.strictEqual(requestUrl.origin, 'https://lookup.example')
+      assert.strictEqual(requestUrl.pathname, '/.well-known/webfinger')
+      assert.strictEqual(requestUrl.searchParams.get('resource'), resource)
+      assert.strictEqual(get.mock.callCount(), 1)
+      assert.strictEqual(get.mock.calls[0].arguments[0], actorId)
+    })
+  }
 
   describe('transform local mention', async () => {
     const text = 'Hello, @neighbor@local.microsyntax.test !'
