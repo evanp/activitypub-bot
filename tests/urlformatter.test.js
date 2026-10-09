@@ -5,6 +5,8 @@ import { UrlFormatter } from '../lib/urlformatter.js'
 describe('UrlFormatter', () => {
   const hostname = 'local.urlformatter.test'
   const origin = `https://${hostname}`
+  const unicodeUsername = 'Ευάγγελος'
+  const encodedUsername = '%CE%95%CF%85%CE%AC%CE%B3%CE%B3%CE%B5%CE%BB%CE%BF%CF%82'
   let formatter = null
   it('can initialize', () => {
     formatter = new UrlFormatter(origin)
@@ -12,6 +14,30 @@ describe('UrlFormatter', () => {
   it('can format a user URL', () => {
     const url = formatter.format({ username: 'megabot' })
     assert.equal(url, `${origin}/user/megabot`)
+  })
+  it('can format an actor URL with a Unicode username', () => {
+    assert.strictEqual(
+      formatter.format({ username: unicodeUsername }),
+      `${origin}/user/${encodedUsername}`
+    )
+  })
+  it('can format a profile URL with a Unicode username', () => {
+    assert.strictEqual(
+      formatter.format({ username: unicodeUsername, type: 'profile' }),
+      `${origin}/profile/${encodedUsername}`
+    )
+  })
+  it('can unformat an encoded actor URL into a Unicode username', () => {
+    assert.deepStrictEqual(
+      formatter.unformat(`${origin}/user/${encodedUsername}`),
+      { username: unicodeUsername, server: false }
+    )
+  })
+  it('can unformat an encoded profile URL into a Unicode username', () => {
+    assert.deepStrictEqual(
+      formatter.unformat(`${origin}/profile/${encodedUsername}`),
+      { username: unicodeUsername, type: 'profile' }
+    )
   })
   it('can format a public key URL', () => {
     const url = formatter.format({ username: 'megabot', type: 'publickey' })
@@ -171,6 +197,12 @@ describe('UrlFormatter', () => {
   it('can format a server acct: URI', () => {
     const uri = formatter.acct()
     assert.strictEqual(uri, `acct:${hostname}@${hostname}`)
+  })
+  it('can format an acct: URI with a Unicode username', () => {
+    assert.strictEqual(
+      formatter.acct(unicodeUsername),
+      `acct:${encodedUsername}@${hostname}`
+    )
   })
   it('can return its hostname', () => {
     assert.strictEqual(formatter.hostname, hostname)

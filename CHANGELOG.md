@@ -21,6 +21,9 @@ and this project adheres to
   tests for Unicode handles and username punctuation (#282).
 - Normalize server origins to support Unicode domains; add regression tests
   for discovery, actor and collection endpoints, and OKBot replies (#282).
+- Support Unicode local usernames by encoding URL paths and acct: URIs and
+  decoding usernames during URL parsing and WebFinger lookup; return 400 for
+  malformed WebFinger username escapes and add regression tests (#282).
 
 ## [0.52.2] - 2026-10-05
 

@@ -87,6 +87,17 @@ describe('webfinger routes', async () => {
       assert.strictEqual(response.status, 404)
     })
   })
+  it('rejects a malformed percent-encoded username with 400', async () => {
+    const response = await request(app)
+      .get('/.well-known/webfinger')
+      .query({ resource: `acct:%ZZ@${LOCAL_HOST}` })
+
+    assert.strictEqual(response.status, 400)
+    assert.strictEqual(response.type, 'application/problem+json')
+    assert.strictEqual(response.body.status, 400)
+    assert.strictEqual(response.body.detail, 'Invalid percent-encoded username %ZZ in resource parameter')
+  })
+
   describe('Webfinger discovery for wrong domain', async () => {
     let response = null
     it('should work without an error', async () => {
