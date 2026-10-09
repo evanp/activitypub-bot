@@ -22,6 +22,7 @@ import DoNothingBot from '../lib/bots/donothing.js'
 
 import { makeDigest } from './utils/digest.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
+import { receiveUnicodeActivity } from './utils/unicode-receive.js'
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -136,7 +137,7 @@ describe('routes.sharedinbox', async () => {
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, 'xn--caf-dma.routes-sharedinbox.test']
     })
   })
 
@@ -148,10 +149,26 @@ describe('routes.sharedinbox', async () => {
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, 'xn--caf-dma.routes-sharedinbox.test']
     })
     await app.cleanup()
   })
+
+  for (const { label, username, domain } of [
+    { label: 'non-ASCII username', username: 'zoë', domain: REMOTE_HOST },
+    { label: 'non-ASCII domain', username: 'unicodeactor', domain: 'café.routes-sharedinbox.test' },
+    { label: 'non-ASCII username and domain', username: 'zoë', domain: 'café.routes-sharedinbox.test' }
+  ]) {
+    it(`receives a signed activity in the shared inbox from an actor with a ${label}`, async () => {
+      await receiveUnicodeActivity(app, {
+        origin,
+        username,
+        domain,
+        path: '/shared/inbox',
+        botName: BOT_DIRECT
+      })
+    })
+  }
 
   describe('can handle an directly addressed activity', async () => {
     const username = REMOTE_ACTOR_1

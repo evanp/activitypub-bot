@@ -14,6 +14,7 @@ import DoNothingBot from '../lib/bots/donothing.js'
 import { makeDigest } from './utils/digest.js'
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
+import { receiveUnicodeActivity } from './utils/unicode-receive.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
@@ -78,7 +79,7 @@ describe('routes.inbox', async () => {
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, 'xn--caf-dma.routes-inbox.test']
     })
   })
 
@@ -90,10 +91,26 @@ describe('routes.inbox', async () => {
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST]
+      remoteDomains: [REMOTE_HOST, 'xn--caf-dma.routes-inbox.test']
     })
     await app.cleanup()
   })
+
+  for (const { label, username, domain } of [
+    { label: 'non-ASCII username', username: 'zoë', domain: REMOTE_HOST },
+    { label: 'non-ASCII domain', username: 'unicodeactor', domain: 'café.routes-inbox.test' },
+    { label: 'non-ASCII username and domain', username: 'zoë', domain: 'café.routes-inbox.test' }
+  ]) {
+    it(`receives a signed activity in the actor inbox from an actor with a ${label}`, async () => {
+      await receiveUnicodeActivity(app, {
+        origin,
+        username,
+        domain,
+        path: `/user/${BOT_USERNAME}/inbox`,
+        botName: BOT_USERNAME
+      })
+    })
+  }
 
   describe('GET /user/{botid}/inbox', async () => {
     let response = null
