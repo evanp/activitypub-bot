@@ -19,6 +19,8 @@ and this project adheres to
 - Linkify mentions with non-ASCII usernames and domains or ASCII punctuation
   in usernames, preserving HTML escaping and URL fragments; add regression
   tests for Unicode handles and username punctuation (#282).
+- Normalize server origins to support Unicode domains; add regression tests
+  for discovery, actor and collection endpoints, and OKBot replies (#282).
 
 ## [0.52.2] - 2026-10-05
 
