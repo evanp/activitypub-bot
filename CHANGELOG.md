@@ -9,6 +9,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.54.4] - 2026-10-10
+
+### Changed
+
+- Update dependencies: mysql2, pg, pino, redis, and supertest.
+
 ## [0.54.3] - 2026-10-09
 
 ### Fixed
@@ -1766,7 +1772,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.54.3...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.54.4...HEAD
+[0.54.4]: https://github.com/evanp/activitypub-bot/compare/v0.54.3...v0.54.4
 [0.54.3]: https://github.com/evanp/activitypub-bot/compare/v0.54.2...v0.54.3
 [0.54.2]: https://github.com/evanp/activitypub-bot/compare/v0.54.1...v0.54.2
 [0.54.1]: https://github.com/evanp/activitypub-bot/compare/v0.54.0...v0.54.1
