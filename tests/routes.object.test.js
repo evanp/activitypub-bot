@@ -365,10 +365,11 @@ describe('object collection routes', async () => {
       assert.strictEqual(typeof response.body.partOf, 'string')
       assert.strictEqual(response.body.partOf, `${origin}/user/${username}/${type}/${nanoid}/replies`)
     })
-    it('should return an object with the right items', async () => {
-      assert.strictEqual(typeof response.body.items, 'object')
-      assert.strictEqual(response.body.items.length, 1)
-      assert.strictEqual(response.body.items[0], reply.id)
+    it('should return an object with the right orderedItems', async () => {
+      assert.ok(Array.isArray(response.body.orderedItems))
+      assert.strictEqual(response.body.items, undefined)
+      assert.strictEqual(response.body.orderedItems.length, 1)
+      assert.strictEqual(response.body.orderedItems[0], reply.id)
     })
   })
 
@@ -450,10 +451,11 @@ describe('object collection routes', async () => {
       assert.strictEqual(typeof response.body.partOf, 'string')
       assert.strictEqual(response.body.partOf, `${origin}/user/${username}/${type}/${nanoid}/likes`)
     })
-    it('should return an object with the right items', async () => {
-      assert.strictEqual(typeof response.body.items, 'object')
-      assert.strictEqual(response.body.items.length, 1)
-      assert.strictEqual(response.body.items[0], like.id)
+    it('should return an object with the right orderedItems', async () => {
+      assert.ok(Array.isArray(response.body.orderedItems))
+      assert.strictEqual(response.body.items, undefined)
+      assert.strictEqual(response.body.orderedItems.length, 1)
+      assert.strictEqual(response.body.orderedItems[0], like.id)
     })
   })
 
@@ -535,10 +537,11 @@ describe('object collection routes', async () => {
       assert.strictEqual(typeof response.body.partOf, 'string')
       assert.strictEqual(response.body.partOf, `${origin}/user/${username}/${type}/${nanoid}/shares`)
     })
-    it('should return an object with the right items', async () => {
-      assert.strictEqual(typeof response.body.items, 'object')
-      assert.strictEqual(response.body.items.length, 1)
-      assert.strictEqual(response.body.items[0], share.id)
+    it('should return an object with the right orderedItems', async () => {
+      assert.ok(Array.isArray(response.body.orderedItems))
+      assert.strictEqual(response.body.items, undefined)
+      assert.strictEqual(response.body.orderedItems.length, 1)
+      assert.strictEqual(response.body.orderedItems[0], share.id)
     })
   })
 
@@ -671,11 +674,12 @@ describe('object collection routes', async () => {
       assert.strictEqual(typeof response.body.partOf, 'string')
       assert.strictEqual(response.body.partOf, `${origin}/user/${username}/${type}/${nanoid}/thread`)
     })
-    it('should return an object with the right items', async () => {
-      assert.strictEqual(typeof response.body.items, 'object')
-      assert.strictEqual(response.body.items.length, 2)
-      assert.strictEqual(response.body.items[0], reply.id)
-      assert.strictEqual(response.body.items[1], obj.id)
+    it('should return an object with the right orderedItems', async () => {
+      assert.ok(Array.isArray(response.body.orderedItems))
+      assert.strictEqual(response.body.items, undefined)
+      assert.strictEqual(response.body.orderedItems.length, 2)
+      assert.strictEqual(response.body.orderedItems[0], reply.id)
+      assert.strictEqual(response.body.orderedItems[1], obj.id)
     })
   })
 
@@ -691,8 +695,11 @@ describe('object collection routes', async () => {
     })
   })
 
-  const itemIds = (body) =>
-    (body.items || body.orderedItems || []).map(i => (typeof i === 'string' ? i : i.id))
+  const itemIds = (body) => {
+    assert.ok(Array.isArray(body.orderedItems))
+    assert.strictEqual(body.items, undefined)
+    return body.orderedItems.map(i => (typeof i === 'string' ? i : i.id))
+  }
 
   describe('GET replies excludes a reply from a blocked domain', async () => {
     let response = null

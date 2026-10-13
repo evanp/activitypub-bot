@@ -11,6 +11,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Use `orderedItems` instead of `items` on actor and object collection pages
+  to preserve ordered-list semantics in JSON-LD (#291).
+
 ## [0.54.4] - 2026-10-10
 
 ### Changed

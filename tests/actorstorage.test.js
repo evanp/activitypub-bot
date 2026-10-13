@@ -108,6 +108,9 @@ describe('ActorStorage', () => {
       `https://local.actorstorage.test/user/${LOCAL_USER}/followers/1`
     )
     assert.strictEqual(page.type, 'https://www.w3.org/ns/activitystreams#OrderedCollectionPage')
+    const exported = await page.export({ useOriginalContext: true })
+    assert.strictEqual(exported.items, undefined)
+    assert.deepStrictEqual(exported.orderedItems ?? [], [])
     assert.strictEqual(
       page.partOf.id,
       `https://local.actorstorage.test/user/${LOCAL_USER}/followers`
@@ -126,8 +129,11 @@ describe('ActorStorage', () => {
     const collection2 = await storage.getCollection(FOLLOWERS_USER, 'followers')
     assert.strictEqual(collection2.totalItems, 1)
     const page = await storage.getCollectionPage(FOLLOWERS_USER, 'followers', 1)
-    assert.strictEqual(page.items.length, 1)
-    assert.strictEqual(Array.from(page.items)[0].id, 'https://social.actorstorage.test/user/test2')
+    assert.strictEqual(page.get('items').length, 1)
+    assert.strictEqual(Array.from(page.get('items'))[0].id, 'https://social.actorstorage.test/user/test2')
+    const exported = await page.export({ useOriginalContext: true })
+    assert.strictEqual(exported.items, undefined)
+    assert.deepStrictEqual(exported.orderedItems, [other.id])
   })
   it('can remove from a collection', async () => {
     await storage.removeFromCollection(
@@ -138,7 +144,7 @@ describe('ActorStorage', () => {
     const collection2 = await storage.getCollection(FOLLOWERS_USER, 'followers')
     assert.strictEqual(collection2.totalItems, 0)
     const page = await storage.getCollectionPage(FOLLOWERS_USER, 'followers', 1)
-    assert.ok(!page.items)
+    assert.strictEqual(page.get('items')?.length ?? 0, 0)
   })
   it('can add a lot of items a collection', async () => {
     for (let i = 0; i < 3 * MAX_PAGE_SIZE; i++) {
@@ -156,8 +162,11 @@ describe('ActorStorage', () => {
     const collection = await storage.getCollection(LIKED_USER_A, 'liked')
     assert.strictEqual(collection.totalItems, 3 * MAX_PAGE_SIZE)
     const page = await storage.getCollectionPage(LIKED_USER_A, 'liked', 2)
-    assert.strictEqual(page.items.length, MAX_PAGE_SIZE)
+    assert.strictEqual(page.get('items').length, MAX_PAGE_SIZE)
     assert.ok(page.next)
+    const exported = await page.export({ useOriginalContext: true })
+    assert.strictEqual(exported.items, undefined)
+    assert.deepStrictEqual(exported.orderedItems, Array.from(page.get('items'), item => item.id))
   })
   it('can iterate over a collection', async () => {
     const seen = new Set()

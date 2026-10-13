@@ -195,6 +195,10 @@ describe('actor collection routes', async () => {
         it('should return an object with a type matching the request', async () => {
           assert.strictEqual(response.body.type, 'OrderedCollectionPage')
         })
+        it('should have no unordered items on an empty page', async () => {
+          assert.strictEqual(response.body.items, undefined)
+          assert.deepStrictEqual(response.body.orderedItems ?? [], [])
+        })
         it('should return an object with attributedTo', async () => {
           assert.strictEqual(typeof response.body.attributedTo, 'string')
         })
@@ -298,6 +302,43 @@ describe('actor collection routes', async () => {
           assert.strictEqual(response.body.detail, `No such page 99999999 for collection ${coll} for user ${BOT_USERNAME}`)
         })
       })
+    })
+  }
+
+  for (const collection of ['outbox', 'liked', 'followers', 'following']) {
+    it(`GET ${collection} returns orderedItems in collection order`, async () => {
+      const { actorStorage, objectStorage, formatter, connection } = app.locals
+      const ids = []
+      const isActor = ['followers', 'following'].includes(collection)
+      const type = isActor ? 'Person' : collection === 'outbox' ? 'IntransitiveActivity' : 'Note'
+
+      for (let i = 0; i < 2; i++) {
+        const item = await as2.import({
+          id: isActor
+            ? `https://remote.routes-collection.test/users/${collection}${i}`
+            : formatter.format({ username: BOT_USERNAME, type: type.toLowerCase(), nanoid: nanoid() }),
+          type,
+          attributedTo: formatter.format({ username: BOT_USERNAME }),
+          actor: collection === 'outbox' ? formatter.format({ username: BOT_USERNAME }) : undefined,
+          content: `Ordered collection member ${i}`,
+          to: 'as:Public'
+        })
+        ids.push(item.id)
+        if (!isActor) {
+          await objectStorage.create(item)
+        }
+        await actorStorage.addToCollection(BOT_USERNAME, collection, item)
+        await connection.query(
+          'UPDATE actorcollectionpage SET createdAt = ? WHERE username = ? AND property = ? AND item = ?',
+          { replacements: [`2020-01-0${i + 1}T00:00:00Z`, BOT_USERNAME, collection, item.id] }
+        )
+      }
+
+      const response = await request(app).get(`/user/${BOT_USERNAME}/${collection}/1`)
+      assert.strictEqual(response.status, 200)
+      assert.strictEqual(response.body.type, 'OrderedCollectionPage')
+      assert.strictEqual(response.body.items, undefined)
+      assert.deepStrictEqual(response.body.orderedItems, [ids[1], ids[0]])
     })
   }
 
@@ -407,7 +448,9 @@ describe('actor collection routes', async () => {
     })
 
     it('should have one item', async () => {
-      assert.ok(!Array.isArray(response.body.items) || response.body.items.length === 1)
+      assert.ok(Array.isArray(response.body.orderedItems))
+      assert.strictEqual(response.body.orderedItems.length, 1)
+      assert.strictEqual(response.body.items, undefined)
     })
   })
 
@@ -416,8 +459,11 @@ describe('actor collection routes', async () => {
     const normalFollowerId = 'https://remote.routes-collection.test/users/normalfollower'
     const blockedFollowerId = `https://${BLOCKED_HOST}/users/blockedfollower`
 
-    const itemIds = (body) =>
-      (body.items || body.orderedItems || []).map(i => (typeof i === 'string' ? i : i.id))
+    const itemIds = (body) => {
+      assert.ok(Array.isArray(body.orderedItems))
+      assert.strictEqual(body.items, undefined)
+      return body.orderedItems.map(i => (typeof i === 'string' ? i : i.id))
+    }
 
     before(async () => {
       const actorStorage = app.locals.actorStorage
@@ -456,8 +502,11 @@ describe('actor collection routes', async () => {
     let normalActivityId = null
     let blockedAnnounceId = null
 
-    const itemIds = (body) =>
-      (body.items || body.orderedItems || []).map(i => (typeof i === 'string' ? i : i.id))
+    const itemIds = (body) => {
+      assert.ok(Array.isArray(body.orderedItems))
+      assert.strictEqual(body.items, undefined)
+      return body.orderedItems.map(i => (typeof i === 'string' ? i : i.id))
+    }
 
     before(async () => {
       const actorStorage = app.locals.actorStorage

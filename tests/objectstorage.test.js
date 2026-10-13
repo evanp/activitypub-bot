@@ -99,12 +99,18 @@ describe('ObjectStorage', async () => {
     assert.equal(page.partOf.id, `${doc.id}/replies`)
     assert.ok(!page.next)
     assert.ok(!page.prev)
-    assert.ok(!page.items)
+    assert.strictEqual(page.get('items')?.length ?? 0, 0)
+    const exported = await page.export({ useOriginalContext: true })
+    assert.strictEqual(exported.items, undefined)
+    assert.deepStrictEqual(exported.orderedItems ?? [], [])
   })
   it('can add to a collection', async () => {
     await storage.addToCollection(doc.id, 'replies', doc2)
     const page = await storage.getCollectionPage(doc.id, 'replies', 1)
-    assert.ok(Array.from(page.items).find(item => item.id === doc2.id))
+    assert.ok(Array.from(page.get('items')).find(item => item.id === doc2.id))
+    const exported = await page.export({ useOriginalContext: true })
+    assert.strictEqual(exported.items, undefined)
+    assert.deepStrictEqual(exported.orderedItems, [doc2.id])
   })
   it('can check collection membership', async () => {
     assert.strictEqual(true, await storage.isInCollection(doc.id, 'replies', doc2))
@@ -113,7 +119,7 @@ describe('ObjectStorage', async () => {
   it('can remove from a collection', async () => {
     await storage.removeFromCollection(doc.id, 'replies', doc2)
     const page = await storage.getCollectionPage(doc.id, 'replies', 1)
-    assert.ok(!page.items)
+    assert.strictEqual(page.get('items')?.length ?? 0, 0)
   })
   it('can add many items to a collection', async () => {
     for (let i = 3; i < 3 + (3 * MAX_PAGE_SIZE); i++) {
@@ -133,9 +139,12 @@ describe('ObjectStorage', async () => {
     assert.equal(collection.last.id, `${doc.id}/replies/1`)
     const page = await storage.getCollectionPage(doc.id, 'replies', 2)
     assert.ok(page.next)
-    assert.ok(page.items)
-    const items = Array.from(page.items)
+    assert.ok(page.get('items'))
+    const items = Array.from(page.get('items'))
     assert.equal(items.length, MAX_PAGE_SIZE)
+    const exported = await page.export({ useOriginalContext: true })
+    assert.strictEqual(exported.items, undefined)
+    assert.deepStrictEqual(exported.orderedItems, items.map(item => item.id))
     for (let i = 0; i < items.length; i++) {
       assert.ok(items[i])
       for (let j = i + 1; j < items.length; j++) {
