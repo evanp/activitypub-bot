@@ -164,4 +164,37 @@ describe('ObjectStorage', async () => {
     }
     assert.strictEqual(seen.size, 3 * MAX_PAGE_SIZE)
   })
+
+  for (const operation of ['add', 'remove', 'remove-last', 'remove-absent']) {
+    it(`maintains collection timestamps on ${operation}`, async () => {
+      const id = `${TEST_NOTE_BASE}/timestamps-${operation}`
+      const oldTimestamp = '2020-01-01T00:00:00Z'
+      await storage.addToCollection(id, 'replies', doc2)
+      if (operation === 'remove') {
+        await storage.addToCollection(id, 'replies', doc3)
+      }
+      await connection.query(
+        'UPDATE collections SET createdAt = ?, updatedAt = ? WHERE id = ? AND property = ?',
+        { replacements: [oldTimestamp, oldTimestamp, id, 'replies'] }
+      )
+      const before = await (await storage.getCollection(id, 'replies')).export()
+
+      if (operation === 'add') {
+        await storage.addToCollection(id, 'replies', doc3)
+      } else {
+        await storage.removeFromCollection(id, 'replies', operation === 'remove-absent' ? doc3 : doc2)
+      }
+
+      const after = await (await storage.getCollection(id, 'replies')).export()
+      const expectedCount = operation === 'add' ? 2 : operation === 'remove-last' ? 0 : 1
+      assert.strictEqual(after.totalItems, expectedCount)
+      assert.strictEqual(after.first, before.first)
+      assert.strictEqual(after.published, before.published)
+      if (operation === 'remove-absent') {
+        assert.strictEqual(after.updated, before.updated)
+      } else {
+        assert.ok(Date.parse(after.updated) > Date.parse(before.updated), 'updated must advance when membership changes')
+      }
+    })
+  }
 })

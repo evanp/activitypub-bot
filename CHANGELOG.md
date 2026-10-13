@@ -15,6 +15,8 @@ and this project adheres to
 
 - Use `orderedItems` instead of `items` on actor and object collection pages
   to preserve ordered-list semantics in JSON-LD (#291).
+- Update object collection counts and `updated` timestamps when members are
+  added or removed, including changes within an existing page (#297).
 
 ## [0.54.4] - 2026-10-10
 

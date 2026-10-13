@@ -22,6 +22,8 @@ const ACTIVE_RECENT_A = 'actorstoragetestactive1'
 const ACTIVE_RECENT_B = 'actorstoragetestactive2'
 const ACTIVE_OLDER = 'actorstoragetestactive3'
 const ACTIVE_ANCIENT = 'actorstoragetestactive4'
+const TIMESTAMP_OPERATIONS = ['add', 'remove', 'remove-last', 'remove-absent']
+const TIMESTAMP_USERS = TIMESTAMP_OPERATIONS.map(operation => `actorstoragetimestamps-${operation}`)
 const TEST_USERNAMES = [
   LOCAL_USER,
   FOLLOWERS_USER,
@@ -35,6 +37,7 @@ const TEST_USERNAMES = [
   ACTIVE_RECENT_B,
   ACTIVE_OLDER,
   ACTIVE_ANCIENT,
+  ...TIMESTAMP_USERS,
   ...FOLLOWING_USERS
 ]
 
@@ -176,6 +179,38 @@ describe('ActorStorage', () => {
     }
     assert.strictEqual(seen.size, 3 * MAX_PAGE_SIZE)
   })
+  for (const operation of TIMESTAMP_OPERATIONS) {
+    it(`maintains collection timestamps on ${operation}`, async () => {
+      const username = `actorstoragetimestamps-${operation}`
+      const oldTimestamp = '2020-01-01T00:00:00Z'
+      await storage.addToCollection(username, 'followers', other)
+      if (operation === 'remove') {
+        await storage.addToCollection(username, 'followers', unfollowed)
+      }
+      await connection.query(
+        'UPDATE actorcollection SET createdAt = ?, updatedAt = ? WHERE username = ? AND property = ?',
+        { replacements: [oldTimestamp, oldTimestamp, username, 'followers'] }
+      )
+      const before = await (await storage.getCollection(username, 'followers')).export()
+
+      if (operation === 'add') {
+        await storage.addToCollection(username, 'followers', unfollowed)
+      } else {
+        await storage.removeFromCollection(username, 'followers', operation === 'remove-absent' ? unfollowed : other)
+      }
+
+      const after = await (await storage.getCollection(username, 'followers')).export()
+      const expectedCount = operation === 'add' ? 2 : operation === 'remove-last' ? 0 : 1
+      assert.strictEqual(after.totalItems, expectedCount)
+      assert.strictEqual(after.first, before.first)
+      assert.strictEqual(after.published, before.published)
+      if (operation === 'remove-absent') {
+        assert.strictEqual(after.updated, before.updated)
+      } else {
+        assert.ok(Date.parse(after.updated) > Date.parse(before.updated), 'updated must advance when membership changes')
+      }
+    })
+  }
   it('can add twice and remove once from a collection', async () => {
     const other = await as2.import({
       id: 'https://social.actorstorage.test/user/foo/note/200',
