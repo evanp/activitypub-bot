@@ -17,6 +17,9 @@ and this project adheres to
   to preserve ordered-list semantics in JSON-LD (#291).
 - Update object collection counts and `updated` timestamps when members are
   added or removed, including changes within an existing page (#297).
+- Preserve the supplied username when fetching collection pages through
+  `ActivityPubClient.items()` so page requests use the same signing identity
+  as the collection request (#299).
 
 ## [0.54.4] - 2026-10-10
 

@@ -789,6 +789,58 @@ describe('ActivityPubClient', async () => {
     assert.strictEqual(counter, 5 * MAX_ITEMS)
   })
 
+  for (const type of ['Collection', 'OrderedCollection']) {
+    for (const pageToCheck of [1, 2]) {
+      it(`uses the supplied username for ${type} page ${pageToCheck}`, async () => {
+        const path = `/authenticated-pagination/${type}/${pageToCheck}`
+        const collectionUri = `https://${REMOTE_HOST}${path}`
+        const itemIds = [1, 2].map(num => `${collectionUri}/item/${num}`)
+        const requests = new Map()
+        const scope = nock(`https://${REMOTE_HOST}`)
+        const responses = [
+          {
+            id: collectionUri,
+            type,
+            first: `${collectionUri}/page/1`
+          },
+          {
+            id: `${collectionUri}/page/1`,
+            type: `${type}Page`,
+            partOf: collectionUri,
+            next: `${collectionUri}/page/2`,
+            [type === 'Collection' ? 'items' : 'orderedItems']: [itemIds[0]]
+          },
+          {
+            id: `${collectionUri}/page/2`,
+            type: `${type}Page`,
+            partOf: collectionUri,
+            [type === 'Collection' ? 'items' : 'orderedItems']: [itemIds[1]]
+          }
+        ]
+
+        for (const response of responses) {
+          scope.get(new URL(response.id).pathname).reply(function () {
+            requests.set(response.id, normalizeHeaders(this.req.headers))
+            return [200, {
+              '@context': 'https://www.w3.org/ns/activitystreams',
+              ...response
+            }, { 'Content-Type': 'application/activity+json' }]
+          })
+        }
+
+        const actualIds = []
+        for await (const item of client.items(collectionUri, LOCAL_SIGNING_USER)) {
+          actualIds.push(item.id)
+        }
+
+        assert.deepStrictEqual(actualIds, itemIds)
+        assert.ok(scope.isDone(), 'the collection and both pages must be fetched')
+        assertRfc9421GetHeaders(requests.get(collectionUri), LOCAL_SIGNING_USER)
+        assertRfc9421GetHeaders(requests.get(`${collectionUri}/page/${pageToCheck}`), LOCAL_SIGNING_USER)
+      })
+    }
+  }
+
   it('sends a relay subscription with full Public URL', async () => {
     const PUBLIC = 'https://www.w3.org/ns/activitystreams#Public'
     const obj = as2.follow()
