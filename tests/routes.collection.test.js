@@ -17,6 +17,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
 const BLOCKED_HOST = 'blocked-one.test'
 
+const MAX_PAGE_SIZE = 256
+const INLINE_COUNTS = [0, 1, MAX_PAGE_SIZE, MAX_PAGE_SIZE + 1]
+
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
 
 describe('actor collection routes', async () => {
@@ -29,8 +32,10 @@ describe('actor collection routes', async () => {
   const OUTBOX_ONE_USERNAME = 'routescollectiontestone'
   const FOLLOWERS_BLOCKED_USERNAME = 'routescollectiontestfolblk'
   const OUTBOX_BLOCKED_USERNAME = 'routescollectiontestoutblk'
-  const TEST_USERNAMES = [BOT_USERNAME, OUTBOX_MANY_USERNAME, OUTBOX_ONE_USERNAME, FOLLOWERS_BLOCKED_USERNAME, OUTBOX_BLOCKED_USERNAME]
+  const INLINE_USERNAMES = INLINE_COUNTS.map(count => `routescollectioninline${count}`)
+  const TEST_USERNAMES = [...INLINE_USERNAMES, BOT_USERNAME, OUTBOX_MANY_USERNAME, OUTBOX_ONE_USERNAME, FOLLOWERS_BLOCKED_USERNAME, OUTBOX_BLOCKED_USERNAME]
   const testBots = {
+    ...Object.fromEntries(INLINE_USERNAMES.map(username => [username, new DoNothingBot(username)])),
     [BOT_USERNAME]: new OKBot(BOT_USERNAME),
     [OUTBOX_MANY_USERNAME]: new DoNothingBot(OUTBOX_MANY_USERNAME),
     [OUTBOX_ONE_USERNAME]: new DoNothingBot(OUTBOX_ONE_USERNAME),
@@ -109,11 +114,12 @@ describe('actor collection routes', async () => {
           assert.strictEqual(typeof response.body.summaryMap, 'object')
           assert.strictEqual(typeof response.body.summaryMap.en, 'string')
         })
-        it('should return an object with a first', async () => {
-          assert.strictEqual(typeof response.body.first, 'string')
+        it('should omit first on an empty collection', async () => {
+          assert.strictEqual(response.body.first, undefined)
         })
-        it('should return an object with a last', async () => {
-          assert.strictEqual(typeof response.body.last, 'string')
+        it('should omit orderedItems on an empty collection', async () => {
+          assert.strictEqual(response.body.totalItems, 0)
+          assert.strictEqual(response.body.orderedItems, undefined)
         })
         it(`should return an object with a ${coll}Of to the actor`, async () => {
           assert.strictEqual(typeof response.body[coll + 'Of'], 'string')
@@ -334,12 +340,54 @@ describe('actor collection routes', async () => {
         )
       }
 
-      const response = await request(app).get(`/user/${BOT_USERNAME}/${collection}/1`)
+      const response = await request(app).get(`/user/${BOT_USERNAME}/${collection}`)
       assert.strictEqual(response.status, 200)
-      assert.strictEqual(response.body.type, 'OrderedCollectionPage')
+      assert.strictEqual(response.body.type, 'OrderedCollection')
+      assert.strictEqual(response.body.first, undefined)
       assert.strictEqual(response.body.items, undefined)
       assert.deepStrictEqual(response.body.orderedItems, [ids[1], ids[0]])
     })
+  }
+
+  for (const collection of ['outbox', 'liked', 'followers', 'following']) {
+    for (const count of INLINE_COUNTS) {
+      it(`GET ${collection} with ${count} members uses the inline threshold`, async () => {
+        const { actorStorage, objectStorage, formatter, connection } = app.locals
+        const username = `routescollectioninline${count}`
+        const ids = []
+        const isActor = ['followers', 'following'].includes(collection)
+        for (let i = 0; i < count; i++) {
+          const member = await as2.import({
+            id: isActor
+              ? `https://remote.routes-collection.test/inline/${collection}/${count}/${String(i).padStart(3, '0')}`
+              : formatter.format({ username, type: collection === 'outbox' ? 'intransitiveactivity' : 'note', nanoid: nanoid() }),
+            type: isActor ? 'Person' : collection === 'outbox' ? 'IntransitiveActivity' : 'Note',
+            attributedTo: formatter.format({ username }),
+            actor: collection === 'outbox' ? formatter.format({ username }) : undefined,
+            to: 'as:Public'
+          })
+          ids.push(member.id)
+          if (!isActor) await objectStorage.create(member)
+          await actorStorage.addToCollection(username, collection, member)
+        }
+        await connection.query(
+          'UPDATE actorcollectionpage SET createdAt = ? WHERE username = ? AND property = ?',
+          { replacements: ['2020-01-01T00:00:00Z', username, collection] }
+        )
+        const response = await request(app).get(`/user/${username}/${collection}`)
+        assert.strictEqual(response.status, 200)
+        assert.strictEqual(response.body.type, 'OrderedCollection')
+        assert.strictEqual(response.body.totalItems, count)
+        assert.strictEqual(response.body.items, undefined)
+        if (count > MAX_PAGE_SIZE) {
+          assert.strictEqual(typeof response.body.first, 'string')
+          assert.strictEqual(response.body.orderedItems, undefined)
+        } else {
+          assert.strictEqual(response.body.first, undefined)
+          assert.deepStrictEqual(response.body.orderedItems, count === 0 ? undefined : ids.sort().reverse())
+        }
+      })
+    }
   }
 
   describe('GET non-existent collection for existent user', async () => {
@@ -379,7 +427,7 @@ describe('actor collection routes', async () => {
     })
   })
 
-  describe('GET /user/{botid}/outbox/1 with contents', async () => {
+  describe('GET /user/{botid}/outbox with contents', async () => {
     let response = null
 
     before(async () => {
@@ -407,14 +455,18 @@ describe('actor collection routes', async () => {
     })
 
     it('should work without an error', async () => {
-      response = await request(app).get(`/user/${OUTBOX_MANY_USERNAME}/outbox/1`)
+      response = await request(app).get(`/user/${OUTBOX_MANY_USERNAME}/outbox`)
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
     })
+    it('should include all members inline', () => {
+      assert.strictEqual(response.body.first, undefined)
+      assert.strictEqual(response.body.orderedItems?.length, 20)
+    })
   })
 
-  describe('GET /user/{botid}/outbox/1 with one item', async () => {
+  describe('GET /user/{botid}/outbox with one item', async () => {
     let response = null
 
     before(async () => {
@@ -440,7 +492,7 @@ describe('actor collection routes', async () => {
     })
 
     it('should work without an error', async () => {
-      response = await request(app).get(`/user/${OUTBOX_ONE_USERNAME}/outbox/1`)
+      response = await request(app).get(`/user/${OUTBOX_ONE_USERNAME}/outbox`)
     })
 
     it('should return 200 OK', async () => {
@@ -482,7 +534,7 @@ describe('actor collection routes', async () => {
     })
 
     it('should work without an error', async () => {
-      response = await request(app).get(`/user/${FOLLOWERS_BLOCKED_USERNAME}/followers/1`)
+      response = await request(app).get(`/user/${FOLLOWERS_BLOCKED_USERNAME}/followers`)
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
@@ -541,7 +593,7 @@ describe('actor collection routes', async () => {
     })
 
     it('should work without an error', async () => {
-      response = await request(app).get(`/user/${OUTBOX_BLOCKED_USERNAME}/outbox/1`)
+      response = await request(app).get(`/user/${OUTBOX_BLOCKED_USERNAME}/outbox`)
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)

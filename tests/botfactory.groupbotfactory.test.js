@@ -189,8 +189,8 @@ describe('GroupBotFactory', async () => {
       const { actorStorage, objectStorage } = app.locals
       const outbox = await actorStorage.getCollection(GROUP_USERNAME, 'outbox')
       assert.strictEqual(outbox.totalItems, 1)
-      const page = await actorStorage.getCollectionPage(GROUP_USERNAME, 'outbox', 1)
-      const items = Array.from(page.items)
+      const items = Array.from(outbox.get('items') ?? [])
+      assert.strictEqual(items.length, 1)
       const announce = await objectStorage.read(items[0].id)
       assert.strictEqual(announce.type, `${AS}Announce`)
       const objects = Array.from(announce.object)

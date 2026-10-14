@@ -88,9 +88,55 @@ describe('ObjectStorage', async () => {
     assert.equal(collection.id, `${doc.id}/replies`)
     assert.equal(collection.type, 'https://www.w3.org/ns/activitystreams#OrderedCollection')
     assert.equal(collection.totalItems, 0)
-    assert.equal(collection.first.id, `${doc.id}/replies/1`)
-    assert.equal(collection.last.id, `${doc.id}/replies/1`)
+    const exported = await collection.export({ useOriginalContext: true })
+    assert.strictEqual(exported.first, undefined)
+    assert.strictEqual(exported.orderedItems, undefined)
   })
+  for (const count of [0, 1, MAX_PAGE_SIZE, MAX_PAGE_SIZE + 1]) {
+    it(`exports a collection with ${count} members using the inline threshold`, async () => {
+      const id = `${TEST_NOTE_BASE}/inline-${count}`
+      const ids = []
+      for (let i = 0; i < count; i++) {
+        const item = await as2.import({ id: `${TEST_NOTE_BASE}/inline/${count}/${String(i).padStart(3, '0')}`, type: 'Note' })
+        ids.push(item.id)
+        await storage.addToCollection(id, 'replies', item)
+      }
+      await connection.query(
+        'UPDATE pages SET createdAt = ? WHERE id = ? AND property = ?',
+        { replacements: ['2020-01-01T00:00:00Z', id, 'replies'] }
+      )
+      const exported = await (await storage.getCollection(id, 'replies')).export({ useOriginalContext: true })
+      assert.strictEqual(exported.totalItems, count)
+      assert.strictEqual(exported.items, undefined)
+      if (count > MAX_PAGE_SIZE) {
+        assert.strictEqual(typeof exported.first, 'string')
+        assert.strictEqual(exported.orderedItems, undefined)
+      } else {
+        assert.strictEqual(exported.first, undefined)
+        assert.deepStrictEqual(exported.orderedItems, count === 0 ? undefined : ids.reverse())
+      }
+    })
+  }
+
+  it('inlines all remaining members when a paginated collection shrinks to page size', async () => {
+    const id = `${TEST_NOTE_BASE}/inline-shrink`
+    const members = []
+    for (let i = 0; i <= MAX_PAGE_SIZE; i++) {
+      const member = await as2.import({ id: `${TEST_NOTE_BASE}/shrink/${String(i).padStart(3, '0')}`, type: 'Note' })
+      members.push(member)
+      await storage.addToCollection(id, 'replies', member)
+    }
+    await connection.query(
+      'UPDATE pages SET createdAt = ? WHERE id = ? AND property = ?',
+      { replacements: ['2020-01-01T00:00:00Z', id, 'replies'] }
+    )
+    await storage.removeFromCollection(id, 'replies', members.shift())
+    const exported = await (await storage.getCollection(id, 'replies')).export({ useOriginalContext: true })
+    assert.strictEqual(exported.totalItems, MAX_PAGE_SIZE)
+    assert.strictEqual(exported.first, undefined)
+    assert.deepStrictEqual(exported.orderedItems, members.map(member => member.id).reverse())
+  })
+
   it('can get a collection page', async () => {
     const page = await storage.getCollectionPage(doc.id, 'replies', 1)
     assert.equal(typeof page, 'object')
@@ -106,9 +152,9 @@ describe('ObjectStorage', async () => {
   })
   it('can add to a collection', async () => {
     await storage.addToCollection(doc.id, 'replies', doc2)
-    const page = await storage.getCollectionPage(doc.id, 'replies', 1)
-    assert.ok(Array.from(page.get('items')).find(item => item.id === doc2.id))
-    const exported = await page.export({ useOriginalContext: true })
+    const collection = await storage.getCollection(doc.id, 'replies')
+    assert.ok(Array.from(collection.get('items') ?? []).find(item => item.id === doc2.id))
+    const exported = await collection.export({ useOriginalContext: true })
     assert.strictEqual(exported.items, undefined)
     assert.deepStrictEqual(exported.orderedItems, [doc2.id])
   })
@@ -118,8 +164,10 @@ describe('ObjectStorage', async () => {
   })
   it('can remove from a collection', async () => {
     await storage.removeFromCollection(doc.id, 'replies', doc2)
-    const page = await storage.getCollectionPage(doc.id, 'replies', 1)
-    assert.strictEqual(page.get('items')?.length ?? 0, 0)
+    const collection = await storage.getCollection(doc.id, 'replies')
+    const exported = await collection.export({ useOriginalContext: true })
+    assert.strictEqual(exported.first, undefined)
+    assert.strictEqual(exported.orderedItems, undefined)
   })
   it('can add many items to a collection', async () => {
     for (let i = 3; i < 3 + (3 * MAX_PAGE_SIZE); i++) {

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
 import request from 'supertest'
+import { nanoid as makeNanoid } from 'nanoid'
 import { nockSetup, nockFormat, nockSignature, makeActor } from '@evanp/activitypub-nock'
 
 import { makeApp } from '../lib/app.js'
@@ -15,6 +16,8 @@ import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } fr
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
 const BLOCKED_HOST = 'blocked-one.test'
+
+const MAX_PAGE_SIZE = 256
 
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
 
@@ -287,6 +290,48 @@ describe('object collection routes', async () => {
     })
   })
 
+  for (const collection of ['replies', 'likes', 'shares', 'thread']) {
+    for (const count of [0, 1, MAX_PAGE_SIZE, MAX_PAGE_SIZE + 1]) {
+      it(`GET ${collection} with ${count} members uses the inline threshold`, async () => {
+        const { objectStorage, formatter, connection } = app.locals
+        const parentNanoid = makeNanoid()
+        const id = formatter.format({ username, type: 'note', nanoid: parentNanoid })
+        const parent = await as2.import({
+          id,
+          type: 'Note',
+          attributedTo: formatter.format({ username }),
+          to: 'as:Public'
+        })
+        await objectStorage.create(parent)
+        const ids = []
+        for (let i = 0; i < count; i++) {
+          const member = await as2.import({
+            id: `https://${REMOTE_HOST}/inline/${parentNanoid}/${String(i).padStart(3, '0')}`,
+            type: collection === 'likes' ? 'Like' : collection === 'shares' ? 'Announce' : 'Note'
+          })
+          ids.push(member.id)
+          await objectStorage.addToCollection(id, collection, member)
+        }
+        await connection.query(
+          'UPDATE pages SET createdAt = ? WHERE id = ? AND property = ?',
+          { replacements: ['2020-01-01T00:00:00Z', id, collection] }
+        )
+        const response = await request(app).get(`/user/${username}/note/${parentNanoid}/${collection}`)
+        assert.strictEqual(response.status, 200)
+        assert.strictEqual(response.body.type, 'OrderedCollection')
+        assert.strictEqual(response.body.totalItems, count)
+        assert.strictEqual(response.body.items, undefined)
+        if (count > MAX_PAGE_SIZE) {
+          assert.strictEqual(typeof response.body.first, 'string')
+          assert.strictEqual(response.body.orderedItems, undefined)
+        } else {
+          assert.strictEqual(response.body.first, undefined)
+          assert.deepStrictEqual(response.body.orderedItems, count === 0 ? undefined : ids.reverse())
+        }
+      })
+    }
+  }
+
   describe('GET /user/{username}/{type}/{nanoid}/replies', async () => {
     let response = null
     const url = `/user/${username}/${type}/${nanoid}/replies`
@@ -315,13 +360,12 @@ describe('object collection routes', async () => {
       assert.strictEqual(typeof response.body.totalItems, 'number')
       assert.strictEqual(response.body.totalItems, 1)
     })
-    it('should return an object with the right first', async () => {
-      assert.strictEqual(typeof response.body.first, 'string')
-      assert.strictEqual(response.body.first, `${origin}/user/${username}/${type}/${nanoid}/replies/1`)
+    it('should omit first for inline members', async () => {
+      assert.strictEqual(response.body.first, undefined)
     })
-    it('should return an object with the right last', async () => {
-      assert.strictEqual(typeof response.body.last, 'string')
-      assert.strictEqual(response.body.last, `${origin}/user/${username}/${type}/${nanoid}/replies/1`)
+    it('should include orderedItems in the collection', async () => {
+      assert.strictEqual(response.body.items, undefined)
+      assert.deepStrictEqual(response.body.orderedItems, [reply.id])
     })
     it('should return an object with the right repliesOf', async () => {
       assert.strictEqual(typeof response.body.repliesOf, 'string')
@@ -401,13 +445,12 @@ describe('object collection routes', async () => {
       assert.strictEqual(typeof response.body.totalItems, 'number')
       assert.strictEqual(response.body.totalItems, 1)
     })
-    it('should return an object with the right first', async () => {
-      assert.strictEqual(typeof response.body.first, 'string')
-      assert.strictEqual(response.body.first, `${origin}/user/${username}/${type}/${nanoid}/likes/1`)
+    it('should omit first for inline members', async () => {
+      assert.strictEqual(response.body.first, undefined)
     })
-    it('should return an object with the right last', async () => {
-      assert.strictEqual(typeof response.body.last, 'string')
-      assert.strictEqual(response.body.last, `${origin}/user/${username}/${type}/${nanoid}/likes/1`)
+    it('should include orderedItems in the collection', async () => {
+      assert.strictEqual(response.body.items, undefined)
+      assert.deepStrictEqual(response.body.orderedItems, [like.id])
     })
     it('should return an object with the right likesOf', async () => {
       assert.strictEqual(typeof response.body.likesOf, 'string')
@@ -487,13 +530,12 @@ describe('object collection routes', async () => {
       assert.strictEqual(typeof response.body.totalItems, 'number')
       assert.strictEqual(response.body.totalItems, 1)
     })
-    it('should return an object with the right first', async () => {
-      assert.strictEqual(typeof response.body.first, 'string')
-      assert.strictEqual(response.body.first, `${origin}/user/${username}/${type}/${nanoid}/shares/1`)
+    it('should omit first for inline members', async () => {
+      assert.strictEqual(response.body.first, undefined)
     })
-    it('should return an object with the right last', async () => {
-      assert.strictEqual(typeof response.body.last, 'string')
-      assert.strictEqual(response.body.last, `${origin}/user/${username}/${type}/${nanoid}/shares/1`)
+    it('should include orderedItems in the collection', async () => {
+      assert.strictEqual(response.body.items, undefined)
+      assert.deepStrictEqual(response.body.orderedItems, [share.id])
     })
     it('should return an object with the right sharesOf', async () => {
       assert.strictEqual(typeof response.body.sharesOf, 'string')
@@ -632,13 +674,12 @@ describe('object collection routes', async () => {
       assert.strictEqual(typeof response.body.totalItems, 'number')
       assert.strictEqual(response.body.totalItems, 2)
     })
-    it('should return an object with the right first', async () => {
-      assert.strictEqual(typeof response.body.first, 'string')
-      assert.strictEqual(response.body.first, `${origin}/user/${username}/${type}/${nanoid}/thread/1`)
+    it('should omit first for inline members', async () => {
+      assert.strictEqual(response.body.first, undefined)
     })
-    it('should return an object with the right last', async () => {
-      assert.strictEqual(typeof response.body.last, 'string')
-      assert.strictEqual(response.body.last, `${origin}/user/${username}/${type}/${nanoid}/thread/1`)
+    it('should include orderedItems in the collection', async () => {
+      assert.strictEqual(response.body.items, undefined)
+      assert.deepStrictEqual(response.body.orderedItems, [reply.id, obj.id])
     })
     it('should return an object with the right root', async () => {
       assert.strictEqual(typeof response.body.root, 'string')
@@ -704,7 +745,7 @@ describe('object collection routes', async () => {
   describe('GET replies excludes a reply from a blocked domain', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/replies/1`)
+      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/replies`)
     })
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
@@ -722,7 +763,7 @@ describe('object collection routes', async () => {
   describe('GET likes excludes a like from a blocked domain', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/likes/1`)
+      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/likes`)
     })
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
@@ -740,7 +781,7 @@ describe('object collection routes', async () => {
   describe('GET shares excludes a share from a blocked domain', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/shares/1`)
+      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/shares`)
     })
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
@@ -758,7 +799,7 @@ describe('object collection routes', async () => {
   describe('GET thread excludes a reply from a blocked domain', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/thread/1`)
+      response = await request(app).get(`/user/${username}/${type}/${subNanoid}/thread`)
     })
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)

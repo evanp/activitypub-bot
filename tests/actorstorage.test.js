@@ -24,7 +24,9 @@ const ACTIVE_OLDER = 'actorstoragetestactive3'
 const ACTIVE_ANCIENT = 'actorstoragetestactive4'
 const TIMESTAMP_OPERATIONS = ['add', 'remove', 'remove-last', 'remove-absent']
 const TIMESTAMP_USERS = TIMESTAMP_OPERATIONS.map(operation => `actorstoragetimestamps-${operation}`)
+const INLINE_USERS = [...[0, 1, MAX_PAGE_SIZE, MAX_PAGE_SIZE + 1].map(count => `actorstorageinline${count}`), 'actorstorageinlineshrink']
 const TEST_USERNAMES = [
+  ...INLINE_USERS,
   LOCAL_USER,
   FOLLOWERS_USER,
   LIKED_USER_A,
@@ -100,9 +102,55 @@ describe('ActorStorage', () => {
     assert.strictEqual(collection.id, `https://local.actorstorage.test/user/${LOCAL_USER}/followers`)
     assert.strictEqual(collection.type, 'https://www.w3.org/ns/activitystreams#OrderedCollection')
     assert.strictEqual(collection.totalItems, 0)
-    assert.ok(collection.first)
-    assert.ok(collection.last)
+    const exported = await collection.export({ useOriginalContext: true })
+    assert.strictEqual(exported.first, undefined)
+    assert.strictEqual(exported.orderedItems, undefined)
   })
+  for (const count of [0, 1, MAX_PAGE_SIZE, MAX_PAGE_SIZE + 1]) {
+    it(`exports a collection with ${count} members using the inline threshold`, async () => {
+      const username = `actorstorageinline${count}`
+      const ids = []
+      for (let i = 0; i < count; i++) {
+        const item = await as2.import({ id: `https://social.actorstorage.test/inline/${count}/${String(i).padStart(3, '0')}`, type: 'Person' })
+        ids.push(item.id)
+        await storage.addToCollection(username, 'followers', item)
+      }
+      await connection.query(
+        'UPDATE actorcollectionpage SET createdAt = ? WHERE username = ? AND property = ?',
+        { replacements: ['2020-01-01T00:00:00Z', username, 'followers'] }
+      )
+      const exported = await (await storage.getCollection(username, 'followers')).export({ useOriginalContext: true })
+      assert.strictEqual(exported.totalItems, count)
+      assert.strictEqual(exported.items, undefined)
+      if (count > MAX_PAGE_SIZE) {
+        assert.strictEqual(typeof exported.first, 'string')
+        assert.strictEqual(exported.orderedItems, undefined)
+      } else {
+        assert.strictEqual(exported.first, undefined)
+        assert.deepStrictEqual(exported.orderedItems, count === 0 ? undefined : ids.reverse())
+      }
+    })
+  }
+
+  it('inlines all remaining members when a paginated collection shrinks to page size', async () => {
+    const username = 'actorstorageinlineshrink'
+    const members = []
+    for (let i = 0; i <= MAX_PAGE_SIZE; i++) {
+      const member = await as2.import({ id: `https://social.actorstorage.test/shrink/${String(i).padStart(3, '0')}`, type: 'Person' })
+      members.push(member)
+      await storage.addToCollection(username, 'followers', member)
+    }
+    await connection.query(
+      'UPDATE actorcollectionpage SET createdAt = ? WHERE username = ? AND property = ?',
+      { replacements: ['2020-01-01T00:00:00Z', username, 'followers'] }
+    )
+    await storage.removeFromCollection(username, 'followers', members.shift())
+    const exported = await (await storage.getCollection(username, 'followers')).export({ useOriginalContext: true })
+    assert.strictEqual(exported.totalItems, MAX_PAGE_SIZE)
+    assert.strictEqual(exported.first, undefined)
+    assert.deepStrictEqual(exported.orderedItems, members.map(member => member.id).reverse())
+  })
+
   it('can get an empty collection page', async () => {
     const page = await storage.getCollectionPage(LOCAL_USER, 'followers', 1)
     assert.ok(page)
@@ -131,10 +179,9 @@ describe('ActorStorage', () => {
     )
     const collection2 = await storage.getCollection(FOLLOWERS_USER, 'followers')
     assert.strictEqual(collection2.totalItems, 1)
-    const page = await storage.getCollectionPage(FOLLOWERS_USER, 'followers', 1)
-    assert.strictEqual(page.get('items').length, 1)
-    assert.strictEqual(Array.from(page.get('items'))[0].id, 'https://social.actorstorage.test/user/test2')
-    const exported = await page.export({ useOriginalContext: true })
+    assert.strictEqual(collection2.get('items')?.length, 1)
+    assert.strictEqual(Array.from(collection2.get('items'))[0].id, 'https://social.actorstorage.test/user/test2')
+    const exported = await collection2.export({ useOriginalContext: true })
     assert.strictEqual(exported.items, undefined)
     assert.deepStrictEqual(exported.orderedItems, [other.id])
   })
@@ -146,8 +193,9 @@ describe('ActorStorage', () => {
     )
     const collection2 = await storage.getCollection(FOLLOWERS_USER, 'followers')
     assert.strictEqual(collection2.totalItems, 0)
-    const page = await storage.getCollectionPage(FOLLOWERS_USER, 'followers', 1)
-    assert.strictEqual(page.get('items')?.length ?? 0, 0)
+    const exported = await collection2.export({ useOriginalContext: true })
+    assert.strictEqual(exported.first, undefined)
+    assert.strictEqual(exported.orderedItems, undefined)
   })
   it('can add a lot of items a collection', async () => {
     for (let i = 0; i < 3 * MAX_PAGE_SIZE; i++) {

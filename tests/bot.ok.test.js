@@ -140,9 +140,8 @@ describe('OK bot', async () => {
       const { actorStorage, objectStorage } = app.locals
       const outbox = await actorStorage.getCollection(BOT_USERNAME, 'outbox')
       assert.strictEqual(outbox.totalItems, 1)
-      const outboxPage = await actorStorage.getCollectionPage(BOT_USERNAME, 'outbox', 1)
-      assert.strictEqual(outboxPage.items.length, 1)
-      const arry = Array.from(outboxPage.items)
+      assert.strictEqual(outbox.get('items')?.length, 1)
+      const arry = Array.from(outbox.get('items') ?? [])
       assert.ok(await asyncSome(arry, async item => {
         const act = await objectStorage.read(item.id)
         const objects = Array.from(act.object)
@@ -227,9 +226,8 @@ describe('OK bot', async () => {
       const { actorStorage, objectStorage } = app.locals
       const outbox = await actorStorage.getCollection(BOT_USERNAME, 'outbox')
       assert.strictEqual(outbox.totalItems, 1)
-      const outboxPage = await actorStorage.getCollectionPage(BOT_USERNAME, 'outbox', 1)
-      assert.strictEqual(outboxPage.items.length, 1)
-      const arry = Array.from(outboxPage.items)
+      assert.strictEqual(outbox.get('items')?.length, 1)
+      const arry = Array.from(outbox.get('items') ?? [])
       assert.ok(await asyncSome(arry, async item => {
         const act = await objectStorage.read(item.id)
         const objects = Array.from(act.object)

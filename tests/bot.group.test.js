@@ -148,8 +148,7 @@ describe('Group bot', async () => {
       const { actorStorage, objectStorage } = app.locals
       const outbox = await actorStorage.getCollection(BOT_USERNAME, 'outbox')
       assert.strictEqual(outbox.totalItems, 1)
-      const page = await actorStorage.getCollectionPage(BOT_USERNAME, 'outbox', 1)
-      const items = Array.from(page.items)
+      const items = Array.from(outbox.get('items') ?? [])
       assert.strictEqual(items.length, 1)
       const announce = await objectStorage.read(items[0].id)
       assert.strictEqual(announce.type, `${AS}Announce`)
@@ -157,8 +156,9 @@ describe('Group bot', async () => {
 
     it('should announce the Note, not the Create', async () => {
       const { actorStorage, objectStorage } = app.locals
-      const page = await actorStorage.getCollectionPage(BOT_USERNAME, 'outbox', 1)
-      const items = Array.from(page.items)
+      const collection = await actorStorage.getCollection(BOT_USERNAME, 'outbox')
+      const items = Array.from(collection.get('items') ?? [])
+      assert.strictEqual(items.length, 1)
       const announce = await objectStorage.read(items[0].id)
       const objects = Array.from(announce.object)
       assert.strictEqual(objects[0].id, noteId)

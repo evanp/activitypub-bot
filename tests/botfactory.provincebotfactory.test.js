@@ -285,11 +285,12 @@ describe('ProvinceBotFactory', async () => {
           assert.strictEqual(typeof response.body.summaryMap, 'object')
           assert.strictEqual(typeof response.body.summaryMap.en, 'string')
         })
-        it('should return an object with a first', async () => {
-          assert.strictEqual(typeof response.body.first, 'string')
+        it('should omit first on an empty collection', async () => {
+          assert.strictEqual(response.body.totalItems, 0)
+          assert.strictEqual(response.body.first, undefined)
         })
-        it('should return an object with a last', async () => {
-          assert.strictEqual(typeof response.body.last, 'string')
+        it('should omit orderedItems on an empty collection', async () => {
+          assert.strictEqual(response.body.orderedItems, undefined)
         })
         it(`should return an object with a ${coll}Of to the actor`, async () => {
           assert.strictEqual(typeof response.body[coll + 'Of'], 'string')

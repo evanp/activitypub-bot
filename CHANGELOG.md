@@ -11,6 +11,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Include `orderedItems` directly in actor and object collection endpoints
+  for collections with 1–256 members, applying the same member filtering as
+  collection pages. Empty collections omit both `first` and `orderedItems`;
+  larger collections retain page links (#293).
+
 ### Fixed
 
 - Use `orderedItems` instead of `items` on actor and object collection pages
