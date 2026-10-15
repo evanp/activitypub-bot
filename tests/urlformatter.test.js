@@ -47,6 +47,24 @@ describe('UrlFormatter', () => {
     const url = formatter.format({ username: 'megabot', collection: 'inbox' })
     assert.equal(url, `${origin}/user/megabot/inbox`)
   })
+  it('can format an actor collection seekItem endpoint URL', () => {
+    const url = formatter.format({
+      username: 'megabot',
+      collection: 'outbox',
+      endpoint: 'seekItem'
+    })
+    assert.strictEqual(url, `${origin}/user/megabot/outbox/seekItem`)
+  })
+  it('can format an object collection seekItem endpoint URL', () => {
+    const url = formatter.format({
+      username: 'megabot',
+      type: 'note',
+      nanoid: 'LNPUlv9kmvhAdr4eoqkil',
+      collection: 'replies',
+      endpoint: 'seekItem'
+    })
+    assert.strictEqual(url, `${origin}/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies/seekItem`)
+  })
   it('can format an inbox URL page', () => {
     const url = formatter.format({
       username: 'megabot',
@@ -143,6 +161,31 @@ describe('UrlFormatter', () => {
     assert.equal(parts.username, 'megabot')
     assert.equal(parts.collection, 'inbox')
     assert.equal(parts.page, 3)
+  })
+  it('can unformat an actor collection seekItem endpoint URL', () => {
+    assert.deepStrictEqual(
+      formatter.unformat(`${origin}/user/megabot/outbox/seekItem`),
+      { username: 'megabot', server: false, collection: 'outbox', endpoint: 'seekItem' }
+    )
+  })
+  it('can unformat an object collection seekItem endpoint URL', () => {
+    assert.deepStrictEqual(
+      formatter.unformat(`${origin}/user/megabot/note/LNPUlv9kmvhAdr4eoqkil/replies/seekItem`),
+      {
+        username: 'megabot',
+        server: false,
+        type: 'note',
+        nanoid: 'LNPUlv9kmvhAdr4eoqkil',
+        collection: 'replies',
+        endpoint: 'seekItem'
+      }
+    )
+  })
+  it('can unformat a server collection seekItem endpoint URL', () => {
+    assert.deepStrictEqual(
+      formatter.unformat(`${origin}/user/${hostname}/outbox/seekItem`),
+      { username: hostname, server: true, collection: 'outbox', endpoint: 'seekItem' }
+    )
   })
   it('can unformat an activity URL', () => {
     const parts = formatter.unformat(
