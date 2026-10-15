@@ -25,7 +25,9 @@ const ACTIVE_ANCIENT = 'actorstoragetestactive4'
 const TIMESTAMP_OPERATIONS = ['add', 'remove', 'remove-last', 'remove-absent']
 const TIMESTAMP_USERS = TIMESTAMP_OPERATIONS.map(operation => `actorstoragetimestamps-${operation}`)
 const INLINE_USERS = [...[0, 1, MAX_PAGE_SIZE, MAX_PAGE_SIZE + 1].map(count => `actorstorageinline${count}`), 'actorstorageinlineshrink']
+const SEEK_USER = 'actorstorageseekitem'
 const TEST_USERNAMES = [
+  SEEK_USER,
   ...INLINE_USERS,
   LOCAL_USER,
   FOLLOWERS_USER,
@@ -149,6 +151,87 @@ describe('ActorStorage', () => {
     assert.strictEqual(exported.totalItems, MAX_PAGE_SIZE)
     assert.strictEqual(exported.first, undefined)
     assert.deepStrictEqual(exported.orderedItems, members.map(member => member.id).reverse())
+  })
+
+  describe('getItemPage()', () => {
+    const owner = SEEK_USER
+    const property = 'followers'
+    const members = []
+    let absent
+
+    before(async () => {
+      absent = await as2.import({ id: 'https://social.actorstorage.test/seekitem/absent', type: 'Person' })
+      for (let i = 0; i < 2 * MAX_PAGE_SIZE + 1; i++) {
+        const member = await as2.import({
+          id: `https://social.actorstorage.test/seekitem/${i}`,
+          type: 'Person'
+        })
+        members.push(member)
+        await storage.addToCollection(owner, property, member)
+      }
+    })
+
+    it('returns -1 for an empty collection', async () => {
+      assert.strictEqual(await storage.getItemPage(owner, 'following', absent), -1)
+    })
+
+    it('returns -1 for a non-member of a paginated collection', async () => {
+      assert.strictEqual(await storage.getItemPage(owner, property, absent), -1)
+    })
+
+    it('does not find a member in another collection property', async () => {
+      await storage.addToCollection(owner, 'following', absent)
+      assert.strictEqual(await storage.getItemPage(owner, property, absent), -1)
+      assert.strictEqual(await storage.getItemPage(owner, 'following', members[0]), -1)
+    })
+
+    it('does not find a member under another owner', async () => {
+      assert.strictEqual(await storage.getItemPage('actorstorageseekitemother', property, members[0]), -1)
+    })
+
+    for (const [index, page] of [[0, 1], [MAX_PAGE_SIZE - 1, 1], [MAX_PAGE_SIZE, 2], [2 * MAX_PAGE_SIZE - 1, 2], [2 * MAX_PAGE_SIZE, 3]]) {
+      it(`returns page ${page} for member ${index}`, async () => {
+        assert.strictEqual(await storage.getItemPage(owner, property, members[index]), page)
+        const exported = await (await storage.getCollectionPage(owner, property, page)).export()
+        assert.ok(exported.orderedItems.includes(members[index].id))
+      })
+    }
+
+    it('matches membership by id rather than object identity', async () => {
+      const reference = await as2.import({ id: members[MAX_PAGE_SIZE].id })
+      assert.strictEqual(await storage.getItemPage(owner, property, reference), 2)
+    })
+
+    it('returns -1 for a removed member', async () => {
+      await storage.removeFromCollection(owner, property, members[1])
+      assert.strictEqual(await storage.getItemPage(owner, property, members[1]), -1)
+    })
+
+    it('returns 0 when remaining members become inline, even from later pages', async () => {
+      for (const member of members.slice(2, MAX_PAGE_SIZE + 2)) {
+        await storage.removeFromCollection(owner, property, member)
+      }
+      const exported = await (await storage.getCollection(owner, property)).export()
+      assert.strictEqual(exported.totalItems, MAX_PAGE_SIZE)
+      assert.strictEqual(exported.first, undefined)
+      for (const member of [members[0], members[2 * MAX_PAGE_SIZE]]) {
+        assert.ok(exported.orderedItems.includes(member.id))
+        assert.strictEqual(await storage.getItemPage(owner, property, member), 0)
+      }
+      assert.strictEqual(await storage.getItemPage(owner, property, members[1]), -1)
+    })
+
+    for (const count of [1, MAX_PAGE_SIZE]) {
+      it(`returns 0 for members and -1 for non-members with ${count} inline items`, async () => {
+        const inlineProperty = `seek-inline-${count}`
+        for (const member of members.slice(0, count)) {
+          await storage.addToCollection(owner, inlineProperty, member)
+        }
+        assert.strictEqual(await storage.getItemPage(owner, inlineProperty, members[0]), 0)
+        assert.strictEqual(await storage.getItemPage(owner, inlineProperty, members[count - 1]), 0)
+        assert.strictEqual(await storage.getItemPage(owner, inlineProperty, absent), -1)
+      })
+    }
   })
 
   it('can get an empty collection page', async () => {
