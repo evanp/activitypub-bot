@@ -92,6 +92,11 @@ describe('ObjectStorage', async () => {
     assert.strictEqual(exported.first, undefined)
     assert.strictEqual(exported.orderedItems, undefined)
   })
+  it('advertises the seekItem endpoint on an object collection', async () => {
+    const collection = await storage.getCollection(doc.id, 'replies')
+    const exported = await collection.export({ useOriginalContext: true })
+    assert.strictEqual(exported.seekItem, `${doc.id}/replies/seekItem`)
+  })
   for (const count of [0, 1, MAX_PAGE_SIZE, MAX_PAGE_SIZE + 1]) {
     it(`exports a collection with ${count} members using the inline threshold`, async () => {
       const id = `${TEST_NOTE_BASE}/inline-${count}`
