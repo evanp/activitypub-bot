@@ -9,6 +9,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Publish actor `webfinger` properties with unencoded Unicode usernames and
+  domain names instead of percent-encoded usernames and IDNA A-label domains.
+
 ## [0.54.4] - 2026-10-10
 
 ### Changed

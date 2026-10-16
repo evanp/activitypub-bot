@@ -14,6 +14,7 @@ describe('server on a Unicode domain', () => {
   const origin = `https://${domain}`
   const asciiOrigin = new URL(origin).origin
   const botName = 'unicodedomainokbot'
+  const unicodeBotName = '好的'
   const actorId = `${asciiOrigin}/user/${botName}`
   const asciiDomain = new URL(origin).hostname
   const serverActorId = `${asciiOrigin}/user/${asciiDomain}`
@@ -31,11 +32,14 @@ describe('server on a Unicode domain', () => {
       origin,
       databaseUrl: getTestDatabaseUrl(),
       redisUrl: getTestRedisUrl(),
-      bots: { [botName]: new OKBot(botName) },
+      bots: {
+        [botName]: new OKBot(botName),
+        [unicodeBotName]: new OKBot(unicodeBotName)
+      },
       logLevel: 'silent'
     })
     await cleanupTestData(app.locals.connection, {
-      usernames: [botName],
+      usernames: [botName, unicodeBotName],
       localDomain: domain,
       remoteDomains: [remoteDomain, new URL(origin).hostname]
     })
@@ -45,7 +49,7 @@ describe('server on a Unicode domain', () => {
     await cleanupRedis(origin)
     if (app) {
       await cleanupTestData(app.locals.connection, {
-        usernames: [botName],
+        usernames: [botName, unicodeBotName],
         localDomain: domain,
         remoteDomains: [remoteDomain, new URL(origin).hostname]
       })
@@ -62,6 +66,18 @@ describe('server on a Unicode domain', () => {
     assert.strictEqual(response.status, 200)
     assert.strictEqual(response.body.subject, `acct:${botName}@${new URL(origin).hostname}`)
     assert.strictEqual(response.body.links.find(link => link.rel === 'self').href, actorId)
+  })
+
+  it('publishes an unencoded webfinger handle for a Unicode username on an IDNA domain', async () => {
+    const path = `/user/${encodeURIComponent(unicodeBotName)}`
+    const response = await request(app)
+      .get(path)
+      .set('Host', asciiDomain)
+      .set('Accept', 'application/activity+json')
+    assert.strictEqual(response.status, 200)
+    assert.strictEqual(response.body.id, `${asciiOrigin}${path}`)
+    assert.strictEqual(response.body.preferredUsername, unicodeBotName)
+    assert.strictEqual(response.body.webfinger, `${unicodeBotName}@${domain}`)
   })
 
   for (const { label, id, owner } of [
