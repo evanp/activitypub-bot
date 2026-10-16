@@ -9,6 +9,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.54.5] - 2026-10-15
+
 ### Fixed
 
 - Publish actor `webfinger` properties with unencoded Unicode usernames and
@@ -1777,7 +1779,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.54.4...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.54.5...HEAD
+[0.54.5]: https://github.com/evanp/activitypub-bot/compare/v0.54.4...v0.54.5
 [0.54.4]: https://github.com/evanp/activitypub-bot/compare/v0.54.3...v0.54.4
 [0.54.3]: https://github.com/evanp/activitypub-bot/compare/v0.54.2...v0.54.3
 [0.54.2]: https://github.com/evanp/activitypub-bot/compare/v0.54.1...v0.54.2
