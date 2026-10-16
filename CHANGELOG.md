@@ -27,6 +27,7 @@ and this project adheres to
 - Preserve the supplied username when fetching collection pages through
   `ActivityPubClient.items()` so page requests use the same signing identity
   as the collection request (#299).
+
 ## [0.54.5] - 2026-10-15
 
 ### Fixed
