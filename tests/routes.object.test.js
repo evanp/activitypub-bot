@@ -1,3 +1,4 @@
+import { corsTests } from './utils/cors.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
@@ -9,6 +10,7 @@ import { nockSetup, nockFormat, nockSignature, makeActor } from '@evanp/activity
 
 import { makeApp } from '../lib/app.js'
 import OKBot from '../lib/bots/ok.js'
+import DoNothingBot from '../lib/bots/donothing.js'
 import as2 from '../lib/activitystreams.js'
 
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
@@ -43,6 +45,7 @@ describe('object collection routes', async () => {
   const type = 'object'
   const nanoid = 'hUQC9HWian7dzOxZJlJBA'
   let app = null
+
   let obj = null
   let reply = null
   let like = null
@@ -247,6 +250,15 @@ describe('object collection routes', async () => {
     })
     await app.cleanup()
   })
+
+  corsTests(() => app, () => [
+    { path: `/user/${username}/${type}/${nanoid}` },
+    ...['replies', 'likes', 'shares', 'thread'].flatMap(collection => [
+      { path: `/user/${username}/${type}/${nanoid}/${collection}` },
+      { path: `/user/${username}/${type}/${nanoid}/${collection}/1` }
+    ]),
+    { path: () => `/user/${username}/${type}/${privateNanoid}`, status: 403 }
+  ])
 
   describe('GET /user/{username}/{type}/{nanoid}', async () => {
     let response = null
@@ -813,4 +825,163 @@ describe('object collection routes', async () => {
       assert.ok(items.includes(subNormalReply.id), `normal reply should be present in thread; got ${JSON.stringify(items)}`)
     })
   })
+})
+
+describe('object collection seekItem routes', () => {
+  const localDomain = 'local.routes-object-seekitem.test'
+  const origin = `https://${localDomain}`
+  const username = 'routesobjectseekitemtest'
+  const collections = ['replies', 'shares', 'likes', 'thread']
+  const fixtures = new Map()
+  let app
+
+  before(async () => {
+    await cleanupRedis(origin)
+    app = await makeApp({
+      origin,
+      databaseUrl: getTestDatabaseUrl(),
+      redisUrl: getTestRedisUrl(),
+      bots: { [username]: new DoNothingBot(username) },
+      domainBlockFileName: fileURLToPath(new URL('./fixtures/blocklist-basic.csv', import.meta.url)),
+      logLevel: 'silent'
+    })
+    await cleanupTestData(app.locals.connection, { usernames: [username], localDomain })
+    const { formatter, objectStorage } = app.locals
+    const owner = formatter.format({ username })
+
+    for (const collection of collections) {
+      const hasActors = ['followers', 'following'].includes(collection)
+      const type = hasActors ? 'Person' : collection === 'outbox' ? 'IntransitiveActivity' : collection === 'likes' ? 'Like' : collection === 'shares' ? 'Announce' : 'Note'
+      const parent = await as2.import({
+        id: formatter.format({ username, type: 'note', nanoid: makeNanoid() }),
+        type: 'Note',
+        attributedTo: owner,
+        to: 'as:Public'
+      })
+      const privateParent = await as2.import({
+        id: formatter.format({ username, type: 'note', nanoid: makeNanoid() }),
+        type: 'Note',
+        attributedTo: owner,
+        to: owner
+      })
+      await objectStorage.create(parent)
+      await objectStorage.create(privateParent)
+      const members = {}
+      for (const visibility of ['readable', 'missing', 'unreadable']) {
+        const member = await as2.import({
+          id: hasActors
+            ? `https://${visibility === 'unreadable' ? 'blocked-one.test' : 'remote.routes-seekitem.test'}/users/${collection}-${visibility}`
+            : formatter.format({ username, type: type.toLowerCase(), nanoid: makeNanoid() }),
+          type,
+          attributedTo: owner,
+          actor: ['IntransitiveActivity', 'Like', 'Announce'].includes(type) ? owner : undefined,
+          object: ['Like', 'Announce'].includes(type) ? parent.id : undefined,
+          inReplyTo: collection === 'replies' ? parent.id : undefined,
+          to: visibility === 'unreadable' ? owner : 'as:Public'
+        })
+        await objectStorage.create(member)
+        members[visibility] = member
+        if (visibility !== 'missing') {
+          await objectStorage.addToCollection(parent.id, collection, member)
+          await objectStorage.addToCollection(privateParent.id, collection, member)
+        }
+      }
+      fixtures.set(collection, {
+        ...members,
+        id: `${parent.id}/${collection}`,
+        privateParent
+      })
+    }
+  })
+
+  after(async () => {
+    await cleanupRedis(origin)
+    if (!app) return
+    try {
+      await cleanupTestData(app.locals.connection, { usernames: [username], localDomain })
+    } finally {
+      await app.cleanup()
+    }
+  })
+
+  corsTests(() => app, () => collections.flatMap(collection => [
+    {
+      name: `${collection} seekItem redirect`,
+      path: () => `${localPath(fixtures.get(collection).id)}/seekItem?item=${encodeURIComponent(fixtures.get(collection).readable.id)}`,
+      status: 307
+    },
+    {
+      name: `${collection} seekItem missing member`,
+      path: () => `${localPath(fixtures.get(collection).id)}/seekItem?item=${encodeURIComponent(fixtures.get(collection).missing.id)}`,
+      status: 404
+    }
+  ]))
+
+  function localPath (url) {
+    const parsed = new URL(url)
+    assert.strictEqual(parsed.origin, origin)
+    return parsed.pathname + parsed.search
+  }
+
+  async function seek (collection, item) {
+    const response = await request(app).get(localPath(fixtures.get(collection).id))
+    assert.strictEqual(response.status, 200)
+    assert.strictEqual(typeof response.body.seekItem, 'string', 'collection must advertise seekItem')
+    const endpoint = new URL(response.body.seekItem)
+    endpoint.searchParams.set('item', item.id)
+    return request(app).get(localPath(endpoint))
+  }
+
+  function assertNotFound (response) {
+    assert.strictEqual(response.status, 404)
+    assert.strictEqual(response.type, 'application/problem+json')
+    assert.strictEqual(response.body.status, 404)
+    assert.strictEqual(response.headers.location, undefined)
+  }
+
+  for (const collection of collections) {
+    describe(collection, () => {
+      it('advertises an HTTPS seekItem endpoint', async () => {
+        const response = await request(app).get(localPath(fixtures.get(collection).id))
+        assert.strictEqual(response.status, 200)
+        assert.strictEqual(typeof response.body.seekItem, 'string')
+        assert.strictEqual(new URL(response.body.seekItem).protocol, 'https:')
+      })
+
+      it('redirects to the collection containing a readable inline member', async () => {
+        const { id, readable } = fixtures.get(collection)
+        const response = await seek(collection, readable)
+        assert.ok([307, 308].includes(response.status), `expected redirect, got ${response.status}`)
+        assert.strictEqual(response.headers.location, id)
+        const target = await request(app).get(localPath(response.headers.location))
+        assert.strictEqual(target.status, 200)
+        assert.strictEqual(target.type, 'application/activity+json')
+        assert.strictEqual(target.body.id, id)
+        assert.ok(target.body.orderedItems.includes(readable.id))
+      })
+
+      it('returns 404 for a readable item that is not a member', async () => {
+        assertNotFound(await seek(collection, fixtures.get(collection).missing))
+      })
+
+      it('returns 404 for a member unreadable by the anonymous principal', async () => {
+        assertNotFound(await seek(collection, fixtures.get(collection).unreadable))
+      })
+
+      if (['replies', 'shares', 'likes'].includes(collection)) {
+        it('returns 404 when the collection is unreadable even if the member is public', async () => {
+          const { privateParent, readable } = fixtures.get(collection)
+          assert.strictEqual(await app.locals.authorizer.canRead(null, privateParent), false)
+          assert.strictEqual(await app.locals.authorizer.canRead(null, readable), true)
+          // Discover the private endpoint internally because its collection cannot be fetched anonymously.
+          const stored = await app.locals.objectStorage.getCollection(privateParent.id, collection)
+          const exported = await stored.export({ useOriginalContext: true })
+          assert.strictEqual(typeof exported.seekItem, 'string', 'private collection must advertise seekItem')
+          const endpoint = new URL(exported.seekItem)
+          endpoint.searchParams.set('item', readable.id)
+          assertNotFound(await request(app).get(localPath(endpoint)))
+        })
+      }
+    })
+  }
 })
