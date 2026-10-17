@@ -383,6 +383,53 @@ describe('ActivityHandler', () => {
     }
     assert.ok(accept)
     assert.ok(add)
+    const followersId = formatter.format({ username: botName, collection: 'followers' })
+    const acceptRecipients = ['to', 'cc', 'bto', 'bcc', 'audience']
+      .flatMap(property => Array.from(accept[property] || []).map(recipient => recipient.id))
+    assert.ok(!acceptRecipients.includes(followersId), 'Private Accept must not address followers')
+    assert.ok(!acceptRecipients.includes(`${NS}Public`), 'Private Accept must not become public')
+    assert.ok(acceptRecipients.includes(actor.id), 'Accept must address the follower')
+    assert.ok([...(add.to || []), ...(add.cc || [])].some(recipient => recipient.id === followersId),
+      'Public Add to followers must address followers')
+  })
+  it('ccs followers when accepting a public follow activity', async () => {
+    const actor = await makeActor('publicfollower1')
+    const followId = `${actor.id}/follow/public1`
+    const followersId = formatter.format({ username: botName, collection: 'followers' })
+    const follow = await as2.import({
+      type: 'Follow',
+      id: followId,
+      actor: actor.id,
+      object: botId,
+      to: botId,
+      cc: 'as:Public'
+    })
+    await handler.handleActivity(bot, follow)
+    await handler.onIdle()
+    assert.ok(await actorStorage.isInCollection(botName, 'followers', actor))
+    let accept
+    let add
+    for await (const ref of actorStorage.items(botName, 'outbox')) {
+      const candidate = await objectStorage.read(ref.id)
+      if (candidate.type === ACCEPT && candidate.object?.first?.id === followId) {
+        accept = candidate
+      } else if (candidate.type === ADD &&
+          candidate.object?.first?.id === actor.id &&
+          candidate.target?.first?.id === followersId) {
+        add = candidate
+      }
+    }
+    assert.ok(accept, 'Public Follow must generate an Accept')
+    assert.ok(add, 'Public Follow must generate an Add to followers')
+    const acceptRecipients = [...(accept.to || []), ...(accept.cc || [])]
+    assert.ok(acceptRecipients.some(recipient => recipient.id === `${NS}Public`),
+      'Accept must retain Public addressing')
+    assert.ok(acceptRecipients.some(recipient => recipient.id === actor.id),
+      'Accept must address the follower')
+    assert.ok(Array.from(accept.cc || []).some(recipient => recipient.id === followersId),
+      'Public Accept must cc the bot\'s followers')
+    assert.ok([...(add.to || []), ...(add.cc || [])].some(recipient => recipient.id === followersId),
+      'Public Add to followers must address followers')
   })
   it('can handle a duplicate follow activity', async () => {
     const actor = await makeActor('follower2')
