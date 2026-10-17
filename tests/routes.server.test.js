@@ -1,3 +1,4 @@
+import { corsTests } from './utils/cors.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 
@@ -40,6 +41,11 @@ describe('server routes', async () => {
     }
     await app.cleanup()
   })
+
+  corsTests(() => app, () => [
+    { path: serverActorPath },
+    { path: publicKeyPath }
+  ])
 
   describe('GET server actor', async () => {
     let response = null

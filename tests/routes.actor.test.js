@@ -1,3 +1,4 @@
+import { corsTests } from './utils/cors.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 
@@ -55,6 +56,16 @@ describe('actor routes', async () => {
     })
     await app.cleanup()
   })
+
+  corsTests(() => app, () => [
+    { path: `/user/${BOT_USERNAME}`, headers: ['accept', 'signature', 'signature-input', 'date', 'digest', 'content-digest'] },
+    { path: `/user/${BOT_USERNAME}/publickey` },
+    { path: `/user/${BOT_USERNAME}/icon`, accept: 'image/png' },
+    { path: `/user/${BOT_USERNAME_2}/image`, accept: 'image/jpeg' },
+    { path: `/user/${BOT_USERNAME_2}/icon`, status: 307 },
+    { path: `/user/${BOT_USERNAME}/image`, status: 307 },
+    { path: `/user/${DNE_USERNAME}`, status: 404 }
+  ])
 
   describe('GET /user/{botid}', async () => {
     let response = null
