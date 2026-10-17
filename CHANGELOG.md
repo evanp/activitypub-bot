@@ -27,6 +27,9 @@ and this project adheres to
 - Preserve the supplied username when fetching collection pages through
   `ActivityPubClient.items()` so page requests use the same signing identity
   as the collection request (#299).
+- Enable cross-origin browser access to public actor, object, collection,
+  WebFinger, and NodeInfo endpoints. Keep proxy access restricted to the
+  server’s own origin; other routes grant no CORS permissions.
 
 ## [0.54.5] - 2026-10-15
 
