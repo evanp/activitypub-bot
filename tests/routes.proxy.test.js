@@ -1,3 +1,4 @@
+import { corsTests } from './utils/cors.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
@@ -51,6 +52,11 @@ describe('proxy for remote objects', async () => {
     await app.cleanup()
   })
 
+  corsTests(() => app, () => [
+    { path: '/shared/proxy', method: 'POST', body: { id: `https://${REMOTE_HOST}/user/remote0` }, headers: ['content-type'] },
+    { path: '/shared/proxy', method: 'POST', body: {}, status: 400, headers: ['content-type'] }
+  ], { origin, restricted: true })
+
   describe('request an existing remote object', async () => {
     let response
     const username = 'remote0'
@@ -85,12 +91,32 @@ describe('proxy for remote objects', async () => {
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
     })
-    it('should have an Allow header with POST', async () => {
-      assert.strictEqual(response.headers.allow, 'POST')
+    it('should have an Access-Control-Allow-Methods header with POST', async () => {
+      assert.strictEqual(response.headers['access-control-allow-methods'], 'POST')
+    })
+    it('should have an Allow header including POST', async () => {
+      const methods = (response.headers.allow || '').split(/\s*,\s*/)
+      assert.ok(methods.includes('POST'))
     })
     it('should have a CORS header restricting to the local origin', async () => {
       assert.strictEqual(response.headers['access-control-allow-origin'], origin)
     })
+  })
+
+  it('CORS does not authorize an unrelated browser origin on proxy preflight', async () => {
+    const response = await request(app).options('/shared/proxy')
+      .set('Origin', 'https://browser.example')
+      .set('Access-Control-Request-Method', 'POST')
+      .set('Access-Control-Request-Headers', 'content-type')
+    assert.strictEqual(response.headers['access-control-allow-origin'], origin)
+  })
+
+  it('CORS does not authorize an unrelated browser origin on proxy responses', async () => {
+    const response = await request(app).post('/shared/proxy')
+      .set('Origin', 'https://browser.example')
+      .type('form').send({ id: `https://${REMOTE_HOST}/user/remote0` })
+    assert.strictEqual(response.status, 200)
+    assert.strictEqual(response.headers['access-control-allow-origin'], origin)
   })
 
   describe('request a non-existent remote object', async () => {
