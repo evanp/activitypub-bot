@@ -642,8 +642,9 @@ describe('BotContext', () => {
     assert.strictEqual(webfinger, `${REMOTE_USER_4}@${REMOTE_HOST}`)
   })
 
-  it('can reply to a note', async () => {
+  it('can reply to a public note and cc followers', async () => {
     const noteIn = await makeObjectDefault(REMOTE_USER_5, 'Note', 1)
+    assert.ok(Array.from(noteIn.to || []).some(recipient => recipient.id === `${AS2_NS}Public`))
     const note = await context.sendReply(`@${REMOTE_USER_5}@${REMOTE_HOST} OK`, noteIn)
     assert.ok(note)
     assert.strictEqual(note.type, AS2_NS + 'Note')
@@ -658,7 +659,57 @@ describe('BotContext', () => {
     }
     await context.onIdle()
     assert.strictEqual(postInbox[REMOTE_USER_5], 1)
+    const followersId = formatter.format({ username: botName, collection: 'followers' })
+    assert.ok(Array.from(note.cc || []).some(recipient => recipient.id === followersId),
+      'Reply to a public note must cc the bot\'s followers')
   })
+
+  it('does not add followers when replying to a non-public note', async () => {
+    const noteIn = await makeObject(REMOTE_USER_5, 'Note', 777, REMOTE_HOST, {
+      to: formatter.format({ username: botName })
+    })
+    const followersId = formatter.format({ username: botName, collection: 'followers' })
+    const recipientIds = object => ['to', 'cc', 'bto', 'bcc', 'audience']
+      .flatMap(property => Array.from(object[property] || []).map(recipient => recipient.id))
+    assert.ok(!recipientIds(noteIn).includes(`${AS2_NS}Public`))
+    assert.ok(!recipientIds(noteIn).includes(followersId))
+
+    const note = await context.sendReply('Private reply', noteIn)
+    await context.onIdle()
+
+    assert.strictEqual(note.inReplyTo.first.id, noteIn.id)
+    assert.ok(recipientIds(note).includes(`${REMOTE_ORIGIN}/user/${REMOTE_USER_5}`),
+      'Reply must address the original author')
+    assert.ok(!recipientIds(note).includes(followersId),
+      'Reply to a non-public note must not add followers to any recipient field')
+    assert.ok(!recipientIds(note).includes(`${AS2_NS}Public`),
+      'Reply to a non-public note must not become public')
+  })
+
+  for (const isPublic of [true, false]) {
+    it(`removes the bot from all addressees when replying to a ${isPublic ? 'public' : 'private'} note`, async () => {
+      const botId = formatter.format({ username: botName })
+      const properties = ['to', 'cc', 'bto', 'bcc', 'audience']
+      const addressing = Object.fromEntries(properties.map(property => [property, [botId]]))
+      if (isPublic) addressing.to.push(`${AS2_NS}Public`)
+      const original = await makeObject(REMOTE_USER_5, 'Note', isPublic ? 778 : 779, REMOTE_HOST, addressing)
+      for (const property of properties) {
+        assert.ok(Array.from(original[property] || []).some(recipient => recipient.id === botId),
+          `Original must address the bot in ${property}`)
+      }
+
+      const reply = await context.sendReply('Reply without self-addressing', original)
+      await context.onIdle()
+
+      for (const property of properties) {
+        assert.ok(!Array.from(reply[property] || []).some(recipient => recipient.id === botId),
+          `Reply must remove the bot from ${property}`)
+      }
+      assert.ok(Array.from(reply.to || []).some(recipient =>
+        recipient.id === `${REMOTE_ORIGIN}/user/${REMOTE_USER_5}`),
+      'Reply must still address the original author')
+    })
+  }
 
   it('can reply to self', async () => {
     const followers = await actorStorage.getCollection(botName, 'followers')
