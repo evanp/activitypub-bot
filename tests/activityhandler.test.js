@@ -467,6 +467,23 @@ describe('ActivityHandler', () => {
     assert.equal(
       false,
       await actorStorage.isInCollection(botName, 'pendingFollowing', followActivity))
+    await handler.onIdle()
+    const followingId = formatter.format({ username: botName, collection: 'following' })
+    const followersId = formatter.format({ username: botName, collection: 'followers' })
+    let add
+    for await (const ref of actorStorage.items(botName, 'outbox')) {
+      const candidate = await objectStorage.read(ref.id)
+      if (candidate.type === ADD &&
+          candidate.object?.first?.id === actor.id &&
+          candidate.target?.first?.id === followingId) {
+        add = candidate
+        break
+      }
+    }
+    assert.ok(add, 'Accepting a Follow must generate an Add to following')
+    const recipients = [...(add.to || []), ...(add.cc || [])]
+    assert.ok(recipients.some(recipient => recipient.id === followersId),
+      'Add to following must address the bot\'s followers')
   })
   it('can ignore an accept activity for a non-existing follow', async () => {
     const actor = await makeActor('accepter2')
