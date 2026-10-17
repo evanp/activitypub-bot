@@ -236,6 +236,18 @@ describe('actor collection routes', async () => {
         })
       })
 
+      it(`GET ${coll} page Number.MAX_SAFE_INTEGER should return 404 Not Found`, async () => {
+        const response = await request(app).get(`/user/${BOT_USERNAME}/${coll}/${Number.MAX_SAFE_INTEGER}`)
+        assert.strictEqual(response.status, 404)
+      })
+
+      for (const page of ['abc', '-1', '0', '1abc', '18446744073709551617', '01', '+1', '1.5', '1e2', '0x10', ' 1', '1 ', '1\n', '9007199254740992', '9'.repeat(400)]) {
+        it(`GET ${coll} page ${JSON.stringify(page)} should return 400 Bad Request`, async () => {
+          const response = await request(app).get(`/user/${BOT_USERNAME}/${coll}/${encodeURIComponent(page)}`)
+          assert.strictEqual(response.status, 400)
+        })
+      }
+
       describe('GET collection page for non-existent user', async () => {
         let response = null
         it('should work without an error', async () => {

@@ -303,6 +303,18 @@ describe('object collection routes', async () => {
   })
 
   for (const collection of ['replies', 'likes', 'shares', 'thread']) {
+    it(`GET ${collection} page Number.MAX_SAFE_INTEGER should return 404 Not Found`, async () => {
+      const response = await request(app).get(`/user/${username}/${type}/${nanoid}/${collection}/${Number.MAX_SAFE_INTEGER}`)
+      assert.strictEqual(response.status, 404)
+    })
+
+    for (const page of ['abc', '-1', '0', '1abc', '18446744073709551617', '01', '+1', '1.5', '1e2', '0x10', ' 1', '1 ', '1\n', '9007199254740992', '9'.repeat(400)]) {
+      it(`GET ${collection} page ${JSON.stringify(page)} should return 400 Bad Request`, async () => {
+        const response = await request(app).get(`/user/${username}/${type}/${nanoid}/${collection}/${encodeURIComponent(page)}`)
+        assert.strictEqual(response.status, 400)
+      })
+    }
+
     for (const count of [0, 1, MAX_PAGE_SIZE, MAX_PAGE_SIZE + 1]) {
       it(`GET ${collection} with ${count} members uses the inline threshold`, async () => {
         const { objectStorage, formatter, connection } = app.locals
