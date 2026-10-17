@@ -11,12 +11,23 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Advertise `seekItem` endpoints on actor and object collections, redirecting
+  readable members to their containing collection or page. Missing or
+  inaccessible members return 404 (#300).
+- Add `getItemPage()` to ActorStorage and ObjectStorage, returning -1 for a
+  missing member, 0 for an inline member, or its page number.
+- Support collection endpoint formatting and parsing in UrlFormatter.
+
 ### Changed
 
 - Include `orderedItems` directly in actor and object collection endpoints
   for collections with 1–256 members, applying the same member filtering as
   collection pages. Empty collections omit both `first` and `orderedItems`;
   larger collections retain page links (#293).
+- Store object collection item counts instead of counting members on each
+  read, with a migration that initializes counts for existing collections (#295).
 
 ### Fixed
 
@@ -30,6 +41,11 @@ and this project adheres to
 - Enable cross-origin browser access to public actor, object, collection,
   WebFinger, and NodeInfo endpoints. Keep proxy access restricted to the
   server’s own origin; other routes grant no CORS permissions.
+- Address followers on public Likes, replies, Follow acceptance activities,
+  and Add activities announcing accepted outgoing Follows. Non-public replies
+  and Follow acceptance activities do not add followers (#290).
+- Remove the replying bot from `to`, `cc`, `bto`, `bcc`, and `audience` when
+  constructing replies.
 
 ## [0.54.5] - 2026-10-15
 
