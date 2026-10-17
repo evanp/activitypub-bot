@@ -1,3 +1,4 @@
+import { corsTests } from './utils/cors.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 
@@ -32,6 +33,11 @@ describe('nodeinfo routes', async () => {
     }
     await app.cleanup()
   })
+
+  corsTests(() => app, () => [
+    { path: '/.well-known/nodeinfo', accept: 'application/json' },
+    ...['2.0', '2.1', '2.2'].map(version => ({ path: `/nodeinfo/${version}`, accept: 'application/json' }))
+  ])
 
   describe('GET /.well-known/nodeinfo', async () => {
     let response = null
