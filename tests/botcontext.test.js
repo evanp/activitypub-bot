@@ -279,7 +279,7 @@ describe('BotContext', () => {
   it('can like an object', async () => {
     const id = `${REMOTE_ORIGIN}/user/${REMOTE_USER_2}/object/1`
     const obj = await context.getObject(id)
-    await context.likeObject(obj)
+    const activity = await context.likeObject(obj)
     await context.onIdle()
     assert.strictEqual(postInbox[REMOTE_USER_2], 1)
     const outbox = await actorStorage.getCollection(botName, 'outbox')
@@ -288,6 +288,9 @@ describe('BotContext', () => {
     assert.strictEqual(inbox.totalItems, 2)
     const liked = await actorStorage.getCollection(botName, 'liked')
     assert.strictEqual(liked.totalItems, 1)
+    assert.ok(Array.from(activity.cc || []).some(recipient =>
+      recipient.id === formatter.format({ username: botName, collection: 'followers' })
+    ), 'Like must cc the bot\'s followers')
   })
   it('can unlike an object', async () => {
     const id = `${REMOTE_ORIGIN}/user/${REMOTE_USER_2}/object/1`
