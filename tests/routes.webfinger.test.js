@@ -1,3 +1,4 @@
+import { corsTests } from './utils/cors.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 
@@ -34,6 +35,12 @@ describe('webfinger routes', async () => {
     }
     await app.cleanup()
   })
+
+  corsTests(() => app, () => [
+    { path: `/.well-known/webfinger?resource=${encodeURIComponent(`acct:${BOT_USERNAME}@${LOCAL_HOST}`)}`, accept: 'application/jrd+json' },
+    { path: `/.well-known/webfinger?resource=${encodeURIComponent(`acct:${DNE_USERNAME}@${LOCAL_HOST}`)}`, status: 404 },
+    { path: '/.well-known/webfinger', status: 400 }
+  ])
 
   describe('GET /.well-known/webfinger', async () => {
     let response = null
