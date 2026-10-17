@@ -1,3 +1,4 @@
+import { noCorsTests } from './utils/cors.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
@@ -95,6 +96,12 @@ describe('routes.inbox', async () => {
     })
     await app.cleanup()
   })
+
+  noCorsTests(() => app, () => [
+    { path: `/user/${BOT_USERNAME}/inbox`, status: 403 },
+    { path: `/user/${BOT_USERNAME}/inbox/1`, status: 403 },
+    { path: `/user/${BOT_USERNAME}/inbox`, method: 'POST', status: 401, body: {}, requestHeaders: { Signature: 'invalid' } }
+  ])
 
   for (const { label, username, domain } of [
     { label: 'non-ASCII username', username: 'zoë', domain: REMOTE_HOST },
@@ -216,6 +223,7 @@ describe('routes.inbox', async () => {
     it('should work without an error', async () => {
       response = await request(app)
         .post(path)
+        .set('Origin', 'https://browser.example')
         .send(body)
         .set('Signature', signature)
         .set('Date', date)
@@ -224,6 +232,9 @@ describe('routes.inbox', async () => {
         .set('Content-Type', 'application/activity+json')
       assert.ok(response)
       await app.onIdle()
+    })
+    it('does not grant CORS access to accepted deliveries', () => {
+      assert.strictEqual(response.headers['access-control-allow-origin'], undefined)
     })
     it('should return a 202 status', async () => {
       assert.strictEqual(response.status, 202)

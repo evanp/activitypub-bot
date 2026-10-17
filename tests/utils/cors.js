@@ -44,3 +44,38 @@ export function corsTests (getApp, getCases, { origin = browserOrigin, restricte
     }
   })
 }
+
+export function noCorsTests (getApp, getCases) {
+  describe('No cross-origin browser access', () => {
+    const assertNoCors = response => {
+      for (const header of [
+        'access-control-allow-origin',
+        'access-control-allow-methods',
+        'access-control-allow-headers',
+        'access-control-allow-credentials'
+      ]) {
+        assert.equal(response.headers[header], undefined, `${header} must be absent`)
+      }
+    }
+
+    for (const { path, method = 'GET', status = 200, body, requestHeaders = {} } of getCases()) {
+      it(`${method} ${path} does not grant CORS access`, async () => {
+        let req = request(getApp())[method.toLowerCase()](path)
+          .set('Origin', browserOrigin)
+          .set(requestHeaders)
+        if (body !== undefined) req = req.send(body)
+        const response = await req
+        assert.equal(response.status, status)
+        assertNoCors(response)
+      })
+
+      it(`OPTIONS ${path} does not grant CORS access for ${method}`, async () => {
+        const response = await request(getApp()).options(path)
+          .set('Origin', browserOrigin)
+          .set('Access-Control-Request-Method', method)
+          .set('Access-Control-Request-Headers', method === 'POST' ? 'content-type, signature, date, digest' : 'accept')
+        assertNoCors(response)
+      })
+    }
+  })
+}

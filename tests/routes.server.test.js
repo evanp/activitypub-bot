@@ -1,4 +1,4 @@
-import { corsTests } from './utils/cors.js'
+import { corsTests, noCorsTests } from './utils/cors.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 
@@ -41,6 +41,8 @@ describe('server routes', async () => {
     }
     await app.cleanup()
   })
+
+  noCorsTests(() => app, () => [{ path: '/' }])
 
   corsTests(() => app, () => [
     { path: serverActorPath },

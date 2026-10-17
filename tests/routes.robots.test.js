@@ -1,3 +1,4 @@
+import { noCorsTests } from './utils/cors.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 
@@ -46,6 +47,8 @@ describe('GET /robots.txt', async () => {
     })
     await app.cleanup()
   })
+
+  noCorsTests(() => app, () => [{ path: '/robots.txt' }])
 
   describe('unsigned request', async () => {
     let response = null

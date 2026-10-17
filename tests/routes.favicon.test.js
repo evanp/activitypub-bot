@@ -1,3 +1,4 @@
+import { noCorsTests } from './utils/cors.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 
@@ -30,6 +31,8 @@ describe('GET /favicon.ico', async () => {
     }
     await app.cleanup()
   })
+
+  noCorsTests(() => app, () => [{ path: '/favicon.ico' }])
 
   describe('unsigned request', async () => {
     let response = null

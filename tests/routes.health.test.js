@@ -1,3 +1,4 @@
+import { noCorsTests } from './utils/cors.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 
@@ -28,6 +29,8 @@ describe('health check routes', async () => {
     }
     await app.cleanup()
   })
+
+  noCorsTests(() => app, () => [{ path: '/livez' }, { path: '/readyz' }])
 
   describe('GET /livez', async () => {
     let response = null
