@@ -135,6 +135,11 @@ export async function cleanupTestData (connection, {
   addLikeClauses(objectClauses, objectReplacements, 'id', allPatterns, 'objectIdPattern')
   await deleteWhere(connection, 'objects', objectClauses, objectReplacements)
 
+  const endpointCacheClauses = []
+  const endpointCacheReplacements = {}
+  addLikeClauses(endpointCacheClauses, endpointCacheReplacements, 'actor_id', allPatterns, 'endpointActorPattern')
+  await deleteWhere(connection, 'endpoint_cache', endpointCacheClauses, endpointCacheReplacements)
+
   const rateLimitClauses = []
   const rateLimitReplacements = {}
   if (remoteDomains.length > 0) {

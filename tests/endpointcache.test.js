@@ -4,7 +4,7 @@ import assert from 'node:assert'
 import Logger from 'pino'
 
 import { EndpointCache } from '../lib/endpointcache.js'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const REMOTE_HOST = 'social.endpointcache.test'
 
@@ -18,11 +18,17 @@ describe('EndpointCache', async () => {
   before(async () => {
     logger = new Logger({ level: 'silent' })
     connection = await createMigratedTestConnection()
+    await cleanupTestData(connection, { remoteDomains: [REMOTE_HOST] })
     cache = new EndpointCache(connection, logger)
   })
 
   after(async () => {
-    await connection.close()
+    if (!connection) return
+    try {
+      await cleanupTestData(connection, { remoteDomains: [REMOTE_HOST] })
+    } finally {
+      await connection.close()
+    }
   })
 
   it('get on a cold cache returns null', async () => {
