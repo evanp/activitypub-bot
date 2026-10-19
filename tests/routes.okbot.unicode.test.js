@@ -86,8 +86,8 @@ describe('OKBot replies to Unicode handles', () => {
       let delivered
       const inbox = nock(remoteOrigin)
         .post(new URL(`${actorId}/inbox`).pathname)
-        .reply(202, (uri, body) => {
-          delivered = typeof body === 'string' ? JSON.parse(body) : body
+        .reply(202, async (request) => {
+          delivered = await request.json()
           return ''
         })
       const activity = await as2.import({

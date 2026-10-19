@@ -49,7 +49,7 @@
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
-    "@evanp/activitypub-nock": "^1.0.0",
+    "@evanp/activitypub-nock": "^2.0.1",
     "eslint": "^9.39.5",
     "neostandard": "^0.14.0",
     "nock": "^15.0.1",

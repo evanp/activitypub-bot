@@ -95,12 +95,6 @@ describe('ActivityPubClient', async () => {
     return nockFormat(params.domain ? params : { domain: REMOTE_HOST, ...params })
   }
 
-  function normalizeHeaders (headers) {
-    return Object.fromEntries(
-      Object.entries(headers).map(([key, value]) => [key, Array.isArray(value) ? value[0] : value])
-    )
-  }
-
   function assertRfc9421GetHeaders (headers, username = LOCAL_SIGNING_USER) {
     assert.ok(headers)
     assert.ok(headers.signature)
@@ -377,9 +371,9 @@ describe('ActivityPubClient', async () => {
     nock(`https://${DOUBLE_KNOCK_POST_HOST}`)
       .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         requestNumber += 1
-        requests.push(normalizeHeaders(this.req.headers))
+        requests.push(Object.fromEntries(request.headers))
         return (requestNumber === 1)
           ? [403, 'forbidden']
           : [202, 'accepted']
@@ -422,16 +416,16 @@ describe('ActivityPubClient', async () => {
     nock(`https://${CACHED_DRAFT_POST_HOST}`)
       .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         firstRequestNumber += 1
-        firstRequests.push(normalizeHeaders(this.req.headers))
+        firstRequests.push(Object.fromEntries(request.headers))
         return (firstRequestNumber === 1)
           ? [403, 'forbidden']
           : [202, 'accepted']
       })
       .post(`/user/${REMOTE_RELAY_USER}/inbox`)
-      .reply(function () {
-        secondRequests.push(normalizeHeaders(this.req.headers))
+      .reply(function (request) {
+        secondRequests.push(Object.fromEntries(request.headers))
         return [202, 'accepted']
       })
 
@@ -476,18 +470,18 @@ describe('ActivityPubClient', async () => {
     nock(`https://${EXPIRED_DRAFT_POST_HOST}`)
       .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         firstRequestNumber += 1
-        firstRequests.push(normalizeHeaders(this.req.headers))
+        firstRequests.push(Object.fromEntries(request.headers))
         return (firstRequestNumber === 1)
           ? [403, 'forbidden']
           : [202, 'accepted']
       })
       .post(`/user/${REMOTE_RELAY_USER}/inbox`)
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         secondRequestNumber += 1
-        secondRequests.push(normalizeHeaders(this.req.headers))
+        secondRequests.push(Object.fromEntries(request.headers))
         return (secondRequestNumber === 1)
           ? [403, 'forbidden']
           : [202, 'accepted']
@@ -525,8 +519,8 @@ describe('ActivityPubClient', async () => {
 
     nock(`https://${NO_FALLBACK_POST_HOST}`)
       .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
-      .reply(function () {
-        requests.push(normalizeHeaders(this.req.headers))
+      .reply(function (request) {
+        requests.push(Object.fromEntries(request.headers))
         return [500, 'internal server error']
       })
 
@@ -555,8 +549,8 @@ describe('ActivityPubClient', async () => {
 
     nock(`https://${RFC9421_HOST}`)
       .get('/user/activitypubclientevan/note/101')
-      .reply(function () {
-        requests.push(normalizeHeaders(this.req.headers))
+      .reply(function (request) {
+        requests.push(Object.fromEntries(request.headers))
         return [200, noteText, { 'Content-Type': 'application/activity+json' }]
       })
 
@@ -582,9 +576,9 @@ describe('ActivityPubClient', async () => {
     nock(`https://${DOUBLE_KNOCK_HOST}`)
       .get('/user/activitypubclientevan/note/102')
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         requestNumber += 1
-        requests.push(normalizeHeaders(this.req.headers))
+        requests.push(Object.fromEntries(request.headers))
         return (requestNumber === 1)
           ? [403, 'forbidden']
           : [200, noteText, { 'Content-Type': 'application/activity+json' }]
@@ -621,16 +615,16 @@ describe('ActivityPubClient', async () => {
     nock(`https://${CACHED_DRAFT_HOST}`)
       .get('/user/activitypubclientevan/note/103')
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         firstRequestNumber += 1
-        firstRequests.push(normalizeHeaders(this.req.headers))
+        firstRequests.push(Object.fromEntries(request.headers))
         return (firstRequestNumber === 1)
           ? [403, 'forbidden']
           : [200, firstNoteText, { 'Content-Type': 'application/activity+json' }]
       })
       .get('/user/activitypubclientevan/note/104')
-      .reply(function () {
-        secondRequests.push(normalizeHeaders(this.req.headers))
+      .reply(function (request) {
+        secondRequests.push(Object.fromEntries(request.headers))
         return [200, secondNoteText, { 'Content-Type': 'application/activity+json' }]
       })
 
@@ -669,18 +663,18 @@ describe('ActivityPubClient', async () => {
     nock(`https://${EXPIRED_DRAFT_HOST}`)
       .get('/user/activitypubclientevan/note/105')
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         firstRequestNumber += 1
-        firstRequests.push(normalizeHeaders(this.req.headers))
+        firstRequests.push(Object.fromEntries(request.headers))
         return (firstRequestNumber === 1)
           ? [403, 'forbidden']
           : [200, firstNoteText, { 'Content-Type': 'application/activity+json' }]
       })
       .get('/user/activitypubclientevan/note/106')
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         secondRequestNumber += 1
-        secondRequests.push(normalizeHeaders(this.req.headers))
+        secondRequests.push(Object.fromEntries(request.headers))
         return (secondRequestNumber === 1)
           ? [403, 'forbidden']
           : [200, secondNoteText, { 'Content-Type': 'application/activity+json' }]
@@ -713,8 +707,8 @@ describe('ActivityPubClient', async () => {
 
     nock(`https://${NO_FALLBACK_HOST}`)
       .get('/user/activitypubclientevan/note/107')
-      .reply(function () {
-        requests.push(normalizeHeaders(this.req.headers))
+      .reply(function (request) {
+        requests.push(Object.fromEntries(request.headers))
         return [500, 'internal server error']
       })
 
@@ -820,8 +814,8 @@ describe('ActivityPubClient', async () => {
         ]
 
         for (const response of responses) {
-          scope.get(new URL(response.id).pathname).reply(function () {
-            requests.set(response.id, normalizeHeaders(this.req.headers))
+          scope.get(new URL(response.id).pathname).reply(function (request) {
+            requests.set(response.id, Object.fromEntries(request.headers))
             return [200, {
               '@context': 'https://www.w3.org/ns/activitystreams',
               ...response
@@ -1115,8 +1109,8 @@ describe('ActivityPubClient', async () => {
 
     nock(`https://${RFC9421_NO_CACHE_HOST}`)
       .get('/user/activitypubclientevan/note/108')
-      .reply(function () {
-        requests.push(normalizeHeaders(this.req.headers))
+      .reply(function (request) {
+        requests.push(Object.fromEntries(request.headers))
         return [200, noteText, { 'Content-Type': 'application/activity+json' }]
       })
 
@@ -1144,8 +1138,8 @@ describe('ActivityPubClient', async () => {
 
     nock(`https://${RFC9421_NO_CACHE_POST_HOST}`)
       .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
-      .reply(function () {
-        requests.push(normalizeHeaders(this.req.headers))
+      .reply(function (request) {
+        requests.push(Object.fromEntries(request.headers))
         return [202, 'accepted']
       })
 
@@ -1172,9 +1166,9 @@ describe('ActivityPubClient', async () => {
     nock(`https://${BAD_REQUEST_HOST}`)
       .get('/user/activitypubclientevan/note/109')
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         requestNumber += 1
-        requests.push(normalizeHeaders(this.req.headers))
+        requests.push(Object.fromEntries(request.headers))
         return (requestNumber === 1)
           ? [400, 'bad request']
           : [200, noteText, { 'Content-Type': 'application/activity+json' }]
@@ -1205,9 +1199,9 @@ describe('ActivityPubClient', async () => {
     nock(`https://${BAD_REQUEST_POST_HOST}`)
       .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         requestNumber += 1
-        requests.push(normalizeHeaders(this.req.headers))
+        requests.push(Object.fromEntries(request.headers))
         return (requestNumber === 1)
           ? [400, 'bad request']
           : [202, 'accepted']
@@ -1240,9 +1234,9 @@ describe('ActivityPubClient', async () => {
     nock(`https://${LEGACY_RFC9421_HOST}`)
       .get('/user/activitypubclientevan/note/110')
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         requestNumber += 1
-        requests.push(normalizeHeaders(this.req.headers))
+        requests.push(Object.fromEntries(request.headers))
         return (requestNumber === 1)
           ? [400, 'bad request']
           : [200, noteText, { 'Content-Type': 'application/activity+json' }]
@@ -1280,9 +1274,9 @@ describe('ActivityPubClient', async () => {
     nock(`https://${LEGACY_RFC9421_POST_HOST}`)
       .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         requestNumber += 1
-        requests.push(normalizeHeaders(this.req.headers))
+        requests.push(Object.fromEntries(request.headers))
         return (requestNumber === 1)
           ? [400, 'bad request']
           : [202, 'accepted']
@@ -1315,9 +1309,9 @@ describe('ActivityPubClient', async () => {
     nock(`https://${FALLBACK_BODY_POST_HOST}`)
       .post(`/user/${REMOTE_PROFILE_USER}/inbox`)
       .twice()
-      .reply(function (uri, requestBody) {
+      .reply(async function (request) {
         requestNumber += 1
-        bodies.push(requestBody)
+        bodies.push(await request.text())
         return (requestNumber === 1)
           ? [400, JSON.stringify({ error: 'missing signature header' }), { 'Content-Type': 'application/json' }]
           : [202, 'accepted']
@@ -1363,9 +1357,9 @@ describe('ActivityPubClient', async () => {
     nock(`https://${AUTH_404_HOST}`)
       .get(`/user/${REMOTE_PROFILE_USER}/publickey`)
       .times(3)
-      .reply(function () {
+      .reply(function (request) {
         requestNumber += 1
-        requests.push(normalizeHeaders(this.req.headers))
+        requests.push(Object.fromEntries(request.headers))
         if (requestNumber < 3) {
           return [
             404,
@@ -1406,9 +1400,9 @@ describe('ActivityPubClient', async () => {
     nock(`https://${AUTH_410_HOST}`)
       .get(`/user/${REMOTE_PROFILE_USER}/publickey`)
       .times(3)
-      .reply(function () {
+      .reply(function (request) {
         requestNumber += 1
-        requests.push(normalizeHeaders(this.req.headers))
+        requests.push(Object.fromEntries(request.headers))
         if (requestNumber === 1) {
           return [401, 'unauthorized', { 'Content-Type': 'text/plain' }]
         }
@@ -1448,9 +1442,9 @@ describe('ActivityPubClient', async () => {
     nock(`https://${UNSIGNED_410_HOST}`)
       .get(`/user/${REMOTE_PROFILE_USER}/publickey`)
       .twice()
-      .reply(function () {
+      .reply(function (request) {
         requestNumber += 1
-        requests.push(normalizeHeaders(this.req.headers))
+        requests.push(Object.fromEntries(request.headers))
         if (requestNumber === 1) {
           return [410, 'gone', { 'Content-Type': 'text/plain' }]
         }
