@@ -841,6 +841,7 @@ describe('object collection routes', async () => {
 
 describe('object collection seekItem routes', () => {
   const localDomain = 'local.routes-object-seekitem.test'
+  const remoteDomains = ['remote.routes-seekitem.test', 'https://blocked-one.test/users']
   const origin = `https://${localDomain}`
   const username = 'routesobjectseekitemtest'
   const collections = ['replies', 'shares', 'likes', 'thread']
@@ -857,7 +858,7 @@ describe('object collection seekItem routes', () => {
       domainBlockFileName: fileURLToPath(new URL('./fixtures/blocklist-basic.csv', import.meta.url)),
       logLevel: 'silent'
     })
-    await cleanupTestData(app.locals.connection, { usernames: [username], localDomain })
+    await cleanupTestData(app.locals.connection, { usernames: [username], localDomain, remoteDomains })
     const { formatter, objectStorage } = app.locals
     const owner = formatter.format({ username })
 
@@ -910,7 +911,7 @@ describe('object collection seekItem routes', () => {
     await cleanupRedis(origin)
     if (!app) return
     try {
-      await cleanupTestData(app.locals.connection, { usernames: [username], localDomain })
+      await cleanupTestData(app.locals.connection, { usernames: [username], localDomain, remoteDomains })
     } finally {
       await app.cleanup()
     }

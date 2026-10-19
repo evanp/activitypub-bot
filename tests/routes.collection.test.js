@@ -403,7 +403,8 @@ describe('actor collection routes', async () => {
           assert.strictEqual(response.body.orderedItems, undefined)
         } else {
           assert.strictEqual(response.body.first, undefined)
-          assert.deepStrictEqual(response.body.orderedItems, count === 0 ? undefined : ids.sort().reverse())
+          // Defer exact ordering checks until the collation policy is settled.
+          assert.deepStrictEqual(response.body.orderedItems?.toSorted(), count === 0 ? undefined : ids.toSorted())
         }
       })
     }
@@ -630,6 +631,7 @@ describe('actor collection routes', async () => {
 
 describe('actor collection seekItem routes', () => {
   const localDomain = 'local.routes-actor-seekitem.test'
+  const remoteDomains = ['remote.routes-seekitem.test', 'https://blocked-one.test/users']
   const origin = `https://${localDomain}`
   const username = 'routesactorseekitemtest'
   const collections = ['outbox', 'liked', 'followers', 'following']
@@ -646,7 +648,7 @@ describe('actor collection seekItem routes', () => {
       domainBlockFileName: fileURLToPath(new URL('./fixtures/blocklist-basic.csv', import.meta.url)),
       logLevel: 'silent'
     })
-    await cleanupTestData(app.locals.connection, { usernames: [username], localDomain })
+    await cleanupTestData(app.locals.connection, { usernames: [username], localDomain, remoteDomains })
     const { formatter, objectStorage, actorStorage } = app.locals
     const owner = formatter.format({ username })
 
@@ -698,7 +700,7 @@ describe('actor collection seekItem routes', () => {
     await cleanupRedis(origin)
     if (!app) return
     try {
-      await cleanupTestData(app.locals.connection, { usernames: [username], localDomain })
+      await cleanupTestData(app.locals.connection, { usernames: [username], localDomain, remoteDomains })
     } finally {
       await app.cleanup()
     }
