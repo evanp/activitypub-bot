@@ -27,6 +27,7 @@ describe('server with a Unicode OKBot username', () => {
     nockSetup(remoteDomain)
     await cleanupRedis(origin)
     app = await makeApp({
+      allowPrivateNetworkRequests: true,
       origin,
       databaseUrl: getTestDatabaseUrl(),
       redisUrl: getTestRedisUrl(),

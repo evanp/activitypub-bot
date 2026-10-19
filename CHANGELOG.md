@@ -22,7 +22,8 @@ and this project adheres to
 
 ### Changed
 
-- Update dependencies: express, express-rate-limit, nanoid, neostandard, and nock.
+- Update dependencies: activitypub-nock, express, express-rate-limit, nanoid,
+  neostandard, and nock.
 - Require on-disk SQLite integration tests to pass before publishing releases.
 - Include `orderedItems` directly in actor and object collection endpoints
   for collections with 1–256 members, applying the same member filtering as
@@ -33,6 +34,9 @@ and this project adheres to
 
 ### Fixed
 
+- Restore HTTP mocking in tests after the nock update by adapting reply
+  callbacks and test fetcher configuration, preserving private-network
+  protection coverage.
 - Use transactions for concurrent actor and object collection additions and
   removals to preserve page sizes and item counts.
 - Return HTTP 400 for invalid collection page numbers and HTTP 404 for

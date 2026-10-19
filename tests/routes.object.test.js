@@ -66,7 +66,7 @@ describe('object collection routes', async () => {
   before(async () => {
     await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST, allowPrivateNetworkRequests: true
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
@@ -852,6 +852,7 @@ describe('object collection seekItem routes', () => {
   before(async () => {
     await cleanupRedis(origin)
     app = await makeApp({
+      allowPrivateNetworkRequests: true,
       origin,
       databaseUrl: getTestDatabaseUrl(),
       redisUrl: getTestRedisUrl(),

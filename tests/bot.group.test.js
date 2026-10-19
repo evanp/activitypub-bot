@@ -44,7 +44,7 @@ describe('Group bot', async () => {
     nockSetup(REMOTE_HOST)
     await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
+      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl(), allowPrivateNetworkRequests: true
     })
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,

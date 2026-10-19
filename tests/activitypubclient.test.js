@@ -144,6 +144,7 @@ describe('ActivityPubClient', async () => {
   let keyStorage = null
   let formatter = null
   let client = null
+  let strictClient = null
   let signer = null
   let messageSigner = null
   let digester = null
@@ -195,7 +196,7 @@ describe('ActivityPubClient', async () => {
     throttler = new RequestThrottler(connection, logger)
     policyStorage = new SignaturePolicyStorage(connection, logger)
     remoteObjectCache = new RemoteObjectCache(connection, logger)
-    safeFetcher = new SafeFetcher(new DomainBlocker(null, connection, logger))
+    safeFetcher = new SafeFetcher(new DomainBlocker(null, connection, logger), { allowPrivate: true })
     domainBlocker = new DomainBlocker(BASIC_BLOCKLIST, connection, logger)
     await domainBlocker.initialize()
     client = new ActivityPubClient(
@@ -209,6 +210,19 @@ describe('ActivityPubClient', async () => {
       messageSigner,
       policyStorage,
       safeFetcher,
+      domainBlocker
+    )
+    strictClient = new ActivityPubClient(
+      keyStorage,
+      formatter,
+      signer,
+      digester,
+      logger,
+      throttler,
+      remoteObjectCache,
+      messageSigner,
+      policyStorage,
+      new SafeFetcher(new DomainBlocker(null, connection, logger)),
       domainBlocker
     )
 
@@ -953,7 +967,7 @@ describe('ActivityPubClient', async () => {
     nock.restore()
     try {
       await assert.rejects(
-        () => client.get(url, LOCAL_SIGNING_USER),
+        () => strictClient.get(url, LOCAL_SIGNING_USER),
         (err) => {
           assert.strictEqual(err.name, 'FetchError')
           assert.match(err.message, /Private network address 192\.168\.0\.1/)
@@ -974,7 +988,7 @@ describe('ActivityPubClient', async () => {
     nock.restore()
     try {
       await assert.rejects(
-        () => client.post(url, obj, LOCAL_SIGNING_USER),
+        () => strictClient.post(url, obj, LOCAL_SIGNING_USER),
         (err) => {
           assert.strictEqual(err.name, 'FetchError')
           assert.match(err.message, /Private network address 192\.168\.0\.1/)
@@ -989,7 +1003,7 @@ describe('ActivityPubClient', async () => {
   it('throws on get() with http: URL', async () => {
     const url = 'http://93.184.216.34/user/test/note/1'
     await assert.rejects(
-      () => client.get(url, LOCAL_SIGNING_USER),
+      () => strictClient.get(url, LOCAL_SIGNING_USER),
       (err) => {
         assert.strictEqual(err.name, 'ProtocolError')
         return true
@@ -1004,7 +1018,7 @@ describe('ActivityPubClient', async () => {
       .publishedNow()
       .get()
     await assert.rejects(
-      () => client.post(url, obj, LOCAL_SIGNING_USER),
+      () => strictClient.post(url, obj, LOCAL_SIGNING_USER),
       (err) => {
         assert.strictEqual(err.name, 'ProtocolError')
         return true
@@ -1015,7 +1029,7 @@ describe('ActivityPubClient', async () => {
   it('throws on get() with unsupported protocol', async () => {
     const url = 'ftp://social.example.com/user/test/note/1'
     await assert.rejects(
-      () => client.get(url, LOCAL_SIGNING_USER),
+      () => strictClient.get(url, LOCAL_SIGNING_USER),
       (err) => {
         assert.strictEqual(err.name, 'ProtocolError')
         return true
@@ -1030,7 +1044,7 @@ describe('ActivityPubClient', async () => {
       .publishedNow()
       .get()
     await assert.rejects(
-      () => client.post(url, obj, LOCAL_SIGNING_USER),
+      () => strictClient.post(url, obj, LOCAL_SIGNING_USER),
       (err) => {
         assert.strictEqual(err.name, 'ProtocolError')
         return true

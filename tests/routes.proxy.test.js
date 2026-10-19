@@ -31,7 +31,7 @@ describe('proxy for remote objects', async () => {
   before(async () => {
     await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots, logLevel, redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST
+      databaseUrl, origin, bots, logLevel, redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST, allowPrivateNetworkRequests: true
     })
     await cleanupTestData(app.locals.connection, {
       localDomain: LOCAL_HOST,

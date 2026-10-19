@@ -53,7 +53,7 @@ describe('microsyntax', async () => {
   const throttler = new RequestThrottler(connection, logger)
   const remoteObjectCache = new RemoteObjectCache(connection, logger)
   const policyStorage = new SignaturePolicyStorage(connection, logger)
-  const safeFetcher = new SafeFetcher(new DomainBlocker(null, connection, logger))
+  const safeFetcher = new SafeFetcher(new DomainBlocker(null, connection, logger), { allowPrivate: true })
   const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, safeFetcher, new DomainBlocker(null, connection, logger))
   const transformer = new Transformer(tagNamespace, client, safeFetcher, formatter)
 

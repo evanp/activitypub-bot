@@ -20,6 +20,7 @@ describe('OKBot replies to Unicode handles', () => {
   before(async () => {
     await cleanupRedis(origin)
     app = await makeApp({
+      allowPrivateNetworkRequests: true,
       origin,
       databaseUrl: getTestDatabaseUrl(),
       redisUrl: getTestRedisUrl(),

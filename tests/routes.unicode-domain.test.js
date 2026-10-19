@@ -29,6 +29,7 @@ describe('server on a Unicode domain', () => {
     nockSetup(remoteDomain)
     await cleanupRedis(origin)
     app = await makeApp({
+      allowPrivateNetworkRequests: true,
       origin,
       databaseUrl: getTestDatabaseUrl(),
       redisUrl: getTestRedisUrl(),

@@ -130,6 +130,7 @@ describe('routes.sharedinbox', async () => {
     nockSetup(remoteHost)
     await cleanupRedis(origin)
     app = await makeApp({
+      allowPrivateNetworkRequests: true,
       databaseUrl,
       origin,
       bots: testBots,
