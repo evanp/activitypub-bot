@@ -130,7 +130,13 @@ describe('routes.sharedinbox', async () => {
     nockSetup(remoteHost)
     await cleanupRedis(origin)
     app = await makeApp({
-      databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST
+      databaseUrl,
+      origin,
+      bots: testBots,
+      logLevel: 'silent',
+      redisUrl: getTestRedisUrl(),
+      domainBlockFileName: BASIC_BLOCKLIST,
+      deliveryWorkerCount: databaseUrl === 'sqlite::memory:' ? 1 : undefined
     })
     formatter = app.locals.formatter
     actorStorage = app.locals.actorStorage
