@@ -90,6 +90,7 @@ describe('routes.inbox', async () => {
       return
     }
     await cleanupTestData(app.locals.connection, {
+      domainBlockFiles: [BASIC_BLOCKLIST],
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
       remoteDomains: [REMOTE_HOST, 'xn--caf-dma.routes-inbox.test']

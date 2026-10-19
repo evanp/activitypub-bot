@@ -244,6 +244,7 @@ describe('object collection routes', async () => {
       return
     }
     await cleanupTestData(app.locals.connection, {
+      domainBlockFiles: [BASIC_BLOCKLIST],
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
       remoteDomains: [REMOTE_HOST]
@@ -911,7 +912,7 @@ describe('object collection seekItem routes', () => {
     await cleanupRedis(origin)
     if (!app) return
     try {
-      await cleanupTestData(app.locals.connection, { usernames: [username], localDomain, remoteDomains })
+      await cleanupTestData(app.locals.connection, { domainBlockFiles: [BASIC_BLOCKLIST], usernames: [username], localDomain, remoteDomains })
     } finally {
       await app.cleanup()
     }

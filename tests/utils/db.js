@@ -1,5 +1,7 @@
 import { Sequelize } from 'sequelize'
 import { createClient } from 'redis'
+import { readFile } from 'node:fs/promises'
+import { parse } from 'csv-parse/sync'
 
 import { runMigrations } from '../../lib/migrations/index.js'
 
@@ -76,7 +78,9 @@ export async function cleanupTestData (connection, {
   usernames = [],
   localDomain = null,
   remoteDomains = [],
-  queues = []
+  queues = [],
+  domainBlockFiles = [],
+  blockedDomains = []
 } = {}) {
   const localPattern = toUrlPattern(localDomain)
   const normalizedRemotePatterns = remoteDomains.map(toUrlPattern).filter(Boolean)
@@ -140,6 +144,11 @@ export async function cleanupTestData (connection, {
   addLikeClauses(endpointCacheClauses, endpointCacheReplacements, 'actor_id', allPatterns, 'endpointActorPattern')
   await deleteWhere(connection, 'endpoint_cache', endpointCacheClauses, endpointCacheReplacements)
 
+  if (localDomain) {
+    const domain = new URL(localDomain.includes('://') ? localDomain : `https://${localDomain}`).hostname
+    await deleteWhere(connection, 'server_stats', ['domain = :domain'], { domain })
+  }
+
   const rateLimitClauses = []
   const rateLimitReplacements = {}
   if (remoteDomains.length > 0) {
@@ -168,10 +177,26 @@ export async function cleanupTestData (connection, {
   await deleteWhere(connection, 'signature_policy', signaturePolicyClauses, signaturePolicyReplacements)
 
   if (queues.length > 0) {
-    await connection.query(
-      'DELETE FROM job WHERE queue_id in (?);',
-      { replacements: [queues] }
-    )
+    await deleteWhere(connection, 'job', ['queue_id IN (:queues)'], { queues })
+    await deleteWhere(connection, 'failed_job', ['queue_id IN (:queues)'], { queues })
+  }
+
+  const domainNames = new Set(blockedDomains.map(domain => domain.toLowerCase()))
+  for (const filename of domainBlockFiles) {
+    const records = parse(await readFile(filename, 'utf8'), {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+      relax_column_count: true
+    })
+    for (const record of records) {
+      if (record['#severity'] === 'suspend' && !record['#domain'].includes('*')) {
+        domainNames.add(record['#domain'].toLowerCase())
+      }
+    }
+  }
+  if (domainNames.size > 0) {
+    await deleteWhere(connection, 'domain_block', ['domain_name IN (:domainNames)'], { domainNames: [...domainNames] })
   }
 }
 

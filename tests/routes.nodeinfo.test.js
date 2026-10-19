@@ -7,7 +7,7 @@ import request from 'supertest'
 import { makeApp } from '../lib/app.js'
 import OKBot from '../lib/bots/ok.js'
 
-import { getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
+import { getTestDatabaseUrl, getTestRedisUrl, cleanupRedis, cleanupTestData } from './utils/db.js'
 
 describe('nodeinfo routes', async () => {
   const LOCAL_HOST = 'local.routes-nodeinfo.test'
@@ -24,6 +24,7 @@ describe('nodeinfo routes', async () => {
     app = await makeApp({
       databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
+    await cleanupTestData(app.locals.connection, { localDomain: LOCAL_HOST })
   })
 
   after(async () => {
@@ -31,7 +32,11 @@ describe('nodeinfo routes', async () => {
     if (!app) {
       return
     }
-    await app.cleanup()
+    try {
+      await cleanupTestData(app.locals.connection, { localDomain: LOCAL_HOST })
+    } finally {
+      await app.cleanup()
+    }
   })
 
   corsTests(() => app, () => [

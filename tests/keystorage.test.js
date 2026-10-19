@@ -9,11 +9,11 @@ import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const BOT1 = 'keystoragetest1'
 const BOT2 = 'keystoragetest2'
-const SYSTEM_BOT = ''
+const SYSTEM_BOT = 'local.keystorage.test'
 const TEST_BOTS = [BOT1, BOT2, SYSTEM_BOT]
 
 describe('KeyStorage', async () => {
-  const hostname = 'local.keystorage.test'
+  const hostname = SYSTEM_BOT
   let connection = null
   let storage = null
   let logger = null

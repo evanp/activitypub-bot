@@ -46,6 +46,7 @@ describe('proxy for remote objects', async () => {
       return
     }
     await cleanupTestData(app.locals.connection, {
+      domainBlockFiles: [BASIC_BLOCKLIST],
       localDomain: LOCAL_HOST,
       remoteDomains: [REMOTE_HOST]
     })

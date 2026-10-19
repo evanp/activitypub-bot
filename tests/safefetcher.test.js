@@ -9,7 +9,7 @@ import Logger from 'pino'
 
 import { SafeFetcher } from '../lib/safefetcher.js'
 import { DomainBlocker } from '../lib/domainblocker.js'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
@@ -43,7 +43,11 @@ describe('SafeFetcher', () => {
   after(async () => {
     dns.lookup = originalLookup
     dnsPromises.lookup = originalPromiseLookup
-    await connection.close()
+    try {
+      await cleanupTestData(connection, { domainBlockFiles: [BASIC_BLOCKLIST] })
+    } finally {
+      await connection.close()
+    }
   })
 
   it('can be constructed with just a domain blocker', () => {

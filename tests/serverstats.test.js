@@ -68,8 +68,6 @@ describe('ServerStats', async () => {
       localDomain: LOCAL_HOST,
       remoteDomains: []
     })
-    await connection.query('DELETE FROM server_stats WHERE domain = ?',
-      { replacements: [LOCAL_HOST] })
     await connection.close()
   })
 

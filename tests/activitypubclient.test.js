@@ -240,6 +240,7 @@ describe('ActivityPubClient', async () => {
 
   after(async () => {
     await cleanupTestData(connection, {
+      domainBlockFiles: [BASIC_BLOCKLIST],
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
       remoteDomains: [

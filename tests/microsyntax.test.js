@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test'
+import { describe, it, after } from 'node:test'
 import assert from 'node:assert'
 
 import Logger from 'pino'
@@ -19,7 +19,7 @@ import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const AS2 = 'https://www.w3.org/ns/activitystreams#'
 
@@ -34,6 +34,18 @@ describe('microsyntax', async () => {
   })
   const digester = new Digester(logger)
   const connection = await createMigratedTestConnection()
+  const cleanupOptions = {
+    localDomain: new URL(origin).hostname,
+    remoteDomains: ['social.microsyntax.test', 'lookup.example', 'xn--caf-dma.example']
+  }
+  after(async () => {
+    try {
+      await cleanupTestData(connection, cleanupOptions)
+    } finally {
+      await connection.close()
+    }
+  })
+  await cleanupTestData(connection, cleanupOptions)
   const keyStorage = new KeyStorage(connection, logger)
   const formatter = new UrlFormatter(origin)
   const signer = new HTTPSignature(logger)

@@ -57,6 +57,7 @@ const OTHER_HOST = 'other.activitydistributor.test'
 const THIRD_HOST = 'third.activitydistributor.test'
 const SHARED_HOST = 'shared.activitydistributor.test'
 const FLAKY_HOST = 'flaky.activitydistributor.test'
+const ENDPOINT_HOST = 'endpoint.activitydistributor.test'
 const BLOCKED_HOST = 'blocked-one.test'
 const LOCAL_USER0 = 'activitydistributortest0'
 const LOCAL_USER1 = 'activitydistributortest1'
@@ -117,9 +118,10 @@ describe('ActivityDistributor', () => {
 
   async function cleanup () {
     await cleanupTestData(connection, {
+      domainBlockFiles: [BASIC_BLOCKLIST],
       usernames: LOCAL_USERNAMES,
       localDomain: LOCAL_HOST,
-      remoteDomains: [SOCIAL_HOST, OTHER_HOST, THIRD_HOST, SHARED_HOST, FLAKY_HOST, BLOCKED_HOST]
+      remoteDomains: [SOCIAL_HOST, OTHER_HOST, THIRD_HOST, SHARED_HOST, FLAKY_HOST, BLOCKED_HOST, ENDPOINT_HOST]
     })
   }
 
@@ -618,7 +620,7 @@ describe('ActivityDistributor', () => {
   })
 
   it('does not distribute to a recipient whose inbox is on a blocked domain', async () => {
-    const endpointHost = 'endpoint.activitydistributor.test'
+    const endpointHost = ENDPOINT_HOST
     const actorId = `https://${endpointHost}/user/endpointtest1`
     const actorObj = await makeActor('endpointtest1', endpointHost)
     const actorJson = JSON.parse(await actorObj.write())

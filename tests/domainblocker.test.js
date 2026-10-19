@@ -7,7 +7,7 @@ import Logger from 'pino'
 
 import { DomainBlocker } from '../lib/domainblocker.js'
 import as2 from '../lib/activitystreams.js'
-import { createMigratedTestConnection } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const fixture = (name) => resolve(__dirname, 'fixtures', name)
@@ -16,6 +16,8 @@ const logger = new Logger({ level: 'silent' })
 
 const BASIC = fixture('blocklist-basic.csv')
 const SUBSET = fixture('blocklist-subset.csv')
+const PREEXISTING_DOMAIN = 'preexisting.test'
+const cleanupOptions = { domainBlockFiles: [BASIC, SUBSET], blockedDomains: [PREEXISTING_DOMAIN] }
 
 describe('DomainBlocker', async () => {
   const connections = []
@@ -23,6 +25,7 @@ describe('DomainBlocker', async () => {
   async function migratedConnection () {
     const connection = await createMigratedTestConnection()
     connections.push(connection)
+    await cleanupTestData(connection, cleanupOptions)
     return connection
   }
 
@@ -34,7 +37,11 @@ describe('DomainBlocker', async () => {
 
   after(async () => {
     for (const connection of connections) {
-      await connection.close()
+      try {
+        await cleanupTestData(connection, cleanupOptions)
+      } finally {
+        await connection.close()
+      }
     }
   })
 
@@ -164,7 +171,7 @@ describe('DomainBlocker', async () => {
     const connection = await migratedConnection()
     await connection.query(
       'INSERT INTO domain_block (domain_name) VALUES (?)',
-      { replacements: ['preexisting.test'] }
+      { replacements: [PREEXISTING_DOMAIN] }
     )
 
     const blocker = new DomainBlocker(null, connection, logger)

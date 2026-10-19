@@ -40,7 +40,7 @@ describe('server on a Unicode domain', () => {
     })
     await cleanupTestData(app.locals.connection, {
       usernames: [botName, unicodeBotName],
-      localDomain: domain,
+      localDomain: asciiDomain,
       remoteDomains: [remoteDomain, new URL(origin).hostname]
     })
   })
@@ -50,7 +50,7 @@ describe('server on a Unicode domain', () => {
     if (app) {
       await cleanupTestData(app.locals.connection, {
         usernames: [botName, unicodeBotName],
-        localDomain: domain,
+        localDomain: asciiDomain,
         remoteDomains: [remoteDomain, new URL(origin).hostname]
       })
       await app.cleanup()

@@ -50,6 +50,7 @@ describe('app', async () => {
       return
     }
     await cleanupTestData(app.locals.connection, {
+      domainBlockFiles: [BASIC_BLOCKLIST],
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST
     })

@@ -89,6 +89,7 @@ describe('LitePubRelayClientBot', () => {
     botlitepubfollowerauthor: new DoNothingBot('botlitepubfollowerauthor'),
     botlitepubfollowonlyauthor: new DoNothingBot('botlitepubfollowonlyauthor')
   }
+  TEST_USERNAMES.push(...Object.keys(bots))
   let authz
   let cache
   let handler

@@ -62,7 +62,7 @@ const REMOTE_ACTOR_10 = 'botcontextactor10'
 const REMOTE_ACTOR_11 = 'botcontextactor11'
 
 const DUPLICATE_USERNAME = 'botcontextdupe1'
-const TEST_USERNAMES = [BOT_USERNAME, LOCAL_OK_USERNAME, DUPLICATE_USERNAME]
+const TEST_USERNAMES = [BOT_USERNAME, LOCAL_OK_USERNAME, DUPLICATE_USERNAME, 'botcontextpendingfollowing', 'botcontextemptypendingfollowing']
 
 function makeActorDefault (username, domain = REMOTE_HOST) {
   return makeActor(username, domain)

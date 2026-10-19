@@ -6,7 +6,7 @@ import request from 'supertest'
 
 import { makeApp } from '../lib/app.js'
 
-import { getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
+import { getTestDatabaseUrl, getTestRedisUrl, cleanupRedis, cleanupTestData } from './utils/db.js'
 
 const AS2_TYPES = [
   'application/activity+json',
@@ -32,6 +32,7 @@ describe('server routes', async () => {
     app = await makeApp({
       databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
+    await cleanupTestData(app.locals.connection, { localDomain: LOCAL_HOST })
   })
 
   after(async () => {
@@ -39,7 +40,11 @@ describe('server routes', async () => {
     if (!app) {
       return
     }
-    await app.cleanup()
+    try {
+      await cleanupTestData(app.locals.connection, { localDomain: LOCAL_HOST })
+    } finally {
+      await app.cleanup()
+    }
   })
 
   noCorsTests(() => app, () => [{ path: '/' }])
