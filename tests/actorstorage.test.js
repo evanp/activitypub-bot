@@ -5,9 +5,14 @@ import { ActorStorage } from '../lib/actorstorage.js'
 import { UrlFormatter } from '../lib/urlformatter.js'
 import as2 from '../lib/activitystreams.js'
 
-import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
+import { createMigratedTestConnection, cleanupTestData, getTestDatabaseUrl } from './utils/db.js'
 
 const MAX_PAGE_SIZE = 256
+const concurrencyOptions = {
+  skip: getTestDatabaseUrl() === 'sqlite::memory:'
+    ? 'Concurrent transactions require a file or external database; set TEST_DATABASE_URL'
+    : false
+}
 const AS2_NS = 'https://www.w3.org/ns/activitystreams#'
 const LOCAL_USER = 'actorstoragetest1'
 const FOLLOWERS_USER = 'actorstoragetest3'
@@ -26,7 +31,9 @@ const TIMESTAMP_OPERATIONS = ['add', 'remove', 'remove-last', 'remove-absent']
 const TIMESTAMP_USERS = TIMESTAMP_OPERATIONS.map(operation => `actorstoragetimestamps-${operation}`)
 const INLINE_USERS = [...[0, 1, MAX_PAGE_SIZE, MAX_PAGE_SIZE + 1].map(count => `actorstorageinline${count}`), 'actorstorageinlineshrink']
 const SEEK_USER = 'actorstorageseekitem'
+const STRESS_USERS = ['actorstoragestressadd', 'actorstoragestressremove']
 const TEST_USERNAMES = [
+  ...STRESS_USERS,
   SEEK_USER,
   ...INLINE_USERS,
   LOCAL_USER,
@@ -159,6 +166,53 @@ describe('ActorStorage', () => {
     assert.strictEqual(exported.totalItems, MAX_PAGE_SIZE)
     assert.strictEqual(exported.first, undefined)
     assert.deepStrictEqual(exported.orderedItems, members.map(member => member.id).reverse())
+  })
+
+  it('handles 8 concurrent additions across a page boundary', concurrencyOptions, async () => {
+    const owner = 'actorstoragestressadd'
+    const property = 'followers'
+    const members = await Promise.all(Array.from({ length: 263 }, (_, i) => as2.import({
+      id: `https://social.actorstorage.test/stress/add/${i}`,
+      type: 'Person'
+    })))
+    for (const member of members.slice(0, 255)) {
+      await storage.addToCollection(owner, property, member)
+    }
+    const results = await Promise.allSettled(
+      members.slice(255).map(member => storage.addToCollection(owner, property, member))
+    )
+    assert.deepStrictEqual(results.filter(result => result.status === 'rejected'), [])
+    const collection = await storage.getCollection(owner, property)
+    assert.strictEqual(collection.totalItems, 263)
+    const seen = []
+    for (const [page, expectedSize] of [[1, MAX_PAGE_SIZE], [2, 263 - MAX_PAGE_SIZE]]) {
+      const exported = await (await storage.getCollectionPage(owner, property, page)).export()
+      assert.strictEqual(exported.orderedItems.length, expectedSize)
+      seen.push(...exported.orderedItems)
+    }
+    assert.deepStrictEqual(seen.sort(), members.map(member => member.id).sort())
+  })
+
+  it('handles 8 concurrent removals to an empty collection', concurrencyOptions, async () => {
+    const owner = 'actorstoragestressremove'
+    const property = 'followers'
+    const members = await Promise.all(Array.from({ length: 8 }, (_, i) => as2.import({
+      id: `https://social.actorstorage.test/stress/remove/${i}`,
+      type: 'Person'
+    })))
+    for (const member of members) {
+      await storage.addToCollection(owner, property, member)
+    }
+    const results = await Promise.allSettled(
+      members.map(member => storage.removeFromCollection(owner, property, member))
+    )
+    assert.deepStrictEqual(results.filter(result => result.status === 'rejected'), [])
+    const collection = await storage.getCollection(owner, property)
+    assert.strictEqual(collection.totalItems, 0)
+    const exported = await collection.export()
+    assert.deepStrictEqual(exported.orderedItems ?? [], [])
+    const page = await (await storage.getCollectionPage(owner, property, 1)).export()
+    assert.deepStrictEqual(page.orderedItems ?? [], [])
   })
 
   describe('getItemPage()', () => {
