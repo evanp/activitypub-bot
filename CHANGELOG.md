@@ -22,6 +22,7 @@ and this project adheres to
 
 ### Changed
 
+- Update dependencies: express, express-rate-limit, nanoid, neostandard, and nock.
 - Require on-disk SQLite integration tests to pass before publishing releases.
 - Include `orderedItems` directly in actor and object collection endpoints
   for collections with 1–256 members, applying the same member filtering as
