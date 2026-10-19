@@ -11,6 +11,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.55.0] - 2026-10-19
+
 ### Added
 
 - Advertise `seekItem` endpoints on actor and object collections, redirecting
@@ -1827,7 +1829,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.54.5...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.55.0...HEAD
+[0.55.0]: https://github.com/evanp/activitypub-bot/compare/v0.54.5...v0.55.0
 [0.54.5]: https://github.com/evanp/activitypub-bot/compare/v0.54.4...v0.54.5
 [0.54.4]: https://github.com/evanp/activitypub-bot/compare/v0.54.3...v0.54.4
 [0.54.3]: https://github.com/evanp/activitypub-bot/compare/v0.54.2...v0.54.3
