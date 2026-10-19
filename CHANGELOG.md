@@ -22,6 +22,7 @@ and this project adheres to
 
 ### Changed
 
+- Require on-disk SQLite integration tests to pass before publishing releases.
 - Include `orderedItems` directly in actor and object collection endpoints
   for collections with 1–256 members, applying the same member filtering as
   collection pages. Empty collections omit both `first` and `orderedItems`;
@@ -31,6 +32,10 @@ and this project adheres to
 
 ### Fixed
 
+- Use transactions for concurrent actor and object collection additions and
+  removals to preserve page sizes and item counts.
+- Return HTTP 400 for invalid collection page numbers and HTTP 404 for
+  nonexistent object collection pages (#298).
 - Use `orderedItems` instead of `items` on actor and object collection pages
   to preserve ordered-list semantics in JSON-LD (#291).
 - Update object collection counts and `updated` timestamps when members are
