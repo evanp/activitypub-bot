@@ -11,6 +11,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Pre-register FEP, socialweb, and W3C Controlled Identifiers JSON-LD contexts
+  for offline imports, including historical socialweb versions and URL aliases.
+- Add offline context regression tests covering RDF expansion, references,
+  literal datatypes, scoped contexts, and ordered lists.
+
+### Changed
+
+- Consolidate bundled JSON-LD context definitions in `lib/contexts/contexts.json`.
+
 ## [0.55.0] - 2026-10-19
 
 ### Added

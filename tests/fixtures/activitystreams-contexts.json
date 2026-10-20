@@ -1,0 +1,1244 @@
+[
+  {
+    "name": "FEP 0391",
+    "urls": [
+      "https://w3id.org/fep/0391",
+      "https://w3id.org/fep/0391/",
+      "https://w3id.org/fep/0391.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "inReplyToProof": "https://activitystreams.test/values/inReplyToProof",
+      "contextProof": "https://activitystreams.test/values/contextProof",
+      "relationshipProof": "https://activitystreams.test/values/relationshipProof",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/0391/contextProof> <https://activitystreams.test/values/contextProof> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/0391/inReplyToProof> <https://activitystreams.test/values/inReplyToProof> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/0391/relationshipProof> <https://activitystreams.test/values/relationshipProof> .\n"
+  },
+  {
+    "name": "FEP 0499",
+    "urls": [
+      "https://w3id.org/fep/0499",
+      "https://w3id.org/fep/0499/",
+      "https://w3id.org/fep/0499.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "multibox": "https://activitystreams.test/values/multibox",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/0499/multibox> <https://activitystreams.test/values/multibox> .\n"
+  },
+  {
+    "name": "FEP 0837",
+    "urls": [
+      "https://w3id.org/fep/0837",
+      "https://w3id.org/fep/0837/",
+      "https://w3id.org/fep/0837.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "action": "example-action",
+      "availableQuantity": "example-availableQuantity",
+      "hasUnit": "example-hasUnit",
+      "hasNumericalValue": "example-hasNumericalValue",
+      "purpose": "example-purpose",
+      "publishes": "example-publishes",
+      "reciprocal": "example-reciprocal",
+      "resourceConformsTo": "example-resourceConformsTo",
+      "resourceQuantity": "example-resourceQuantity",
+      "minimumQuantity": "example-minimumQuantity",
+      "satisfies": "example-satisfies",
+      "stipulates": "example-stipulates",
+      "stipulatesReciprocal": "example-stipulatesReciprocal",
+      "unitBased": "example-unitBased",
+      "OfferAgreement": "https://activitystreams.test/values/OfferAgreement",
+      "AcceptAgreement": "https://activitystreams.test/values/AcceptAgreement",
+      "RejectAgreement": "https://activitystreams.test/values/RejectAgreement",
+      "type": [
+        "Note",
+        "Agreement",
+        "Commitment",
+        "Intent",
+        "Proposal"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/valueflows/ont/vf#Agreement> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/valueflows/ont/vf#Commitment> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/valueflows/ont/vf#Intent> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/valueflows/ont/vf#Proposal> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/0837/AcceptAgreement> <https://activitystreams.test/values/AcceptAgreement> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/0837/OfferAgreement> <https://activitystreams.test/values/OfferAgreement> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/0837/RejectAgreement> <https://activitystreams.test/values/RejectAgreement> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#action> \"example-action\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#availableQuantity> \"example-availableQuantity\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#hasNumericalValue> \"example-hasNumericalValue\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#hasUnit> \"example-hasUnit\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#minimumQuantity> \"example-minimumQuantity\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#publishes> \"example-publishes\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#purpose> \"example-purpose\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#reciprocal> \"example-reciprocal\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#resourceConformsTo> \"example-resourceConformsTo\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#resourceQuantity> \"example-resourceQuantity\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#satisfies> \"example-satisfies\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#stipulates> \"example-stipulates\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#stipulatesReciprocal> \"example-stipulatesReciprocal\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/valueflows/ont/vf#unitBased> \"example-unitBased\" .\n"
+  },
+  {
+    "name": "FEP 1580",
+    "urls": [
+      "https://w3id.org/fep/1580",
+      "https://w3id.org/fep/1580/",
+      "https://w3id.org/fep/1580.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "actors": "https://activitystreams.test/values/actors",
+      "migratedAt": "2030-01-01T00:00:00Z",
+      "migratedFrom": "https://activitystreams.test/values/migratedFrom",
+      "migration": "https://activitystreams.test/values/migration",
+      "migrationComplete": "https://activitystreams.test/values/migrationComplete",
+      "moves": "https://activitystreams.test/values/moves",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/1580#actors> <https://activitystreams.test/values/actors> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/1580#migratedAt> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/1580#migratedFrom> <https://activitystreams.test/values/migratedFrom> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/1580#migration> <https://activitystreams.test/values/migration> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/1580#migrationComplete> <https://activitystreams.test/values/migrationComplete> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/1580#moves> <https://activitystreams.test/values/moves> .\n"
+  },
+  {
+    "name": "FEP 171b",
+    "urls": [
+      "https://w3id.org/fep/171b",
+      "https://w3id.org/fep/171b/",
+      "https://w3id.org/fep/171b.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "collectionOf": "example-collectionOf",
+      "canReply": "https://activitystreams.test/values/canReply",
+      "contextHistory": "https://activitystreams.test/values/contextHistory",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://fediversity.site/apschema#collectionOf> \"example-collectionOf\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/171b/canReply> <https://activitystreams.test/values/canReply> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/171b/contextHistory> <https://activitystreams.test/values/contextHistory> .\n"
+  },
+  {
+    "name": "FEP 1985",
+    "urls": [
+      "https://w3id.org/fep/1985",
+      "https://w3id.org/fep/1985/",
+      "https://w3id.org/fep/1985.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "orderType": "https://activitystreams.test/values/orderType",
+      "type": [
+        "Note",
+        "ForwardChronological",
+        "ReverseChronological"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/1985/ForwardChronological> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/1985/ReverseChronological> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/1985/orderType> <https://activitystreams.test/values/orderType> .\n"
+  },
+  {
+    "name": "FEP 22cd",
+    "urls": [
+      "https://w3id.org/fep/22cd",
+      "https://w3id.org/fep/22cd/",
+      "https://w3id.org/fep/22cd.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "translations": "example-translations",
+      "sourceUpdated": "2030-01-01T00:00:00Z",
+      "translator": "https://activitystreams.test/values/translator",
+      "inLanguage": "example-inLanguage",
+      "translationOfWork": "https://activitystreams.test/values/translationOfWork",
+      "isBasedOn": "https://activitystreams.test/values/isBasedOn",
+      "type": [
+        "Note",
+        "Translation"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/22cd#Translation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://schema.org/inLanguage> \"example-inLanguage\" .\n<https://activitystreams.test/objects/context-test> <https://schema.org/isBasedOn> <https://activitystreams.test/values/isBasedOn> .\n<https://activitystreams.test/objects/context-test> <https://schema.org/translationOfWork> <https://activitystreams.test/values/translationOfWork> .\n<https://activitystreams.test/objects/context-test> <https://schema.org/translator> <https://activitystreams.test/values/translator> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/22cd#sourceUpdated> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/22cd#translations> \"example-translations\" .\n"
+  },
+  {
+    "name": "FEP 268d",
+    "urls": [
+      "https://w3id.org/fep/268d",
+      "https://w3id.org/fep/268d/",
+      "https://w3id.org/fep/268d.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "searchableBy": "https://activitystreams.test/values/searchableBy",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://fedibird.com/ns#searchableBy> <https://activitystreams.test/values/searchableBy> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n"
+  },
+  {
+    "name": "FEP 2e40",
+    "urls": [
+      "https://w3id.org/fep",
+      "https://w3id.org/fep/",
+      "https://raw.codeberg.page/fediverse/fep/feps/assets/fep-2e40/namespace.json"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n"
+  },
+  {
+    "name": "FEP 34c1",
+    "urls": [
+      "https://w3id.org/fep/34c1",
+      "https://w3id.org/fep/34c1/",
+      "https://w3id.org/fep/34c1.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "pageSize": "example-pageSize",
+      "myFollowees": "https://activitystreams.test/values/myFollowees",
+      "myAudience": "https://activitystreams.test/values/myAudience",
+      "relation": "https://activitystreams.test/values/relation",
+      "path": "https://activitystreams.test/values/path",
+      "value": "example-value",
+      "node": "https://activitystreams.test/values/node",
+      "search": "https://activitystreams.test/values/search",
+      "member": "https://activitystreams.test/values/member",
+      "remainingItems": "example-remainingItems",
+      "template": "https://activitystreams.test/values/template",
+      "type": [
+        "Note",
+        "FilterRequest",
+        "FilterEndpoint",
+        "EqualToRelation",
+        "NotEqualToRelation",
+        "GreaterThanRelation",
+        "GreaterThanOrEqualToRelation",
+        "LessThanRelation",
+        "LessThanOrEqualToRelation",
+        "PrefixRelation",
+        "SubstringRelation",
+        "SuffixRelation",
+        "GeospatiallyContainsRelation",
+        "InBetweenRelation"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/34c1#FilterEndpoint> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/34c1#FilterRequest> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/tree#EqualToRelation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/tree#GeospatiallyContainsRelation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/tree#GreaterThanOrEqualToRelation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/tree#GreaterThanRelation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/tree#InBetweenRelation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/tree#LessThanOrEqualToRelation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/tree#LessThanRelation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/tree#NotEqualToRelation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/tree#PrefixRelation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/tree#SubstringRelation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/tree#SuffixRelation> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/34c1#myAudience> <https://activitystreams.test/values/myAudience> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/34c1#myFollowees> <https://activitystreams.test/values/myFollowees> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/34c1#pageSize> \"example-pageSize\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/tree#member> <https://activitystreams.test/values/member> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/tree#node> <https://activitystreams.test/values/node> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/tree#path> <https://activitystreams.test/values/path> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/tree#relation> <https://activitystreams.test/values/relation> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/tree#remainingItems> \"example-remainingItems\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/tree#search> <https://activitystreams.test/values/search> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/tree#template> <https://activitystreams.test/values/template> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/tree#value> \"example-value\" .\n"
+  },
+  {
+    "name": "FEP 34ec",
+    "urls": [
+      "https://w3id.org/fep/34ec",
+      "https://w3id.org/fep/34ec/",
+      "https://w3id.org/fep/34ec.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "notifications": "https://activitystreams.test/values/notifications",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/34ec#notifications> <https://activitystreams.test/values/notifications> .\n"
+  },
+  {
+    "name": "FEP 3ab2",
+    "urls": [
+      "https://w3id.org/fep/3ab2",
+      "https://w3id.org/fep/3ab2/",
+      "https://w3id.org/fep/3ab2.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "endpoints": {
+        "id": "https://activitystreams.test/objects/endpoints",
+        "streamingControl": "https://activitystreams.test/values/streamingControl"
+      },
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://www.w3.org/ns/activitystreams#endpoints> <https://activitystreams.test/objects/endpoints> .\n<https://activitystreams.test/objects/endpoints> <https://w3id.org/fep/3ab2#streamingControl> <https://activitystreams.test/values/streamingControl> .\n"
+  },
+  {
+    "name": "FEP 5711",
+    "urls": [
+      "https://w3id.org/fep/5711",
+      "https://w3id.org/fep/5711/",
+      "https://w3id.org/fep/5711.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "likesOf": "https://activitystreams.test/values/likesOf",
+      "sharesOf": "https://activitystreams.test/values/sharesOf",
+      "repliesOf": "https://activitystreams.test/values/repliesOf",
+      "inboxOf": "https://activitystreams.test/values/inboxOf",
+      "outboxOf": "https://activitystreams.test/values/outboxOf",
+      "followersOf": "https://activitystreams.test/values/followersOf",
+      "followingOf": "https://activitystreams.test/values/followingOf",
+      "likedOf": "https://activitystreams.test/values/likedOf",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/5711#followersOf> <https://activitystreams.test/values/followersOf> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/5711#followingOf> <https://activitystreams.test/values/followingOf> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/5711#inboxOf> <https://activitystreams.test/values/inboxOf> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/5711#likedOf> <https://activitystreams.test/values/likedOf> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/5711#likesOf> <https://activitystreams.test/values/likesOf> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/5711#outboxOf> <https://activitystreams.test/values/outboxOf> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/5711#repliesOf> <https://activitystreams.test/values/repliesOf> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/5711#sharesOf> <https://activitystreams.test/values/sharesOf> .\n"
+  },
+  {
+    "name": "FEP 5e53",
+    "urls": [
+      "https://w3id.org/fep/5e53",
+      "https://w3id.org/fep/5e53/",
+      "https://w3id.org/fep/5e53.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "xRobotsTag": [
+        "https://activitystreams.test/values/xRobotsTag",
+        "https://activitystreams.test/values/xRobotsTag-second"
+      ],
+      "SPC": [
+        "https://activitystreams.test/values/SPC",
+        "https://activitystreams.test/values/SPC-second"
+      ],
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://privacycg.github.io/gpc-spec/#the-sec-gpc-header-field-for-http-requests> _:c14n2 .\n<https://activitystreams.test/objects/context-test> <https://www.robotstxt.org/meta.html> _:c14n1 .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> <https://activitystreams.test/values/xRobotsTag-second> .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> <https://activitystreams.test/values/xRobotsTag> .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:c14n0 .\n_:c14n2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> <https://activitystreams.test/values/SPC> .\n_:c14n2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:c14n3 .\n_:c14n3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> <https://activitystreams.test/values/SPC-second> .\n_:c14n3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n"
+  },
+  {
+    "name": "FEP 6757",
+    "urls": [
+      "https://w3id.org/fep/6757",
+      "https://w3id.org/fep/6757/",
+      "https://w3id.org/fep/6757.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "license": "https://activitystreams.test/values/license",
+      "preferredLicense": "https://activitystreams.test/values/preferredLicense",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://purl.org/dc/terms/license> <https://activitystreams.test/values/license> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/6757#preferredLicense> <https://activitystreams.test/values/preferredLicense> .\n"
+  },
+  {
+    "name": "FEP 7502",
+    "urls": [
+      "https://w3id.org/fep/7502",
+      "https://w3id.org/fep/7502/",
+      "https://w3id.org/fep/7502.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "type": [
+        "Note",
+        "Authenticated"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/auth/acl#AuthenticatedAgent> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n"
+  },
+  {
+    "name": "FEP 7628",
+    "urls": [
+      "https://w3id.org/fep/7628",
+      "https://w3id.org/fep/7628/",
+      "https://w3id.org/fep/7628.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "movedTo": "https://activitystreams.test/values/movedTo",
+      "copiedTo": "https://activitystreams.test/values/copiedTo",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/7628#copiedTo> <https://activitystreams.test/values/copiedTo> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/7628#movedTo> <https://activitystreams.test/values/movedTo> .\n"
+  },
+  {
+    "name": "FEP 7aa9",
+    "urls": [
+      "https://w3id.org/fep/7aa9",
+      "https://w3id.org/fep/7aa9/",
+      "https://w3id.org/fep/7aa9.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "topic": "https://activitystreams.test/values/topic",
+      "featuredObject": "https://activitystreams.test/values/featuredObject",
+      "canFeature": "https://activitystreams.test/values/canFeature",
+      "featureAuthorization": "https://activitystreams.test/values/featureAuthorization",
+      "type": [
+        "Note",
+        "FeaturedCollection",
+        "FeaturedItem",
+        "FeatureRequest",
+        "FeatureAuthorization"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/7aa9#FeatureAuthorization> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/7aa9#FeatureRequest> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/7aa9#FeaturedCollection> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/7aa9#FeaturedItem> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/7aa9#canFeature> <https://activitystreams.test/values/canFeature> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/7aa9#featureAuthorization> <https://activitystreams.test/values/featureAuthorization> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/7aa9#featuredObject> <https://activitystreams.test/values/featuredObject> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/7aa9#topic> <https://activitystreams.test/values/topic> .\n"
+  },
+  {
+    "name": "FEP 844e",
+    "urls": [
+      "https://w3id.org/fep/844e",
+      "https://w3id.org/fep/844e/",
+      "https://w3id.org/fep/844e.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "implements": "https://activitystreams.test/values/implements",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/844e/implements> <https://activitystreams.test/values/implements> .\n"
+  },
+  {
+    "name": "FEP 888d",
+    "urls": [
+      "https://w3id.org/fep/888d",
+      "https://w3id.org/fep/888d/",
+      "https://w3id.org/fep/888d.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "exampleA": "example-exampleA",
+      "exampleB": "https://activitystreams.test/values/exampleB",
+      "exampleC": [
+        7,
+        8
+      ],
+      "type": [
+        "Note",
+        "SomeType"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/888d/SomeType> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/888d/exampleA> \"example-exampleA\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/888d/exampleB> <https://activitystreams.test/values/exampleB> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/888d/exampleC> _:c14n0 .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"7\"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:c14n1 .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"8\"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n"
+  },
+  {
+    "name": "FEP 8a8e",
+    "urls": [
+      "https://w3id.org/fep/8a8e",
+      "https://w3id.org/fep/8a8e/",
+      "https://w3id.org/fep/8a8e.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "attendees": "example-attendees",
+      "category": [
+        "example-category",
+        "example-category-second"
+      ],
+      "displayEndTime": true,
+      "eventStatus": "https://activitystreams.test/values/eventStatus",
+      "externalParticipationUrl": "example-externalParticipationUrl",
+      "isBannerImage": "example-isBannerImage",
+      "joinMode": "example-joinMode",
+      "organizers": "example-organizers",
+      "previousStartTime": "https://activitystreams.test/values/previousStartTime",
+      "requiredJoinVisibility": [
+        "example-requiredJoinVisibility",
+        "example-requiredJoinVisibility-second"
+      ],
+      "timezone": "example-timezone",
+      "upcomingEvents": "https://activitystreams.test/values/upcomingEvents",
+      "type": [
+        "Note",
+        "AttendeesCollection",
+        "EventCancelled",
+        "EventMovedOnline",
+        "EventPostponed",
+        "EventRescheduled",
+        "EventScheduled",
+        "EventStatusType",
+        "EventTentative",
+        "OrganizersCollection"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/8a8e/AttendeesCollection> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/8a8e/EventCancelled> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/8a8e/EventMovedOnline> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/8a8e/EventPostponed> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/8a8e/EventRescheduled> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/8a8e/EventScheduled> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/8a8e/EventStatusType> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/8a8e/EventTentative> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/8a8e/OrganizersCollection> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/attendees> \"example-attendees\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/category> _:c14n2 .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/displayEndTime> \"true\"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/eventStatus> <https://activitystreams.test/values/eventStatus> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/externalParticipationUrl> \"example-externalParticipationUrl\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/isBannerImage> \"example-isBannerImage\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/joinMode> \"example-joinMode\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/organizers> \"example-organizers\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/previousStartTime> <https://activitystreams.test/values/previousStartTime> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/requiredJoinVisibility> _:c14n0 .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/timezone> \"example-timezone\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/8a8e/upcomingEvents> <https://activitystreams.test/values/upcomingEvents> .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"example-requiredJoinVisibility\"^^<http://www.w3.org/2001/XMLSchema#anyURI> .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:c14n3 .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"example-category-second\" .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n_:c14n2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"example-category\" .\n_:c14n2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:c14n1 .\n_:c14n3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"example-requiredJoinVisibility-second\"^^<http://www.w3.org/2001/XMLSchema#anyURI> .\n_:c14n3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n"
+  },
+  {
+    "name": "FEP 9091",
+    "urls": [
+      "https://w3id.org/fep/9091",
+      "https://w3id.org/fep/9091/",
+      "https://w3id.org/fep/9091.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "type": [
+        "Note",
+        "Export"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/9091#Export> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n"
+  },
+  {
+    "name": "FEP 9967",
+    "urls": [
+      "https://w3id.org/fep/9967",
+      "https://w3id.org/fep/9967/",
+      "https://w3id.org/fep/9967.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "type": [
+        "Note",
+        "Respond"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/9967/Respond> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n"
+  },
+  {
+    "name": "FEP a070",
+    "urls": [
+      "https://w3id.org/fep/a070",
+      "https://w3id.org/fep/a070/",
+      "https://w3id.org/fep/a070.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "orderedAttachment": [
+        "https://activitystreams.test/values/orderedAttachment",
+        "https://activitystreams.test/values/orderedAttachment-second"
+      ],
+      "orderedTag": [
+        "https://activitystreams.test/values/orderedTag",
+        "https://activitystreams.test/values/orderedTag-second"
+      ],
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://www.w3.org/ns/activitystreams#attachment> _:c14n1 .\n<https://activitystreams.test/objects/context-test> <https://www.w3.org/ns/activitystreams#tag> _:c14n2 .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> <https://activitystreams.test/values/orderedAttachment-second> .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> <https://activitystreams.test/values/orderedAttachment> .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:c14n0 .\n_:c14n2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> <https://activitystreams.test/values/orderedTag> .\n_:c14n2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:c14n3 .\n_:c14n3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> <https://activitystreams.test/values/orderedTag-second> .\n_:c14n3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n"
+  },
+  {
+    "name": "FEP a1d1",
+    "urls": [
+      "https://w3id.org/fep/a1d1",
+      "https://w3id.org/fep/a1d1/",
+      "https://w3id.org/fep/a1d1.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "operations": [
+        {
+          "id": "https://activitystreams.test/objects/operations",
+          "op": "example-op",
+          "path": "example-path",
+          "value": {
+            "example": [
+              true,
+              "value"
+            ]
+          },
+          "from": "example-from",
+          "add": "example-add",
+          "remove": "example-remove",
+          "replace": "example-replace",
+          "move": "example-move",
+          "copy": "example-copy",
+          "test": "example-test"
+        },
+        {
+          "id": "https://activitystreams.test/objects/operations-second",
+          "op": "example-op",
+          "path": "example-path",
+          "value": {
+            "example": [
+              true,
+              "value"
+            ]
+          },
+          "from": "example-from",
+          "add": "example-add",
+          "remove": "example-remove",
+          "replace": "example-replace",
+          "move": "example-move",
+          "copy": "example-copy",
+          "test": "example-test"
+        }
+      ],
+      "type": [
+        "Note",
+        "Patch",
+        "PatchOperations"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/a1d1#Patch> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/a1d1#PatchOperations> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a1d1#operations> _:c14n1 .\n<https://activitystreams.test/objects/operations-second> <https://w3id.org/fep/a1d1#add> \"example-add\" .\n<https://activitystreams.test/objects/operations-second> <https://w3id.org/fep/a1d1#copy> \"example-copy\" .\n<https://activitystreams.test/objects/operations-second> <https://w3id.org/fep/a1d1#from> \"example-from\" .\n<https://activitystreams.test/objects/operations-second> <https://w3id.org/fep/a1d1#move> \"example-move\" .\n<https://activitystreams.test/objects/operations-second> <https://w3id.org/fep/a1d1#op> \"example-op\" .\n<https://activitystreams.test/objects/operations-second> <https://w3id.org/fep/a1d1#path> \"example-path\" .\n<https://activitystreams.test/objects/operations-second> <https://w3id.org/fep/a1d1#remove> \"example-remove\" .\n<https://activitystreams.test/objects/operations-second> <https://w3id.org/fep/a1d1#replace> \"example-replace\" .\n<https://activitystreams.test/objects/operations-second> <https://w3id.org/fep/a1d1#test> \"example-test\" .\n<https://activitystreams.test/objects/operations-second> <https://w3id.org/fep/a1d1#value> \"{\\\"example\\\":[true,\\\"value\\\"]}\"^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON> .\n<https://activitystreams.test/objects/operations> <https://w3id.org/fep/a1d1#add> \"example-add\" .\n<https://activitystreams.test/objects/operations> <https://w3id.org/fep/a1d1#copy> \"example-copy\" .\n<https://activitystreams.test/objects/operations> <https://w3id.org/fep/a1d1#from> \"example-from\" .\n<https://activitystreams.test/objects/operations> <https://w3id.org/fep/a1d1#move> \"example-move\" .\n<https://activitystreams.test/objects/operations> <https://w3id.org/fep/a1d1#op> \"example-op\" .\n<https://activitystreams.test/objects/operations> <https://w3id.org/fep/a1d1#path> \"example-path\" .\n<https://activitystreams.test/objects/operations> <https://w3id.org/fep/a1d1#remove> \"example-remove\" .\n<https://activitystreams.test/objects/operations> <https://w3id.org/fep/a1d1#replace> \"example-replace\" .\n<https://activitystreams.test/objects/operations> <https://w3id.org/fep/a1d1#test> \"example-test\" .\n<https://activitystreams.test/objects/operations> <https://w3id.org/fep/a1d1#value> \"{\\\"example\\\":[true,\\\"value\\\"]}\"^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON> .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> <https://activitystreams.test/objects/operations-second> .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> <https://activitystreams.test/objects/operations> .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:c14n0 .\n"
+  },
+  {
+    "name": "FEP a427",
+    "urls": [
+      "https://w3id.org/fep/a427",
+      "https://w3id.org/fep/a427/",
+      "https://w3id.org/fep/a427.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "source": "https://activitystreams.test/values/source",
+      "target": "https://activitystreams.test/values/target",
+      "mapping": "example-mapping",
+      "state": "example-state",
+      "acceptance": "https://activitystreams.test/values/acceptance",
+      "migration": "https://activitystreams.test/values/migration",
+      "fromOrigin": "example-fromOrigin",
+      "toOrigin": "example-toOrigin",
+      "rules": [
+        "example-rules",
+        "example-rules-second"
+      ],
+      "fromPrefix": "example-fromPrefix",
+      "toPrefix": "example-toPrefix",
+      "pattern": "example-pattern",
+      "replacement": "example-replacement",
+      "type": [
+        "Note",
+        "ServerMigration",
+        "ServerMigrationAcceptance",
+        "ServerMove",
+        "OriginReplace",
+        "PrefixReplace",
+        "RegexReplace"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/a427#OriginReplace> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/a427#PrefixReplace> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/a427#RegexReplace> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/a427#ServerMigration> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/a427#ServerMigrationAcceptance> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/a427#ServerMove> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#acceptance> <https://activitystreams.test/values/acceptance> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#fromOrigin> \"example-fromOrigin\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#fromPrefix> \"example-fromPrefix\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#mapping> \"example-mapping\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#migration> <https://activitystreams.test/values/migration> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#pattern> \"example-pattern\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#replacement> \"example-replacement\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#rules> _:c14n1 .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#source> <https://activitystreams.test/values/source> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#state> \"example-state\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#target> <https://activitystreams.test/values/target> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#toOrigin> \"example-toOrigin\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/a427#toPrefix> \"example-toPrefix\" .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"example-rules-second\" .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"example-rules\" .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:c14n0 .\n"
+  },
+  {
+    "name": "FEP b06c",
+    "urls": [
+      "https://w3id.org/fep/b06c",
+      "https://w3id.org/fep/b06c/",
+      "https://w3id.org/fep/b06c.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "pollOnly": "example-pollOnly",
+      "updateInterval": "example-updateInterval",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/b06c#pollOnly> \"example-pollOnly\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/b06c#updateInterval> \"example-updateInterval\" .\n"
+  },
+  {
+    "name": "FEP bad1",
+    "urls": [
+      "https://w3id.org/fep/bad1",
+      "https://w3id.org/fep/bad1/",
+      "https://w3id.org/fep/bad1.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "history": "https://activitystreams.test/values/history",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/bad1/history> <https://activitystreams.test/values/history> .\n"
+  },
+  {
+    "name": "FEP c0e0",
+    "urls": [
+      "https://w3id.org/fep/c0e0",
+      "https://w3id.org/fep/c0e0/",
+      "https://w3id.org/fep/c0e0.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "emojiReactions": "example-emojiReactions",
+      "type": [
+        "Note",
+        "EmojiReact"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://fedibird.com/ns#emojiReactions> \"example-emojiReactions\" .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://litepub.social/ns#EmojiReact> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n"
+  },
+  {
+    "name": "FEP c16b",
+    "urls": [
+      "https://w3id.org/fep/c16b",
+      "https://w3id.org/fep/c16b/",
+      "https://w3id.org/fep/c16b.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "htmlMfm": "example-htmlMfm",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/c16b#htmlMfm> \"example-htmlMfm\" .\n"
+  },
+  {
+    "name": "FEP c390",
+    "urls": [
+      "https://w3id.org/fep/c390",
+      "https://w3id.org/fep/c390/",
+      "https://w3id.org/fep/c390.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "type": [
+        "Note",
+        "VerifiableIdentityStatement"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/c390/VerifiableIdentityStatement> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n"
+  },
+  {
+    "name": "FEP d8c8",
+    "urls": [
+      "https://w3id.org/fep/d8c8",
+      "https://w3id.org/fep/d8c8/",
+      "https://w3id.org/fep/d8c8.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "infohash_v1": "example-infohash_v1",
+      "infohash_v2": "example-infohash_v2",
+      "magnet": "example-magnet",
+      "bencoded": "example-bencoded",
+      "type": [
+        "Note",
+        "Torrent"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/d8c8#Torrent> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/d8c8#bencoded> \"example-bencoded\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/d8c8#infohash_v1> \"example-infohash_v1\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/d8c8#infohash_v2> \"example-infohash_v2\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/d8c8#magnet> \"example-magnet\" .\n"
+  },
+  {
+    "name": "FEP db70",
+    "urls": [
+      "https://w3id.org/fep/db70",
+      "https://w3id.org/fep/db70/",
+      "https://w3id.org/fep/db70.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "filter": "https://activitystreams.test/values/filter",
+      "type": [
+        "Note",
+        "RemoveAll"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/db70#RemoveAll> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/db70#filter> <https://activitystreams.test/values/filter> .\n"
+  },
+  {
+    "name": "FEP de8d",
+    "urls": [
+      "https://w3id.org/fep/de8d",
+      "https://w3id.org/fep/de8d/",
+      "https://w3id.org/fep/de8d.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "emojiCatalog": "https://activitystreams.test/values/emojiCatalog",
+      "emojiCategory": "example-emojiCategory",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/de8d#emojiCatalog> <https://activitystreams.test/values/emojiCatalog> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/de8d#emojiCategory> \"example-emojiCategory\" .\n"
+  },
+  {
+    "name": "FEP e4de",
+    "urls": [
+      "https://w3id.org/fep/e4de",
+      "https://w3id.org/fep/e4de/",
+      "https://w3id.org/fep/e4de.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "unattendedSince": "2030-01-01T00:00:00Z",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/e4de#unattendedSince> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n"
+  },
+  {
+    "name": "FEP ef61",
+    "urls": [
+      "https://w3id.org/fep/ef61",
+      "https://w3id.org/fep/ef61/",
+      "https://w3id.org/fep/ef61.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "gateways": [
+        "example-gateways",
+        "example-gateways-second"
+      ],
+      "digestMultibase": "example-digestMultibase",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/ef61/gateways> _:c14n1 .\n<https://activitystreams.test/objects/context-test> <https://www.w3.org/ns/credentials/v2#digestMultibase> \"example-digestMultibase\" .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"example-gateways-second\"^^<http://www.w3.org/2001/XMLSchema#anyURI> .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"example-gateways\"^^<http://www.w3.org/2001/XMLSchema#anyURI> .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:c14n0 .\n"
+  },
+  {
+    "name": "FEP f011",
+    "urls": [
+      "https://w3id.org/fep/f011",
+      "https://w3id.org/fep/f011/",
+      "https://w3id.org/fep/f011.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "endpoints": {
+        "id": "https://activitystreams.test/objects/endpoints",
+        "search": "https://activitystreams.test/values/search"
+      },
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://www.w3.org/ns/activitypub#endpoints> <https://activitystreams.test/objects/endpoints> .\n<https://activitystreams.test/objects/endpoints> <https://w3id.org/fep/f011#search> <https://activitystreams.test/values/search> .\n"
+  },
+  {
+    "name": "FEP fe34",
+    "urls": [
+      "https://w3id.org/fep/fe34",
+      "https://w3id.org/fep/fe34/",
+      "https://w3id.org/fep/fe34.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "partialObject": true,
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/fe34#partialObject> \"true\"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n"
+  },
+  {
+    "name": "FEP 888d alternate",
+    "urls": [
+      "https://raw.codeberg.page/fediverse/fep/fep/888d/context-alternate.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "exampleA": "example-exampleA",
+      "exampleB": "https://activitystreams.test/values/exampleB",
+      "exampleC": [
+        7,
+        8
+      ],
+      "type": [
+        "Note",
+        "SomeType"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/fep/888d#SomeType> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/888d#exampleA> \"example-exampleA\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/888d#exampleB> <https://activitystreams.test/values/exampleB> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/fep/888d#exampleC> _:c14n0 .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"7\"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .\n_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:c14n1 .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> \"8\"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .\n_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n"
+  },
+  {
+    "name": "socialweb blocked/1.0.0",
+    "urls": [
+      "https://purl.archive.org/socialweb/blocked/1.0.0",
+      "https://evanp.github.io/socialweb/blocked/1.0.0.jsonld",
+      "https://purl.archive.org/socialweb/blocked/1.0"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "blocked": "https://activitystreams.test/values/blocked",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/blocked#blocked> <https://activitystreams.test/values/blocked> .\n"
+  },
+  {
+    "name": "socialweb blocked/2.0.0",
+    "urls": [
+      "https://purl.archive.org/socialweb/blocked/2.0.0",
+      "https://evanp.github.io/socialweb/blocked/2.0.0.jsonld",
+      "https://purl.archive.org/socialweb/blocked/2.0",
+      "https://purl.archive.org/socialweb/blocked",
+      "https://evanp.github.io/socialweb/blocked.jsonld",
+      "https://purl.archive.org/socialweb/blocks",
+      "https://evanp.github.io/socialweb/blocks.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "blocked": "https://activitystreams.test/values/blocked",
+      "blocks": "https://activitystreams.test/values/blocks",
+      "blockedOf": "https://activitystreams.test/values/blockedOf",
+      "blocksOf": "https://activitystreams.test/values/blocksOf",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/blocked#blocked> <https://activitystreams.test/values/blocked> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/blocked#blockedOf> <https://activitystreams.test/values/blockedOf> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/blocked#blocks> <https://activitystreams.test/values/blocks> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/blocked#blocksOf> <https://activitystreams.test/values/blocksOf> .\n"
+  },
+  {
+    "name": "socialweb blocks/1.0.0",
+    "urls": [
+      "https://purl.archive.org/socialweb/blocks/1.0.0",
+      "https://evanp.github.io/socialweb/blocks/1.0.0.jsonld",
+      "https://purl.archive.org/socialweb/blocks/1.0"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "blocks": "https://activitystreams.test/values/blocks",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/blocks#blocks> <https://activitystreams.test/values/blocks> .\n"
+  },
+  {
+    "name": "socialweb oauth/1.0.0",
+    "urls": [
+      "https://purl.archive.org/socialweb/oauth/1.0.0",
+      "https://evanp.github.io/socialweb/oauth/1.0.0.jsonld",
+      "https://purl.archive.org/socialweb/oauth/1.0"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "redirectURI": "https://activitystreams.test/values/redirectURI",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/oauth#redirectURI> <https://activitystreams.test/values/redirectURI> .\n"
+  },
+  {
+    "name": "socialweb oauth/1.1.0",
+    "urls": [
+      "https://purl.archive.org/socialweb/oauth/1.1.0",
+      "https://evanp.github.io/socialweb/oauth/1.1.0.jsonld",
+      "https://purl.archive.org/socialweb/oauth/1.1"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "redirectURI": "https://activitystreams.test/values/redirectURI",
+      "universalClientID": true,
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/oauth#redirectURI> <https://activitystreams.test/values/redirectURI> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/oauth#universalClientID> \"true\"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n"
+  },
+  {
+    "name": "socialweb oauth/1.2.0",
+    "urls": [
+      "https://purl.archive.org/socialweb/oauth/1.2.0",
+      "https://evanp.github.io/socialweb/oauth/1.2.0.jsonld",
+      "https://purl.archive.org/socialweb/oauth/1.2"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "redirectURI": "https://activitystreams.test/values/redirectURI",
+      "universalClientID": true,
+      "objectIDasClientID": true,
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/oauth#objectIDasClientID> \"true\"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/oauth#redirectURI> <https://activitystreams.test/values/redirectURI> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/oauth#universalClientID> \"true\"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n"
+  },
+  {
+    "name": "socialweb oauth/2.0.0",
+    "urls": [
+      "https://purl.archive.org/socialweb/oauth/2.0.0",
+      "https://evanp.github.io/socialweb/oauth/2.0.0.jsonld",
+      "https://purl.archive.org/socialweb/oauth/2.0",
+      "https://purl.archive.org/socialweb/oauth",
+      "https://evanp.github.io/socialweb/oauth.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "redirectURI": "example-redirectURI",
+      "objectIDAsClientID": true,
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/oauth#objectIDAsClientID> \"true\"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/oauth#redirectURI> \"example-redirectURI\"^^<http://www.w3.org/2001/XMLSchema#anyURI> .\n"
+  },
+  {
+    "name": "socialweb pending/1.0.0",
+    "urls": [
+      "https://purl.archive.org/socialweb/pending/1.0.0",
+      "https://evanp.github.io/socialweb/pending/1.0.0.jsonld",
+      "https://purl.archive.org/socialweb/pending/1.0"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "pendingFollowers": "https://activitystreams.test/values/pendingFollowers",
+      "pendingFollowing": "https://activitystreams.test/values/pendingFollowing",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/pending#pendingFollowers> <https://activitystreams.test/values/pendingFollowers> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/pending#pendingFollowing> <https://activitystreams.test/values/pendingFollowing> .\n"
+  },
+  {
+    "name": "socialweb pending/1.1.0",
+    "urls": [
+      "https://purl.archive.org/socialweb/pending/1.1.0",
+      "https://evanp.github.io/socialweb/pending/1.1.0.jsonld",
+      "https://purl.archive.org/socialweb/pending/1.1",
+      "https://purl.archive.org/socialweb/pending",
+      "https://evanp.github.io/socialweb/pending.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "pendingFollowers": "https://activitystreams.test/values/pendingFollowers",
+      "pendingFollowing": "https://activitystreams.test/values/pendingFollowing",
+      "pendingFollowersOf": "https://activitystreams.test/values/pendingFollowersOf",
+      "pendingFollowingOf": "https://activitystreams.test/values/pendingFollowingOf",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/pending#pendingFollowers> <https://activitystreams.test/values/pendingFollowers> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/pending#pendingFollowersOf> <https://activitystreams.test/values/pendingFollowersOf> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/pending#pendingFollowing> <https://activitystreams.test/values/pendingFollowing> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/pending#pendingFollowingOf> <https://activitystreams.test/values/pendingFollowingOf> .\n"
+  },
+  {
+    "name": "socialweb seekitem/1.0.0",
+    "urls": [
+      "https://purl.archive.org/socialweb/seekitem/1.0.0",
+      "https://evanp.github.io/socialweb/seekitem/1.0.0.jsonld",
+      "https://purl.archive.org/socialweb/seekitem/1.0",
+      "https://purl.archive.org/socialweb/seekitem"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "seekItem": "example-seekItem",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/seekitem#seekItem> \"example-seekItem\"^^<http://www.w3.org/2001/XMLSchema#anyURI> .\n"
+  },
+  {
+    "name": "socialweb thread/1.0.0",
+    "urls": [
+      "https://purl.archive.org/socialweb/thread/1.0.0",
+      "https://evanp.github.io/socialweb/thread/1.0.0.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n"
+  },
+  {
+    "name": "socialweb thread/1.0.1",
+    "urls": [
+      "https://purl.archive.org/socialweb/thread/1.0.1",
+      "https://evanp.github.io/socialweb/thread/1.0.1.jsonld",
+      "https://purl.archive.org/socialweb/thread/1.0",
+      "https://purl.archive.org/socialweb/thread",
+      "https://evanp.github.io/socialweb/thread.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "thread": "https://activitystreams.test/values/thread",
+      "root": "https://activitystreams.test/values/root",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/thread#root> <https://activitystreams.test/values/root> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/thread#thread> <https://activitystreams.test/values/thread> .\n"
+  },
+  {
+    "name": "socialweb webfinger",
+    "urls": [
+      "https://purl.archive.org/socialweb/webfinger",
+      "https://evanp.github.io/socialweb/webfinger.jsonld"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "webfinger": "example-webfinger",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://purl.archive.org/socialweb/webfinger#webfinger> \"example-webfinger\" .\n"
+  },
+  {
+    "name": "Security v1",
+    "urls": [
+      "https://w3id.org/security/v1"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "authenticationTag": "example-authenticationTag",
+      "canonicalizationAlgorithm": "example-canonicalizationAlgorithm",
+      "cipherAlgorithm": "example-cipherAlgorithm",
+      "cipherData": "example-cipherData",
+      "cipherKey": "example-cipherKey",
+      "created": "2030-01-01T00:00:00Z",
+      "creator": "https://activitystreams.test/values/creator",
+      "digestAlgorithm": "example-digestAlgorithm",
+      "digestValue": "example-digestValue",
+      "domain": "example-domain",
+      "encryptionKey": "example-encryptionKey",
+      "expiration": "2030-01-01T00:00:00Z",
+      "expires": "2030-01-01T00:00:00Z",
+      "initializationVector": "example-initializationVector",
+      "iterationCount": "example-iterationCount",
+      "nonce": "example-nonce",
+      "normalizationAlgorithm": "example-normalizationAlgorithm",
+      "owner": "https://activitystreams.test/values/owner",
+      "password": "example-password",
+      "privateKey": "https://activitystreams.test/values/privateKey",
+      "privateKeyPem": "example-privateKeyPem",
+      "publicKey": "https://activitystreams.test/values/publicKey",
+      "publicKeyBase58": "example-publicKeyBase58",
+      "publicKeyPem": "example-publicKeyPem",
+      "publicKeyWif": "example-publicKeyWif",
+      "publicKeyService": "https://activitystreams.test/values/publicKeyService",
+      "revoked": "2030-01-01T00:00:00Z",
+      "salt": "example-salt",
+      "signature": "example-signature",
+      "signatureAlgorithm": "example-signatureAlgorithm",
+      "signatureValue": "example-signatureValue",
+      "type": [
+        "Note",
+        "EcdsaKoblitzSignature2016",
+        "Ed25519Signature2018",
+        "EncryptedMessage",
+        "GraphSignature2012",
+        "LinkedDataSignature2015",
+        "LinkedDataSignature2016",
+        "CryptographicKey"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://purl.org/dc/terms/created> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <http://purl.org/dc/terms/creator> <https://activitystreams.test/values/creator> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#EcdsaKoblitzSignature2016> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#Ed25519Signature2018> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#EncryptedMessage> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#GraphSignature2012> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#Key> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#LinkedDataSignature2015> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#LinkedDataSignature2016> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#authenticationTag> \"example-authenticationTag\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#canonicalizationAlgorithm> \"example-canonicalizationAlgorithm\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#cipherAlgorithm> \"example-cipherAlgorithm\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#cipherData> \"example-cipherData\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#cipherKey> \"example-cipherKey\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#digestAlgorithm> \"example-digestAlgorithm\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#digestValue> \"example-digestValue\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#domain> \"example-domain\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#encryptionKey> \"example-encryptionKey\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#expiration> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#initializationVector> \"example-initializationVector\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#iterationCount> \"example-iterationCount\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#nonce> \"example-nonce\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#normalizationAlgorithm> \"example-normalizationAlgorithm\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#owner> <https://activitystreams.test/values/owner> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#password> \"example-password\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#privateKey> <https://activitystreams.test/values/privateKey> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#privateKeyPem> \"example-privateKeyPem\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#publicKey> <https://activitystreams.test/values/publicKey> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#publicKeyBase58> \"example-publicKeyBase58\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#publicKeyPem> \"example-publicKeyPem\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#publicKeyService> <https://activitystreams.test/values/publicKeyService> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#publicKeyWif> \"example-publicKeyWif\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#revoked> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#salt> \"example-salt\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#signature> \"example-signature\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#signatureValue> \"example-signatureValue\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#signingAlgorithm> \"example-signatureAlgorithm\" .\n"
+  },
+  {
+    "name": "Identity v1",
+    "urls": [
+      "https://w3id.org/identity/v1"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "claim": "https://activitystreams.test/values/claim",
+      "credential": "https://activitystreams.test/values/credential",
+      "issued": "2030-01-01T00:00:00Z",
+      "issuer": "https://activitystreams.test/values/issuer",
+      "recipient": "https://activitystreams.test/values/recipient",
+      "about": "https://activitystreams.test/values/about",
+      "address": "https://activitystreams.test/values/address",
+      "addressCountry": "example-addressCountry",
+      "addressLocality": "example-addressLocality",
+      "addressRegion": "example-addressRegion",
+      "comment": "example-comment",
+      "created": "2030-01-01T00:00:00Z",
+      "creator": "https://activitystreams.test/values/creator",
+      "description": "example-description",
+      "email": "example-email",
+      "familyName": "example-familyName",
+      "givenName": "example-givenName",
+      "image": "https://activitystreams.test/values/image",
+      "label": "example-label",
+      "name": "example-name",
+      "postalCode": "example-postalCode",
+      "streetAddress": "example-streetAddress",
+      "title": "example-title",
+      "url": "https://activitystreams.test/values/url",
+      "identityService": "https://activitystreams.test/values/identityService",
+      "idp": "https://activitystreams.test/values/idp",
+      "paymentProcessor": "example-paymentProcessor",
+      "preferences": "https://activitystreams.test/values/preferences",
+      "cipherAlgorithm": "example-cipherAlgorithm",
+      "cipherData": "example-cipherData",
+      "cipherKey": "example-cipherKey",
+      "digestAlgorithm": "example-digestAlgorithm",
+      "digestValue": "example-digestValue",
+      "domain": "example-domain",
+      "expires": "2030-01-01T00:00:00Z",
+      "initializationVector": "example-initializationVector",
+      "member": "https://activitystreams.test/values/member",
+      "memberOf": "https://activitystreams.test/values/memberOf",
+      "nonce": "example-nonce",
+      "normalizationAlgorithm": "example-normalizationAlgorithm",
+      "owner": "https://activitystreams.test/values/owner",
+      "password": "example-password",
+      "privateKey": "https://activitystreams.test/values/privateKey",
+      "privateKeyPem": "example-privateKeyPem",
+      "publicKey": "https://activitystreams.test/values/publicKey",
+      "publicKeyPem": "example-publicKeyPem",
+      "publicKeyService": "https://activitystreams.test/values/publicKeyService",
+      "revoked": "2030-01-01T00:00:00Z",
+      "signature": "example-signature",
+      "signatureAlgorithm": "example-signatureAlgorithm",
+      "signatureValue": "example-signatureValue",
+      "accessControl": "https://activitystreams.test/values/accessControl",
+      "writePermission": "https://activitystreams.test/values/writePermission",
+      "type": [
+        "Note",
+        "Group",
+        "Credential",
+        "CryptographicKeyCredential",
+        "Person",
+        "PostalAddress",
+        "Organization",
+        "Identity",
+        "CryptographicKey",
+        "EncryptedMessage",
+        "GraphSignature2012",
+        "LinkedDataSignature2015"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://purl.org/dc/terms/created> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <http://purl.org/dc/terms/creator> <https://activitystreams.test/values/creator> .\n<https://activitystreams.test/objects/context-test> <http://purl.org/dc/terms/title> \"example-title\" .\n<https://activitystreams.test/objects/context-test> <http://schema.org/about> <https://activitystreams.test/values/about> .\n<https://activitystreams.test/objects/context-test> <http://schema.org/address> <https://activitystreams.test/values/address> .\n<https://activitystreams.test/objects/context-test> <http://schema.org/addressCountry> \"example-addressCountry\" .\n<https://activitystreams.test/objects/context-test> <http://schema.org/addressLocality> \"example-addressLocality\" .\n<https://activitystreams.test/objects/context-test> <http://schema.org/addressRegion> \"example-addressRegion\" .\n<https://activitystreams.test/objects/context-test> <http://schema.org/description> \"example-description\" .\n<https://activitystreams.test/objects/context-test> <http://schema.org/email> \"example-email\" .\n<https://activitystreams.test/objects/context-test> <http://schema.org/familyName> \"example-familyName\" .\n<https://activitystreams.test/objects/context-test> <http://schema.org/givenName> \"example-givenName\" .\n<https://activitystreams.test/objects/context-test> <http://schema.org/image> <https://activitystreams.test/values/image> .\n<https://activitystreams.test/objects/context-test> <http://schema.org/member> <https://activitystreams.test/values/member> .\n<https://activitystreams.test/objects/context-test> <http://schema.org/memberOf> <https://activitystreams.test/values/memberOf> .\n<https://activitystreams.test/objects/context-test> <http://schema.org/name> \"example-name\" .\n<https://activitystreams.test/objects/context-test> <http://schema.org/postalCode> \"example-postalCode\" .\n<https://activitystreams.test/objects/context-test> <http://schema.org/streetAddress> \"example-streetAddress\" .\n<https://activitystreams.test/objects/context-test> <http://schema.org/url> <https://activitystreams.test/values/url> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://schema.org/Organization> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://schema.org/Person> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://schema.org/PostalAddress> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/credentials#Credential> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/credentials#CryptographicKeyCredential> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/identity#Identity> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#EncryptedMessage> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#GraphSignature2012> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#Key> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#LinkedDataSignature2015> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Group> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/2000/01/rdf-schema#comment> \"example-comment\" .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/2000/01/rdf-schema#label> \"example-label\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/credentials#claim> <https://activitystreams.test/values/claim> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/credentials#credential> <https://activitystreams.test/values/credential> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/credentials#issued> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/credentials#issuer> <https://activitystreams.test/values/issuer> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/credentials#recipient> <https://activitystreams.test/values/recipient> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/identity#identityService> <https://activitystreams.test/values/identityService> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/identity#idp> <https://activitystreams.test/values/idp> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/payswarm#preferences> <https://activitystreams.test/values/preferences> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/payswarm#processor> \"example-paymentProcessor\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/permissions#accessControl> <https://activitystreams.test/values/accessControl> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/permissions#writePermission> <https://activitystreams.test/values/writePermission> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#cipherAlgorithm> \"example-cipherAlgorithm\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#cipherData> \"example-cipherData\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#cipherKey> \"example-cipherKey\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#digestAlgorithm> \"example-digestAlgorithm\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#digestValue> \"example-digestValue\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#domain> \"example-domain\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#expiration> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#initializationVector> \"example-initializationVector\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#nonce> \"example-nonce\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#normalizationAlgorithm> \"example-normalizationAlgorithm\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#owner> <https://activitystreams.test/values/owner> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#password> \"example-password\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#privateKey> <https://activitystreams.test/values/privateKey> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#privateKeyPem> \"example-privateKeyPem\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#publicKey> <https://activitystreams.test/values/publicKey> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#publicKeyPem> \"example-publicKeyPem\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#publicKeyService> <https://activitystreams.test/values/publicKeyService> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#revoked> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#signature> \"example-signature\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#signatureValue> \"example-signatureValue\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#signingAlgorithm> \"example-signatureAlgorithm\" .\n"
+  },
+  {
+    "name": "Data Integrity v1",
+    "urls": [
+      "https://w3id.org/security/data-integrity/v1"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "proof": "https://activitystreams.test/values/proof",
+      "challenge": "example-challenge",
+      "created": "2030-01-01T00:00:00Z",
+      "domain": "example-domain",
+      "expires": "2030-01-01T00:00:00Z",
+      "nonce": "example-nonce",
+      "proofPurpose": {
+        "id": "https://activitystreams.test/objects/proofPurpose",
+        "assertionMethod": "https://activitystreams.test/values/assertionMethod",
+        "authentication": "https://activitystreams.test/values/authentication",
+        "capabilityInvocation": "https://activitystreams.test/values/capabilityInvocation",
+        "capabilityDelegation": "https://activitystreams.test/values/capabilityDelegation",
+        "keyAgreement": "https://activitystreams.test/values/keyAgreement"
+      },
+      "cryptosuite": "example-cryptosuite",
+      "proofValue": "example-proofValue",
+      "verificationMethod": "https://activitystreams.test/values/verificationMethod",
+      "type": [
+        "Note",
+        "DataIntegrityProof"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://purl.org/dc/terms/created> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#DataIntegrityProof> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#challenge> \"example-challenge\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#cryptosuite> \"example-cryptosuite\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#domain> \"example-domain\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#expiration> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#nonce> \"example-nonce\" .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#proofPurpose> <https://activitystreams.test/objects/proofPurpose> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#proofValue> \"example-proofValue\"^^<https://w3id.org/security#multibase> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#verificationMethod> <https://activitystreams.test/values/verificationMethod> .\n<https://activitystreams.test/objects/proofPurpose> <https://w3id.org/security#assertionMethod> <https://activitystreams.test/values/assertionMethod> .\n<https://activitystreams.test/objects/proofPurpose> <https://w3id.org/security#authenticationMethod> <https://activitystreams.test/values/authentication> .\n<https://activitystreams.test/objects/proofPurpose> <https://w3id.org/security#capabilityDelegationMethod> <https://activitystreams.test/values/capabilityDelegation> .\n<https://activitystreams.test/objects/proofPurpose> <https://w3id.org/security#capabilityInvocationMethod> <https://activitystreams.test/values/capabilityInvocation> .\n<https://activitystreams.test/objects/proofPurpose> <https://w3id.org/security#keyAgreementMethod> <https://activitystreams.test/values/keyAgreement> .\n"
+  },
+  {
+    "name": "DID v1",
+    "urls": [
+      "https://www.w3.org/ns/did/v1"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "alsoKnownAs": "https://activitystreams.test/values/alsoKnownAs",
+      "assertionMethod": "https://activitystreams.test/values/assertionMethod",
+      "authentication": "https://activitystreams.test/values/authentication",
+      "capabilityDelegation": "https://activitystreams.test/values/capabilityDelegation",
+      "capabilityInvocation": "https://activitystreams.test/values/capabilityInvocation",
+      "controller": "https://activitystreams.test/values/controller",
+      "keyAgreement": "https://activitystreams.test/values/keyAgreement",
+      "service": {
+        "id": "https://activitystreams.test/objects/service",
+        "serviceEndpoint": "https://activitystreams.test/values/serviceEndpoint"
+      },
+      "verificationMethod": "https://activitystreams.test/values/verificationMethod",
+      "type": "Note"
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#assertionMethod> <https://activitystreams.test/values/assertionMethod> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#authenticationMethod> <https://activitystreams.test/values/authentication> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#capabilityDelegationMethod> <https://activitystreams.test/values/capabilityDelegation> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#capabilityInvocationMethod> <https://activitystreams.test/values/capabilityInvocation> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#controller> <https://activitystreams.test/values/controller> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#keyAgreementMethod> <https://activitystreams.test/values/keyAgreement> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#verificationMethod> <https://activitystreams.test/values/verificationMethod> .\n<https://activitystreams.test/objects/context-test> <https://www.w3.org/ns/activitystreams#alsoKnownAs> <https://activitystreams.test/values/alsoKnownAs> .\n<https://activitystreams.test/objects/context-test> <https://www.w3.org/ns/did#service> <https://activitystreams.test/objects/service> .\n<https://activitystreams.test/objects/service> <https://www.w3.org/ns/did#serviceEndpoint> <https://activitystreams.test/values/serviceEndpoint> .\n"
+  },
+  {
+    "name": "Multikey v1",
+    "urls": [
+      "https://w3id.org/security/multikey/v1"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "controller": "https://activitystreams.test/values/controller",
+      "revoked": "2030-01-01T00:00:00Z",
+      "expires": "2030-01-01T00:00:00Z",
+      "publicKeyMultibase": "example-publicKeyMultibase",
+      "secretKeyMultibase": "example-secretKeyMultibase",
+      "type": [
+        "Note",
+        "Multikey"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/security#Multikey> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#controller> <https://activitystreams.test/values/controller> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#expiration> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#publicKeyMultibase> \"example-publicKeyMultibase\"^^<https://w3id.org/security#multibase> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#revoked> \"2030-01-01T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n<https://activitystreams.test/objects/context-test> <https://w3id.org/security#secretKeyMultibase> \"example-secretKeyMultibase\"^^<https://w3id.org/security#multibase> .\n"
+  },
+  {
+    "name": "GoToSocial",
+    "urls": [
+      "https://gotosocial.org/ns"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "likeAuthorization": "https://activitystreams.test/values/likeAuthorization",
+      "replyAuthorization": "https://activitystreams.test/values/replyAuthorization",
+      "announceAuthorization": "https://activitystreams.test/values/announceAuthorization",
+      "quoteAuthorization": "https://activitystreams.test/values/quoteAuthorization",
+      "interactingObject": "https://activitystreams.test/values/interactingObject",
+      "interactionTarget": "https://activitystreams.test/values/interactionTarget",
+      "interactionPolicy": "https://activitystreams.test/values/interactionPolicy",
+      "canLike": "https://activitystreams.test/values/canLike",
+      "canReply": "https://activitystreams.test/values/canReply",
+      "canAnnounce": "https://activitystreams.test/values/canAnnounce",
+      "canQuote": "https://activitystreams.test/values/canQuote",
+      "automaticApproval": "https://activitystreams.test/values/automaticApproval",
+      "manualApproval": "https://activitystreams.test/values/manualApproval",
+      "hidesToPublicFromUnauthedWeb": true,
+      "hidesCcPublicFromUnauthedWeb": true,
+      "always": "https://activitystreams.test/values/always",
+      "approvalRequired": "https://activitystreams.test/values/approvalRequired",
+      "approvedBy": "https://activitystreams.test/values/approvedBy",
+      "type": [
+        "Note",
+        "LikeRequest",
+        "ReplyRequest",
+        "AnnounceRequest",
+        "QuoteRequest",
+        "LikeAuthorization",
+        "ReplyAuthorization",
+        "AnnounceAuthorization",
+        "QuoteAuthorization"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://gotosocial.org/ns#AnnounceAuthorization> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://gotosocial.org/ns#AnnounceRequest> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://gotosocial.org/ns#LikeApproval> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://gotosocial.org/ns#LikeRequest> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://gotosocial.org/ns#QuoteAuthorization> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://gotosocial.org/ns#QuoteRequest> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://gotosocial.org/ns#ReplyAuthorization> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://gotosocial.org/ns#ReplyRequest> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#always> <https://activitystreams.test/values/always> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#announceAuthorization> <https://activitystreams.test/values/announceAuthorization> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#approvalRequired> <https://activitystreams.test/values/approvalRequired> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#approvedBy> <https://activitystreams.test/values/approvedBy> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#automaticApproval> <https://activitystreams.test/values/automaticApproval> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#canAnnounce> <https://activitystreams.test/values/canAnnounce> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#canLike> <https://activitystreams.test/values/canLike> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#canQuote> <https://activitystreams.test/values/canQuote> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#canReply> <https://activitystreams.test/values/canReply> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#hidesCcPublicFromUnauthedWeb> \"true\"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#hidesToPublicFromUnauthedWeb> \"true\"^^<http://www.w3.org/2001/XMLSchema#boolean> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#interactingObject> <https://activitystreams.test/values/interactingObject> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#interactionPolicy> <https://activitystreams.test/values/interactionPolicy> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#interactionTarget> <https://activitystreams.test/values/interactionTarget> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#likeAuthorization> <https://activitystreams.test/values/likeAuthorization> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#manualApproval> <https://activitystreams.test/values/manualApproval> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#quoteAuthorization> <https://activitystreams.test/values/quoteAuthorization> .\n<https://activitystreams.test/objects/context-test> <https://gotosocial.org/ns#replyAuthorization> <https://activitystreams.test/values/replyAuthorization> .\n"
+  },
+  {
+    "name": "Miscellany",
+    "urls": [
+      "https://purl.archive.org/miscellany"
+    ],
+    "input": {
+      "id": "https://activitystreams.test/objects/context-test",
+      "manuallyApprovesFollowers": "example-manuallyApprovesFollowers",
+      "movedTo": "https://activitystreams.test/values/movedTo",
+      "sensitive": "example-sensitive",
+      "type": [
+        "Note",
+        "Hashtag"
+      ]
+    },
+    "nquads": "<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Hashtag> .\n<https://activitystreams.test/objects/context-test> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/ns/activitystreams#Note> .\n<https://activitystreams.test/objects/context-test> <https://www.w3.org/ns/activitystreams#manuallyApprovesFollowers> \"example-manuallyApprovesFollowers\" .\n<https://activitystreams.test/objects/context-test> <https://www.w3.org/ns/activitystreams#movedTo> <https://activitystreams.test/values/movedTo> .\n<https://activitystreams.test/objects/context-test> <https://www.w3.org/ns/activitystreams#sensitive> \"example-sensitive\" .\n"
+  }
+]
