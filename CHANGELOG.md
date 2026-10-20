@@ -11,6 +11,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-10-20
+
 ### Added
 
 - Pre-register FEP, socialweb, and W3C Controlled Identifiers JSON-LD contexts
@@ -1840,7 +1842,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.55.0...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.56.0...HEAD
+[0.56.0]: https://github.com/evanp/activitypub-bot/compare/v0.55.0...v0.56.0
 [0.55.0]: https://github.com/evanp/activitypub-bot/compare/v0.54.5...v0.55.0
 [0.54.5]: https://github.com/evanp/activitypub-bot/compare/v0.54.4...v0.54.5
 [0.54.4]: https://github.com/evanp/activitypub-bot/compare/v0.54.3...v0.54.4
