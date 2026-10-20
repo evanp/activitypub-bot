@@ -11,6 +11,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.56.1] - 2026-10-20
+
+### Fixed
+
+- Require activitystrea.ms 4.1.1 or newer for the `alsoKnownAs` vocabulary
+  lookup used by the CID context tests, fixing failures with clean installs.
+
 ## [0.56.0] - 2026-10-20
 
 ### Added
@@ -1842,7 +1849,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.56.0...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.56.1...HEAD
+[0.56.1]: https://github.com/evanp/activitypub-bot/compare/v0.56.0...v0.56.1
 [0.56.0]: https://github.com/evanp/activitypub-bot/compare/v0.55.0...v0.56.0
 [0.55.0]: https://github.com/evanp/activitypub-bot/compare/v0.54.5...v0.55.0
 [0.54.5]: https://github.com/evanp/activitypub-bot/compare/v0.54.4...v0.54.5
