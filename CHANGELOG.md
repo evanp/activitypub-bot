@@ -11,6 +11,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.56.2] - 2026-10-23
+
+### Security
+
+- Rebuild the Docker image with Node.js 26.12.1 to address
+  [CVE-2026-111497](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases),
+  a Brotli decoder out-of-bounds write vulnerability that permits remote code
+  execution.
+
 ## [0.56.1] - 2026-10-20
 
 ### Fixed
@@ -1849,7 +1858,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.56.1...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.56.2...HEAD
+[0.56.2]: https://github.com/evanp/activitypub-bot/compare/v0.56.1...v0.56.2
 [0.56.1]: https://github.com/evanp/activitypub-bot/compare/v0.56.0...v0.56.1
 [0.56.0]: https://github.com/evanp/activitypub-bot/compare/v0.55.0...v0.56.0
 [0.55.0]: https://github.com/evanp/activitypub-bot/compare/v0.54.5...v0.55.0
