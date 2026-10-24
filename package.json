@@ -32,7 +32,7 @@
   "dependencies": {
     "@isaacs/ttlcache": "^2.1.4",
     "@socialwebfoundation/ap-components": "^1.4.2",
-    "activitypub-webfinger": "^0.3.0",
+    "activitypub-webfinger": "^0.5.0",
     "activitystrea.ms": "^4.1.1",
     "cors": "^2.8.6",
     "csv-parse": "^7.0.0",
