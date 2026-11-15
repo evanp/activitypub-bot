@@ -13,6 +13,14 @@ and this project adheres to
 
 ## [0.56.3] - 2026-11-15
 
+### Changed
+
+- Update runtime dependencies: @socialwebfoundation/ap-components,
+  activitypub-webfinger, express-rate-limit, rate-limit-redis, redis, and mysql2.
+- Update development dependencies: neostandard and nock.
+- Update transitive dependencies: body-parser, dompurify, ip-address, qs,
+  undici, webfinger, and the Redis client and modules.
+
 ### Fixed
 
 - Restrict HTTP signature authentication to matched routes so unsupported endpoints such as `/api/v1/instance` return 404 without remote key lookups, preventing recursive server-discovery requests.
