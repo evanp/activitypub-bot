@@ -11,6 +11,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.56.3] - 2026-11-15
+
 ### Fixed
 
 - Restrict HTTP signature authentication to matched routes so unsupported endpoints such as `/api/v1/instance` return 404 without remote key lookups, preventing recursive server-discovery requests.
@@ -1868,7 +1870,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.56.2...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.56.3...HEAD
+[0.56.3]: https://github.com/evanp/activitypub-bot/compare/v0.56.2...v0.56.3
 [0.56.2]: https://github.com/evanp/activitypub-bot/compare/v0.56.1...v0.56.2
 [0.56.1]: https://github.com/evanp/activitypub-bot/compare/v0.56.0...v0.56.1
 [0.56.0]: https://github.com/evanp/activitypub-bot/compare/v0.55.0...v0.56.0
