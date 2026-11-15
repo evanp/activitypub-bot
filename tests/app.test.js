@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
 import request from 'supertest'
+import { nockMessageSignature } from '@evanp/activitypub-nock'
 
 import { makeApp } from '../lib/app.js'
 import DoNothingBot from '../lib/bots/donothing.js'
@@ -83,6 +84,24 @@ describe('app', async () => {
     await request(app).get('/js/package.json').expect(404)
     await request(app).get('/js/index.js').expect(404)
   })
+  it('does not authenticate signed requests to missing routes', async (t) => {
+    const keyLookup = t.mock.method(app.locals.remoteKeyStorage, 'getPublicKey', async () => null)
+    const path = '/api/v1/instance'
+    const headers = await nockMessageSignature({
+      username: 'apptestremote1',
+      domain: 'remote.app.test',
+      url: `${origin}${path}`
+    })
+
+    const response = await request(app).get(path)
+      .set('Host', LOCAL_HOST)
+      .set('Accept', 'application/activity+json')
+      .set(headers)
+
+    assert.strictEqual(keyLookup.mock.callCount(), 0, 'missing routes must not fetch remote signing keys')
+    assert.strictEqual(response.status, 404)
+  })
+
   it('should not allow private network requests by default', async () => {
     assert.strictEqual(app.locals.client.allowPrivateNetworkRequests, false)
   })
