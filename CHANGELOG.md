@@ -299,9 +299,20 @@ and this project adheres to
 
 ## [0.49.0] - 2026-06-28
 
+- New forceUnsubscribe argument for MastodonRelayClient, to force it
+  to unsubscribe unconditionally to an array of actors.
+- Missing required `instance` property in /nodeinfo/2.2.
+
 ## [0.48.2] - 2026-06-04
 
+- Immediate expiry for actors.
+- Include required 'instance' property in nodeinfo 2.2.
+
 ## [0.48.1] - 2026-05-28
+
+- 401 Unauthorized for authentication errors
+- 401 Unauthorized when actor has been
+  deleted
 
 ## [0.48.0] - 2026-05-28
 
@@ -672,6 +683,8 @@ results, for servers that use (wrong, bad) 400, 404 and 410 results for bad sign
 - Bumped `mysql2`, `nanoid`, and `redis` dependencies.
 
 ## [0.41.3] - 2026-04-21
+
+Hot patch on the `stable` branch.
 
 ### Fixed
 
@@ -2057,4 +2070,4 @@ results, for servers that use (wrong, bad) 400, 404 and 410 results for bad sign
 [0.3.1]: https://github.com/evanp/activitypub-bot/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/evanp/activitypub-bot/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/evanp/activitypub-bot/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/evanp/activitypub-bot/releases/tag/v0.1.0
+[0.1.0]: https://github.com/evanp/activitypub-bot/tree/v0.1.0
