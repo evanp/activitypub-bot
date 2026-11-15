@@ -17,6 +17,9 @@ and this project adheres to
 - Try unsigned requests first in `ActivityPubClient.get()` when no username
   is supplied, falling back to an instance-signed request on authentication
   errors. This avoids unnecessary signed requests during key-owner verification.
+- Return HTTP 400 from `/shared/proxy` when the requested ID cannot be
+  resolved in the remote document, including missing fragment IDs, instead of
+  crashing with HTTP 500.
 
 ## [0.56.2] - 2026-10-23
 

@@ -149,6 +149,17 @@ describe('proxy for remote objects', async () => {
     })
   })
 
+  it('returns 400 when the requested fragment is absent from the remote document', async () => {
+    const id = `${nockFormat({ username: 'remote0', domain: REMOTE_HOST })}#missing-key`
+    const response = await request(app).post('/shared/proxy').type('form').send({ id })
+
+    assert.strictEqual(response.status, 400)
+    assert.strictEqual(response.type, 'application/problem+json')
+    assert.strictEqual(response.body.status, 400)
+    assert.strictEqual(response.body.title, 'Bad Request')
+    assert.strictEqual(response.body.type, 'about:blank')
+  })
+
   describe('request a remote object whose content is on a blocked domain', async () => {
     let response
     const id = `https://${REMOTE_HOST}/object/blocked-embed`
