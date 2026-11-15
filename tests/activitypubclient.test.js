@@ -303,14 +303,15 @@ describe('ActivityPubClient', async () => {
     })
   })
 
-  it('can get a remote object without a username', async () => {
+  it('gets a remote object unsigned when no username is supplied', async () => {
     const id = REMOTE_NOTE_1
     const obj = await client.get(id)
     assert.ok(obj)
     assert.equal(typeof obj, 'object')
     assert.equal(obj.id, id)
     const h = getRequestHeaders(id)
-    assertRfc9421GetHeaders(h, LOCAL_HOST)
+    assert.equal(h.signature, undefined)
+    assert.equal(h['signature-input'], undefined)
     assert.equal(typeof h.digest, 'undefined')
     assert.equal(typeof h.date, 'string')
     assert.match(h.date, /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)

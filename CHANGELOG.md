@@ -14,6 +14,9 @@ and this project adheres to
 ### Fixed
 
 - Restrict HTTP signature authentication to matched routes so unsupported endpoints such as `/api/v1/instance` return 404 without remote key lookups, preventing recursive server-discovery requests.
+- Try unsigned requests first in `ActivityPubClient.get()` when no username
+  is supplied, falling back to an instance-signed request on authentication
+  errors. This avoids unnecessary signed requests during key-owner verification.
 
 ## [0.56.2] - 2026-10-23
 

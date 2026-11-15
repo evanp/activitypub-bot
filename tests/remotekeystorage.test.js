@@ -33,6 +33,8 @@ const DUPLICATE_KEY_HOST = 'duplicatekey.remotekeystorage.test'
 const DUPLICATE_KEY_USER = 'remotekeystoragedupkey1'
 const MISMATCH_ID_HOST = 'mismatchid.remotekeystorage.test'
 const MISMATCH_ID_USER = 'remotekeystoragemismatchid1'
+const UNSIGNED_OWNER_HOST = 'unsigned-owner.remotekeystorage.test'
+const UNSIGNED_OWNER_USER = 'remotekeystorageunsignedowner1'
 
 describe('RemoteKeyStorage', async () => {
   const origin = `https://${LOCAL_HOST}`
@@ -49,7 +51,7 @@ describe('RemoteKeyStorage', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST, MISMATCH_ID_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST, MISMATCH_ID_HOST, UNSIGNED_OWNER_HOST]
     })
     const keyStorage = new KeyStorage(connection, logger)
     const formatter = new UrlFormatter(origin)
@@ -66,7 +68,7 @@ describe('RemoteKeyStorage', async () => {
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST, MISMATCH_ID_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST, MISMATCH_ID_HOST, UNSIGNED_OWNER_HOST]
     })
     await connection.close()
   })
@@ -106,6 +108,53 @@ describe('RemoteKeyStorage', async () => {
     const publicKey2 = await getPublicKey(username, domain)
     const remote2 = await remoteKeyStorage.getPublicKey(id, false)
     assert.equal(remote2.publicKeyPem, publicKey2)
+  })
+
+  it('verifies the key owner actor with an unauthenticated request first', async () => {
+    const domain = UNSIGNED_OWNER_HOST
+    const username = UNSIGNED_OWNER_USER
+    const actorId = `https://${domain}/user/${username}`
+    const keyId = `${actorId}/publickey`
+    const publicKeyPem = await getPublicKey(REMOTE_USER_1, REMOTE_HOST)
+    const publicKey = {
+      id: keyId,
+      type: 'CryptographicKey',
+      owner: actorId,
+      publicKeyPem
+    }
+    const actor = {
+      '@context': [
+        'https://www.w3.org/ns/activitystreams',
+        'https://w3id.org/security/v1'
+      ],
+      id: actorId,
+      type: 'Person',
+      publicKey
+    }
+    const requests = []
+    const responseHeaders = { 'Content-Type': 'application/activity+json' }
+
+    const scope = nock(`https://${domain}`)
+      .get(`/user/${username}/publickey`)
+      .reply(200, JSON.stringify({
+        '@context': actor['@context'],
+        ...publicKey
+      }), responseHeaders)
+      .get(`/user/${username}`)
+      .reply(function (request) {
+        requests.push(Object.fromEntries(request.headers))
+        return [200, JSON.stringify(actor), responseHeaders]
+      })
+
+    const remote = await remoteKeyStorage.getPublicKey(keyId)
+
+    assert.ok(scope.isDone())
+    assert.ok(remote)
+    assert.strictEqual(remote.publicKeyPem, publicKeyPem)
+    assert.strictEqual(remote.owner, actorId)
+    assert.strictEqual(requests.length, 1)
+    assert.strictEqual(requests[0].signature, undefined, 'owner verification must try an unsigned request first')
+    assert.strictEqual(requests[0]['signature-input'], undefined)
   })
 
   it('returns null when owner actor publicKey does not match key id', async () => {
