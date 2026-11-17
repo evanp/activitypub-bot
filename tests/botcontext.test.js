@@ -1358,11 +1358,18 @@ describe('BotContext', () => {
     assert.strictEqual(count, 0)
   })
 
-  it('toActorId resolves a local webfinger without doing an HTTP fetch', async () => {
-    const webfinger = `${BOT_USERNAME}@${LOCAL_HOST}`
-    const actorId = await context.toActorId(webfinger)
-    assert.strictEqual(actorId, `${LOCAL_ORIGIN}/user/${BOT_USERNAME}`)
-  })
+  for (const prefix of ['', 'acct:']) {
+    it(`toActorId resolves a local ${prefix || 'bare'} WebFinger address without an HTTP fetch`, async (t) => {
+      const fetch = t.mock.method(safeFetcher, 'fetch', async () => {
+        throw new Error('Unexpected HTTP fetch for a local WebFinger address')
+      })
+      const localContext = await context.duplicate(botName)
+      const webfinger = `${prefix}${BOT_USERNAME}@${LOCAL_HOST}`
+      const actorId = await localContext.toActorId(webfinger)
+      assert.strictEqual(actorId, `${LOCAL_ORIGIN}/user/${BOT_USERNAME}`)
+      assert.strictEqual(fetch.mock.callCount(), 0)
+    })
+  }
 
   describe('getLastActivity', async () => {
     let obj = null

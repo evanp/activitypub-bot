@@ -684,6 +684,12 @@ Gets the `id` of the [ActivityPub
 Actor](https://www.w3.org/TR/activitypub/#actors) with the given
 [WebFinger](https://en.wikipedia.org/wiki/WebFinger) identity.
 
+Accepts a bare account identifier such as `megabot@social.example` or an
+`acct:` URI such as `acct:megabot@social.example`. A leading `acct:` is always
+treated as a scheme prefix and removed before resolution. Both forms resolve
+local addresses directly to the bot's actor URL without an HTTP request;
+remote addresses use WebFinger discovery.
+
 #### async toWebfinger (actorId)
 
 Gets the [WebFinger](https://en.wikipedia.org/wiki/WebFinger) identity of the

@@ -33,6 +33,9 @@ and this project adheres to
 
 - Compare parsed origins in `UrlFormatter.isLocal()` to reject remote URLs
   sharing the local origin prefix, returning `false` for malformed URLs (#329).
+- Strip an optional leading `acct:` in `BotContext.toActorId()` before local
+  address resolution so prefixed and bare local addresses return the same actor
+  URL without HTTP discovery (#330).
 
 ## [0.56.3] - 2026-11-15
 
