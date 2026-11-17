@@ -32,6 +32,13 @@ const TIMESTAMP_USERS = TIMESTAMP_OPERATIONS.map(operation => `actorstoragetimes
 const INLINE_USERS = [...[0, 1, MAX_PAGE_SIZE, MAX_PAGE_SIZE + 1].map(count => `actorstorageinline${count}`), 'actorstorageinlineshrink']
 const SEEK_USER = 'actorstorageseekitem'
 const STRESS_USERS = ['actorstoragestressadd', 'actorstoragestressremove']
+const PROFILE_NEVER_SAVED = 'actorstorageprofiles1'
+const PROFILE_UNCHANGED = 'actorstorageprofiles2'
+const PROFILE_CHANGED = 'actorstorageprofiles3'
+const PROFILE_UNRELATED = 'actorstorageprofiles4'
+const PROFILE_NULL_CHANGED = 'actorstorageprofiles5'
+const PROFILE_ABSENT_UNCHANGED = 'actorstorageprofiles6'
+const PROFILE_TIMESTAMP = 'actorstorageprofiles7'
 const TEST_USERNAMES = [
   ...STRESS_USERS,
   SEEK_USER,
@@ -44,6 +51,13 @@ const TEST_USERNAMES = [
   LIKED_USER_D,
   CUSTOM_USER,
   LAST_ACTIVITY_USER,
+  PROFILE_NEVER_SAVED,
+  PROFILE_UNCHANGED,
+  PROFILE_CHANGED,
+  PROFILE_UNRELATED,
+  PROFILE_NULL_CHANGED,
+  PROFILE_ABSENT_UNCHANGED,
+  PROFILE_TIMESTAMP,
   ACTIVE_RECENT_A,
   ACTIVE_RECENT_B,
   ACTIVE_OLDER,
@@ -618,6 +632,99 @@ describe('ActorStorage', () => {
         object
       )
       assert.ok(!result)
+    })
+  })
+
+  describe('profile fingerprints', async () => {
+    const properties = {
+      fullname: 'Profile Test Bot',
+      description: 'A bot for profile fingerprint tests',
+      icon: new URL('file:///tmp/profile-test-icon.png'),
+      image: new URL('file:///tmp/profile-test-image.png'),
+      type: 'Service'
+    }
+
+    it('reports changes when the profile has never been saved', async () => {
+      const changed = await storage.hasProfileChanged(PROFILE_NEVER_SAVED, properties)
+      assert.strictEqual(changed, true)
+    })
+
+    it('reports no changes after saving the same profile', async () => {
+      await storage.saveProfileFingerprint(PROFILE_UNCHANGED, properties)
+      const changed = await storage.hasProfileChanged(PROFILE_UNCHANGED, properties)
+      assert.strictEqual(changed, false)
+    })
+
+    it('reports changes when some properties differ from the saved profile', async () => {
+      await storage.saveProfileFingerprint(PROFILE_CHANGED, properties)
+      const changed = await storage.hasProfileChanged(PROFILE_CHANGED, {
+        ...properties,
+        fullname: 'A Completely Different Name',
+        icon: new URL('file:///tmp/profile-test-icon-v2.png')
+      })
+      assert.strictEqual(changed, true)
+    })
+
+    it('reports no changes when only unrelated properties differ from the saved profile', async () => {
+      await storage.saveProfileFingerprint(PROFILE_UNRELATED, properties)
+      const changed = await storage.hasProfileChanged(PROFILE_UNRELATED, {
+        ...properties,
+        unrelated: 'ignored'
+      })
+      assert.strictEqual(changed, false)
+    })
+
+    it('reports changes when a saved property is replaced with null', async () => {
+      await storage.saveProfileFingerprint(PROFILE_NULL_CHANGED, properties)
+      const changed = await storage.hasProfileChanged(PROFILE_NULL_CHANGED, {
+        ...properties,
+        icon: null
+      })
+      assert.strictEqual(changed, true)
+    })
+
+    it('reports no changes when a null property becomes absent', async () => {
+      await storage.saveProfileFingerprint(PROFILE_ABSENT_UNCHANGED, {
+        ...properties,
+        icon: null
+      })
+      const absent = { ...properties }
+      delete absent.icon
+      const changed = await storage.hasProfileChanged(PROFILE_ABSENT_UNCHANGED, absent)
+      assert.strictEqual(changed, false)
+    })
+
+    const readUpdatedAt = async () => {
+      const [rows] = await connection.query(
+        'SELECT property, updated_at FROM profile_hash WHERE username = ?',
+        { replacements: [PROFILE_TIMESTAMP] }
+      )
+      return Object.fromEntries(rows.map(row => [row.property, row.updated_at]))
+    }
+
+    it('does not update timestamps when the same profile is saved again', async () => {
+      await storage.saveProfileFingerprint(PROFILE_TIMESTAMP, properties)
+      const before = await readUpdatedAt()
+      assert.deepStrictEqual(Object.keys(before).sort(), Object.keys(properties).sort())
+      await storage.saveProfileFingerprint(PROFILE_TIMESTAMP, properties)
+      assert.deepStrictEqual(await readUpdatedAt(), before)
+    })
+
+    it('updates timestamps when a profile property changes', async () => {
+      await storage.saveProfileFingerprint(PROFILE_TIMESTAMP, properties)
+      await connection.query(
+        'UPDATE profile_hash SET updated_at = ? WHERE username = ?',
+        { replacements: ['2020-01-01 00:00:00', PROFILE_TIMESTAMP] }
+      )
+      const stale = await readUpdatedAt()
+      await storage.saveProfileFingerprint(PROFILE_TIMESTAMP, {
+        ...properties,
+        fullname: 'A Renamed Bot'
+      })
+      const after = await readUpdatedAt()
+      assert.notStrictEqual(after.fullname, stale.fullname)
+      assert.strictEqual(after.description, stale.description)
+      assert.strictEqual(after.icon, stale.icon)
     })
   })
 

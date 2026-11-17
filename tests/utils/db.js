@@ -114,6 +114,7 @@ export async function cleanupTestData (connection, {
     await deleteWhere(connection, 'actorcollection', ['username IN (:usernames)'], usernameOnlyReplacements)
     await deleteWhere(connection, 'lastactivity', ['username IN (:usernames)'], usernameOnlyReplacements)
     await deleteWhere(connection, 'botdata', ['username IN (:usernames)'], usernameOnlyReplacements)
+    await deleteWhere(connection, 'profile_hash', ['username IN (:usernames)'], usernameOnlyReplacements)
     await deleteWhere(connection, 'new_keys', ['username IN (:usernames)'], usernameOnlyReplacements)
   }
 

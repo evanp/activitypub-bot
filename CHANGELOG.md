@@ -17,6 +17,10 @@ and this project adheres to
   re-applies them, verifying migrations run cleanly and are not applied twice.
 - Add migration 017, creating the `profile_hash` table for storing per-property
   profile fingerprints used to detect bot profile changes.
+- Add `ActorStorage.hasProfileChanged()` and `ActorStorage.saveProfileFingerprint()`
+  to compare sha256 fingerprints of a bot's profile properties against stored
+  values, treating missing and null properties as the same. Saving preserves
+  `updated_at` when a property's fingerprint is unchanged.
 
 ## [0.56.3] - 2026-11-15
 
