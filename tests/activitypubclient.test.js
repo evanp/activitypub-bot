@@ -81,13 +81,13 @@ describe('ActivityPubClient', async () => {
   const REMOTE_PUBLIC_KEY = `https://${REMOTE_HOST}/user/${REMOTE_PROFILE_USER}/publickey`
   const REMOTE_INBOX = `https://${REMOTE_HOST}/user/${REMOTE_PROFILE_USER}/inbox`
   const DRAFT_SIGNATURE_GET_WITH_USER_RE = new RegExp(
-    `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_SIGNING_USER)}/publickey",headers="\\(request-target\\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$`
+    `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_SIGNING_USER)}#main-key",headers="\\(request-target\\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$`
   )
   const DRAFT_SIGNATURE_GET_WITHOUT_USER_RE = new RegExp(
-    `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_HOST)}/publickey",headers="\\(request-target\\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$`
+    `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_HOST)}#main-key",headers="\\(request-target\\) host date user-agent accept",signature=".*",algorithm="rsa-sha256"$`
   )
   const SIGNATURE_POST_RE = new RegExp(
-    `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_SIGNING_USER)}/publickey",headers="\\(request-target\\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$`
+    `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_SIGNING_USER)}#main-key",headers="\\(request-target\\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$`
   )
   const MESSAGE_SIGNATURE_RE = /^sig1=:[0-9A-Za-z+/=]+:$/
 
@@ -103,7 +103,7 @@ describe('ActivityPubClient', async () => {
     assert.match(
       headers['signature-input'],
       new RegExp(
-        `^sig1=\\("@method" "@target-uri" "accept" "date" "user-agent"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
+        `^sig1=\\("@method" "@target-uri" "accept" "date" "user-agent"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}#main-key";alg="rsa-v1_5-sha256";created=\\d+$`
       )
     )
   }
@@ -128,7 +128,7 @@ describe('ActivityPubClient', async () => {
     assert.match(
       headers['signature-input'],
       new RegExp(
-        `^sig1=\\("@method" "@target-uri" "date" "user-agent" "content-type" "content-digest"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}/publickey";alg="rsa-v1_5-sha256";created=\\d+$`
+        `^sig1=\\("@method" "@target-uri" "date" "user-agent" "content-type" "content-digest"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}#main-key";alg="rsa-v1_5-sha256";created=\\d+$`
       )
     )
   }

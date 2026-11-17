@@ -81,19 +81,29 @@ describe('server on a Unicode domain', () => {
     assert.strictEqual(response.body.webfinger, `${unicodeBotName}@${domain}`)
   })
 
-  for (const { label, id, owner } of [
-    { label: 'actor public key', id: `${actorId}/publickey`, owner: actorId },
-    { label: 'server actor public key', id: `${serverActorId}/publickey`, owner: serverActorId }
+  for (const { label, owner } of [
+    { label: 'actor public key', owner: actorId },
+    { label: 'Unicode actor public key', owner: `${asciiOrigin}/user/${encodeURIComponent(unicodeBotName)}` },
+    { label: 'server actor public key', owner: serverActorId }
   ]) {
-    it(`serves GET ${label} with the correct id and owner`, async () => {
+    it(`redirects the legacy ${label} URL to the actor's key fragment`, async () => {
       const response = await request(app)
-        .get(new URL(id).pathname)
+        .get(`${new URL(owner).pathname}/publickey`)
+        .set('Host', asciiDomain)
+        .set('Accept', 'application/activity+json')
+      assert.strictEqual(response.status, 307)
+      assert.strictEqual(response.headers.location, `${owner}#main-key`)
+    })
+
+    it(`serves GET ${label} in the actor document with the correct id and owner`, async () => {
+      const response = await request(app)
+        .get(new URL(owner).pathname)
         .set('Host', asciiDomain)
         .set('Accept', 'application/activity+json')
       assert.strictEqual(response.status, 200)
-      assert.strictEqual(response.body.id, id)
-      assert.strictEqual(response.body.owner, owner)
-      assert.match(response.body.publicKeyPem, /-----BEGIN PUBLIC KEY-----/)
+      assert.strictEqual(response.body.publicKey.id, `${owner}#main-key`)
+      assert.strictEqual(response.body.publicKey.owner, owner)
+      assert.match(response.body.publicKey.publicKeyPem, /-----BEGIN PUBLIC KEY-----/)
     })
   }
 
@@ -104,7 +114,7 @@ describe('server on a Unicode domain', () => {
       .set('Accept', 'application/activity+json')
     assert.strictEqual(response.status, 200)
     assert.strictEqual(response.body.id, serverActorId)
-    assert.strictEqual(response.body.publicKey.id, `${serverActorId}/publickey`)
+    assert.strictEqual(response.body.publicKey.id, `${serverActorId}#main-key`)
     assert.strictEqual(response.body.publicKey.owner, serverActorId)
   })
 

@@ -59,7 +59,7 @@ describe('actor routes', async () => {
 
   corsTests(() => app, () => [
     { path: `/user/${BOT_USERNAME}`, headers: ['accept', 'signature', 'signature-input', 'date', 'digest', 'content-digest'] },
-    { path: `/user/${BOT_USERNAME}/publickey` },
+    { path: `/user/${BOT_USERNAME}/publickey`, status: 307 },
     { path: `/user/${BOT_USERNAME}/icon`, accept: 'image/png' },
     { path: `/user/${BOT_USERNAME_2}/image`, accept: 'image/jpeg' },
     { path: `/user/${BOT_USERNAME_2}/icon`, status: 307 },
@@ -137,7 +137,7 @@ describe('actor routes', async () => {
       assert.ok(response.body.publicKey)
     })
     it('should return an object with a publicKey matching the request', async () => {
-      assert.strictEqual(response.body.publicKey.id, `${origin}/user/${BOT_USERNAME}/publickey`)
+      assert.strictEqual(response.body.publicKey.id, `${origin}/user/${BOT_USERNAME}#main-key`)
     })
     it('should return an object with a publicKey with an owner matching the request', async () => {
       assert.strictEqual(response.body.publicKey.owner, `${origin}/user/${BOT_USERNAME}`)
@@ -248,45 +248,11 @@ describe('actor routes', async () => {
     it('should work without an error', async () => {
       response = await request(app).get(`/user/${BOT_USERNAME}/publickey`)
     })
-    it('should return 200 OK', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return 307 Temporary Redirect', () => {
+      assert.strictEqual(response.status, 307)
     })
-    it('should return AS2', async () => {
-      assert.strictEqual(response.type, 'application/activity+json')
-    })
-    it('should return an object', async () => {
-      assert.strictEqual(typeof response.body, 'object')
-    })
-    it('should return an object with an id', async () => {
-      assert.strictEqual(typeof response.body.id, 'string')
-    })
-    it('should return an object with the requested public key id', async () => {
-      assert.strictEqual(response.body.id, `${origin}/user/${BOT_USERNAME}/publickey`)
-    })
-    it('should return an object with an owner', async () => {
-      assert.strictEqual(typeof response.body.owner, 'string')
-    })
-    it('should return an object with the bot as owner', async () => {
-      assert.strictEqual(response.body.owner, `${origin}/user/${BOT_USERNAME}`)
-    })
-    it('should return an object with a publicKeyPem', async () => {
-      assert.strictEqual(typeof response.body.publicKeyPem, 'string')
-    })
-    it('publicKeyPem should be an RSA PKCS-8 key', async () => {
-      assert.match(response.body.publicKeyPem, /^-----BEGIN PUBLIC KEY-----\n/)
-      assert.match(response.body.publicKeyPem, /\n-----END PUBLIC KEY-----\n$/)
-    })
-    it('should return an object with a type', async () => {
-      assert.strictEqual(typeof response.body.type, 'string')
-    })
-    it('should return an object with a type matching the request', async () => {
-      assert.strictEqual(response.body.type, 'CryptographicKey')
-    })
-    it('should return an object with a to', async () => {
-      assert.strictEqual(typeof response.body.to, 'string')
-    })
-    it('should return an object with a to matching the request', async () => {
-      assert.strictEqual(response.body.to, 'as:Public')
+    it('should redirect to the public key fragment on the actor', () => {
+      assert.strictEqual(response.headers.location, `${origin}/user/${BOT_USERNAME}#main-key`)
     })
   })
 

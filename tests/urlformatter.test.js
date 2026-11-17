@@ -41,7 +41,7 @@ describe('UrlFormatter', () => {
   })
   it('can format a public key URL', () => {
     const url = formatter.format({ username: 'megabot', type: 'publickey' })
-    assert.equal(url, `${origin}/user/megabot/publickey`)
+    assert.equal(url, `${origin}/user/megabot#main-key`)
   })
   it('can format an inbox URL', () => {
     const url = formatter.format({ username: 'megabot', collection: 'inbox' })
@@ -119,7 +119,7 @@ describe('UrlFormatter', () => {
       server: true,
       type: 'publickey'
     })
-    assert.equal(url, `${origin}/user/${hostname}/publickey`)
+    assert.equal(url, `${origin}/user/${hostname}#main-key`)
   })
   it('can tell if an URL is local', () => {
     assert.ok(formatter.isLocal(`${origin}/user/megabot`))
@@ -151,7 +151,7 @@ describe('UrlFormatter', () => {
   })
   it('can unformat a public key URL', () => {
     const parts = formatter.unformat(
-      `${origin}/user/megabot/publickey`
+      `${origin}/user/megabot#main-key`
     )
     assert.equal(parts.username, 'megabot')
     assert.equal(parts.type, 'publickey')
@@ -237,7 +237,7 @@ describe('UrlFormatter', () => {
     assert.ok(!parts.type)
   })
   it('can unformat a server public key URL', () => {
-    const parts = formatter.unformat(`${origin}/user/${hostname}/publickey`)
+    const parts = formatter.unformat(`${origin}/user/${hostname}#main-key`)
     assert.ok(parts.server)
     assert.equal(parts.type, 'publickey')
   })

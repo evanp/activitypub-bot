@@ -28,6 +28,9 @@ and this project adheres to
 
 - Automatically call `syncProfile(bot)` after bot initialization, including the
   instance actor and bots created by factories.
+- Use `actorId#main-key` public key IDs for bot and instance actors for
+  interoperability with other servers. Redirect legacy
+  `/user/{username}/publickey` URLs to the new IDs with HTTP 307.
 
 ### Fixed
 

@@ -23,7 +23,7 @@ describe('server routes', async () => {
   const serverActorPath = `/user/${LOCAL_HOST}`
   const serverActorId = `${origin}${serverActorPath}`
   const publicKeyPath = `/user/${LOCAL_HOST}/publickey`
-  const publicKeyId = `${origin}${publicKeyPath}`
+  const publicKeyId = `${serverActorId}#main-key`
   const testBots = {}
   let app = null
 
@@ -51,7 +51,7 @@ describe('server routes', async () => {
 
   corsTests(() => app, () => [
     { path: serverActorPath },
-    { path: publicKeyPath }
+    { path: publicKeyPath, status: 307 }
   ])
 
   describe('GET server actor', async () => {
@@ -79,12 +79,16 @@ describe('server routes', async () => {
     })
     it('should return an object with a publicKey', async () => {
       assert.strictEqual(typeof response.body.publicKey, 'object')
-      assert.strictEqual(typeof response.body.publicKey.id, 'string')
-      assert.strictEqual(typeof response.body.publicKey.owner, 'string')
+      assert.strictEqual(response.body.publicKey.id, publicKeyId)
+      assert.strictEqual(response.body.publicKey.owner, serverActorId)
       assert.strictEqual(typeof response.body.publicKey.type, 'string')
       assert.strictEqual(response.body.publicKey.type, 'CryptographicKey')
       assert.strictEqual(typeof response.body.publicKey.to, 'string')
       assert.strictEqual(response.body.publicKey.to, 'as:Public')
+    })
+    it('publicKeyPem should be an RSA PKCS-8 key', () => {
+      assert.match(response.body.publicKey.publicKeyPem, /^-----BEGIN PUBLIC KEY-----\n/)
+      assert.match(response.body.publicKey.publicKeyPem, /\n-----END PUBLIC KEY-----\n$/)
     })
     it('should include webfinger', async () => {
       assert.strictEqual(typeof response.body.webfinger, 'string')
@@ -161,33 +165,11 @@ describe('server routes', async () => {
     it('should work without an error', async () => {
       response = await request(app).get(publicKeyPath)
     })
-    it('should return 200 OK', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return 307 Temporary Redirect', () => {
+      assert.strictEqual(response.status, 307)
     })
-    it('should return AS2', async () => {
-      assert.strictEqual(response.type, 'application/activity+json')
-    })
-    it('should return an object', async () => {
-      assert.strictEqual(typeof response.body, 'object')
-    })
-    it('should return an object with an id', async () => {
-      assert.strictEqual(typeof response.body.id, 'string')
-    })
-    it('should return an object with an id matching the origin', async () => {
-      assert.strictEqual(response.body.id, publicKeyId)
-    })
-    it('should return an object with an owner', async () => {
-      assert.strictEqual(typeof response.body.owner, 'string')
-    })
-    it('should return an object with the origin as owner', async () => {
-      assert.strictEqual(response.body.owner, serverActorId)
-    })
-    it('should return an object with a publicKeyPem', async () => {
-      assert.strictEqual(typeof response.body.publicKeyPem, 'string')
-    })
-    it('publicKeyPem should be an RSA PKCS-8 key', async () => {
-      assert.match(response.body.publicKeyPem, /^-----BEGIN PUBLIC KEY-----\n/)
-      assert.match(response.body.publicKeyPem, /\n-----END PUBLIC KEY-----\n$/)
+    it('should redirect to the public key fragment on the actor', () => {
+      assert.strictEqual(response.headers.location, publicKeyId)
     })
   })
 
@@ -197,11 +179,11 @@ describe('server routes', async () => {
       response = await request(app).get(publicKeyPath)
         .set('Signature', 'NOT A VALID SIGNATURE')
     })
-    it('should return 200 OK', async () => {
-      assert.strictEqual(response.status, 200)
+    it('should return 307 Temporary Redirect', async () => {
+      assert.strictEqual(response.status, 307)
     })
-    it('should return AS2', async () => {
-      assert.strictEqual(response.type, 'application/activity+json')
+    it('should redirect to the public key fragment on the actor', async () => {
+      assert.strictEqual(response.headers.location, publicKeyId)
     })
   })
 
