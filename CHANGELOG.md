@@ -29,6 +29,11 @@ and this project adheres to
 - Automatically call `syncProfile(bot)` after bot initialization, including the
   instance actor and bots created by factories.
 
+### Fixed
+
+- Compare parsed origins in `UrlFormatter.isLocal()` to reject remote URLs
+  sharing the local origin prefix, returning `false` for malformed URLs (#329).
+
 ## [0.56.3] - 2026-11-15
 
 ### Changed

@@ -125,6 +125,15 @@ describe('UrlFormatter', () => {
     assert.ok(formatter.isLocal(`${origin}/user/megabot`))
     assert.ok(!formatter.isLocal('https://social.urlformatter.test/user/megabot'))
   })
+  for (const [label, url] of [
+    ['a lookalike hostname', `${origin}.remote.example/user/megabot`],
+    ['a different port', `${origin}:8443/user/megabot`],
+    ['the local hostname as userinfo', `${origin}@remote.example/user/megabot`]
+  ]) {
+    it(`does not classify a URL with ${label} as local`, () => {
+      assert.strictEqual(formatter.isLocal(url), false)
+    })
+  }
   it('can get a username from a user URL', () => {
     const username = formatter.getUserName(`${origin}/user/megabot`)
     assert.equal(username, 'megabot')
