@@ -11,6 +11,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Add a migrations test that applies all migrations to a fresh database and
+  re-applies them, verifying migrations run cleanly and are not applied twice.
+
 ## [0.56.3] - 2026-11-15
 
 ### Changed
