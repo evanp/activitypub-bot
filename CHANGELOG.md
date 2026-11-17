@@ -15,6 +15,8 @@ and this project adheres to
 
 - Add a migrations test that applies all migrations to a fresh database and
   re-applies them, verifying migrations run cleanly and are not applied twice.
+- Add migration 017, creating the `profile_hash` table for storing per-property
+  profile fingerprints used to detect bot profile changes.
 
 ## [0.56.3] - 2026-11-15
 
