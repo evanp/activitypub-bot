@@ -36,6 +36,7 @@ import { Authorizer } from '../lib/authorizer.js'
 import { DomainBlocker } from '../lib/domainblocker.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import OKBot from '../lib/bots/ok.js'
+import Bot from '../lib/bot.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
@@ -62,7 +63,25 @@ const REMOTE_ACTOR_10 = 'botcontextactor10'
 const REMOTE_ACTOR_11 = 'botcontextactor11'
 
 const DUPLICATE_USERNAME = 'botcontextdupe1'
-const TEST_USERNAMES = [BOT_USERNAME, LOCAL_OK_USERNAME, DUPLICATE_USERNAME, 'botcontextpendingfollowing', 'botcontextemptypendingfollowing']
+const SYNC_NEVER_SAVED = 'botcontextsync1'
+const SYNC_NEVER_FOLLOWER = 'botcontextsyncfollower1'
+const SYNC_NEVER_FOLLOWING = 'botcontextsyncfollowing1'
+const SYNC_UNCHANGED = 'botcontextsync2'
+const SYNC_UNCHANGED_FOLLOWER = 'botcontextsyncfollower2'
+const SYNC_UNCHANGED_FOLLOWING = 'botcontextsyncfollowing2'
+const SYNC_CHANGED = 'botcontextsync3'
+const SYNC_CHANGED_FOLLOWER = 'botcontextsyncfollower3'
+const SYNC_CHANGED_FOLLOWING = 'botcontextsyncfollowing3'
+const TEST_USERNAMES = [
+  BOT_USERNAME,
+  LOCAL_OK_USERNAME,
+  DUPLICATE_USERNAME,
+  'botcontextpendingfollowing',
+  'botcontextemptypendingfollowing',
+  SYNC_NEVER_SAVED,
+  SYNC_UNCHANGED,
+  SYNC_CHANGED
+]
 
 function makeActorDefault (username, domain = REMOTE_HOST) {
   return makeActor(username, domain)
@@ -195,7 +214,8 @@ describe('BotContext', () => {
         transformer,
         logger,
         bots,
-        safeFetcher
+        safeFetcher,
+        keyStorage
       )
       assert.ok(true)
     } catch (err) {
@@ -1163,7 +1183,8 @@ describe('BotContext', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
     let count = 0
     for await (const _ of emptyContext.following()) {
@@ -1199,7 +1220,8 @@ describe('BotContext', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
     let count = 0
     for await (const _ of emptyContext.followers()) {
@@ -1297,7 +1319,8 @@ describe('BotContext', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
     const followA = { id: `${formatter.format({ username: pendingBotName })}/follow/pendinggen-a` }
     const followB = { id: `${formatter.format({ username: pendingBotName })}/follow/pendinggen-b` }
@@ -1325,7 +1348,8 @@ describe('BotContext', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
     let count = 0
     for await (const _ of emptyContext.pendingFollowing()) {
@@ -1363,6 +1387,176 @@ describe('BotContext', () => {
     it('returns null for a different activity type on the same object', async () => {
       const result = await context.getLastActivity('Like', obj)
       assert.strictEqual(result, null)
+    })
+  })
+
+  describe('syncProfile', () => {
+    const toArray = (value) => {
+      if (value === undefined || value === null) return []
+      return Array.isArray(value) ? value : [value]
+    }
+
+    const profileProperties = (bot) => ({
+      fullname: bot.fullname,
+      description: bot.description,
+      icon: bot.icon,
+      image: bot.image,
+      type: bot.type
+    })
+
+    const makeSyncContext = (username) => new BotContext(
+      username,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      bots,
+      safeFetcher,
+      keyStorage
+    )
+
+    const addAudience = async (username, followerUsername, followingUsername) => {
+      await actorStorage.addToCollection(username, 'followers', await makeActorDefault(followerUsername))
+      await actorStorage.addToCollection(username, 'following', await makeActorDefault(followingUsername))
+    }
+
+    const assertUpdateDelivered = (username, followerUsername, followingUsername, bot) => {
+      for (const [role, remote] of [['follower', followerUsername], ['following', followingUsername]]) {
+        assert.strictEqual(
+          postInbox[remote],
+          1,
+          `expected one inbox delivery to ${role} ${remote}`
+        )
+        const inbox = `${REMOTE_ORIGIN}/user/${remote}/inbox`
+        const raw = getBody(inbox)
+        assert.ok(raw, `expected a body captured for the ${role} inbox`)
+        const body = JSON.parse(raw)
+        assert.strictEqual(body.type, 'Update')
+        assert.strictEqual(body.actor, formatter.format({ username }))
+        assert.strictEqual(body.object.id, formatter.format({ username }))
+        assert.strictEqual(body.object.type, bot.type)
+        assert.strictEqual(body.object.name, bot.fullname)
+        assert.strictEqual(body.object.summary, bot.description)
+        assert.ok(
+          toArray(body.to).includes(formatter.format({ username, collection: 'followers' })),
+          'Update must be addressed to the bot\'s followers'
+        )
+        assert.ok(
+          toArray(body.to).includes(formatter.format({ username, collection: 'following' })),
+          'Update must be addressed to the bot\'s following'
+        )
+        assert.ok(
+          toArray(body.to).includes('as:Public'),
+          'Update must be addressed to the public collection'
+        )
+      }
+    }
+
+    const assertNothingDelivered = (followerUsername, followingUsername) => {
+      for (const remote of [followerUsername, followingUsername]) {
+        assert.ok(
+          !postInbox[remote],
+          `expected no inbox delivery to ${remote}`
+        )
+      }
+    }
+
+    it('saves the fingerprint and sends an Update when none has been saved', async () => {
+      const username = SYNC_NEVER_SAVED
+      const bot = new Bot(username, {
+        fullname: 'Never Saved Bot',
+        description: 'A bot whose profile has never been fingerprinted.'
+      })
+      await addAudience(username, SYNC_NEVER_FOLLOWER, SYNC_NEVER_FOLLOWING)
+
+      const syncContext = makeSyncContext(username)
+      assert.strictEqual(
+        await actorStorage.hasProfileChanged(username, profileProperties(bot)),
+        true,
+        'precondition: no fingerprint should exist yet'
+      )
+
+      await syncContext.syncProfile(bot)
+      await syncContext.onIdle()
+
+      assert.strictEqual(
+        await actorStorage.hasProfileChanged(username, profileProperties(bot)),
+        false,
+        'syncProfile should save the fingerprint'
+      )
+      assertUpdateDelivered(username, SYNC_NEVER_FOLLOWER, SYNC_NEVER_FOLLOWING, bot)
+      const outbox = await actorStorage.getCollection(username, 'outbox')
+      assert.strictEqual(outbox.totalItems, 1)
+    })
+
+    it('saves no new fingerprint and sends no Update when the profile is unchanged', async () => {
+      const username = SYNC_UNCHANGED
+      const bot = new Bot(username, {
+        fullname: 'Unchanged Bot',
+        description: 'A bot whose profile never changes.'
+      })
+      await addAudience(username, SYNC_UNCHANGED_FOLLOWER, SYNC_UNCHANGED_FOLLOWING)
+      await actorStorage.saveProfileFingerprint(username, profileProperties(bot))
+
+      const syncContext = makeSyncContext(username)
+      assert.strictEqual(
+        await actorStorage.hasProfileChanged(username, profileProperties(bot)),
+        false,
+        'precondition: the fingerprint should already match'
+      )
+
+      await syncContext.syncProfile(bot)
+      await syncContext.onIdle()
+
+      assert.strictEqual(
+        await actorStorage.hasProfileChanged(username, profileProperties(bot)),
+        false,
+        'syncProfile should leave the fingerprint unchanged'
+      )
+      assertNothingDelivered(SYNC_UNCHANGED_FOLLOWER, SYNC_UNCHANGED_FOLLOWING)
+      const outbox = await actorStorage.getCollection(username, 'outbox')
+      assert.strictEqual(outbox.totalItems, 0)
+    })
+
+    it('saves the new fingerprint and sends an Update when the profile has changed', async () => {
+      const username = SYNC_CHANGED
+      const oldProperties = {
+        fullname: 'Changed Bot',
+        description: 'A bot whose profile will change.',
+        icon: null,
+        image: null,
+        type: 'Service'
+      }
+      const bot = new Bot(username, {
+        fullname: 'Changed Bot',
+        description: 'A bot whose description has changed.',
+        icon: new URL('file:///tmp/botcontext-sync-icon.png')
+      })
+      await addAudience(username, SYNC_CHANGED_FOLLOWER, SYNC_CHANGED_FOLLOWING)
+      await actorStorage.saveProfileFingerprint(username, oldProperties)
+
+      const syncContext = makeSyncContext(username)
+      assert.strictEqual(
+        await actorStorage.hasProfileChanged(username, profileProperties(bot)),
+        true,
+        'precondition: the fingerprint should differ from the bot profile'
+      )
+
+      await syncContext.syncProfile(bot)
+      await syncContext.onIdle()
+
+      assert.strictEqual(
+        await actorStorage.hasProfileChanged(username, profileProperties(bot)),
+        false,
+        'syncProfile should record the new fingerprint'
+      )
+      assertUpdateDelivered(username, SYNC_CHANGED_FOLLOWER, SYNC_CHANGED_FOLLOWING, bot)
+      const outbox = await actorStorage.getCollection(username, 'outbox')
+      assert.strictEqual(outbox.totalItems, 1)
     })
   })
 

@@ -21,6 +21,8 @@ and this project adheres to
   to compare sha256 fingerprints of a bot's profile properties against stored
   values, treating missing and null properties as the same. Saving preserves
   `updated_at` when a property's fingerprint is unchanged.
+- Add `BotContext.syncProfile(bot)` to send public profile `Update` activities
+  to followers and following when the profile is new or changed.
 
 ## [0.56.3] - 2026-11-15
 

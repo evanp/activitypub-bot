@@ -750,6 +750,18 @@ Get the id of the last activity that has the type `type` and the object
 `object`. Great for double-checking if an object has been `Announce`d or
 `Follow`ed before.
 
+#### async syncProfile (bot)
+
+Checks the bot's `fullname`, `description`, `icon`, `image`, and `type` against
+its saved profile fingerprint. Pass the bot instance associated with this
+context.
+
+If no fingerprint exists or any of those properties have changed, queues an
+`Update` containing the full actor object, with the bot's `followers` and
+`following` collections and `as:Public` in `to`, then saves the new fingerprint.
+Does nothing if the profile is unchanged. Delivery happens in the background;
+use `onIdle()` to wait for it to finish.
+
 #### async onIdle ()
 
 Resolves when the background distribution queue has drained. Intended for test

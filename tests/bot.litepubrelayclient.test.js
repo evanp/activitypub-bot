@@ -150,7 +150,8 @@ describe('LitePubRelayClientBot', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
     nockSetup(REMOTE_HOST)
     relay = nockFormat({ username: RELAY_USERNAME, domain: REMOTE_HOST })
@@ -661,7 +662,8 @@ describe('LitePubRelayClientBot', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
 
     await fanoutBot.initialize(fanoutContext)

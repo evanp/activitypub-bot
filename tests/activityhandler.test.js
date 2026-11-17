@@ -138,7 +138,8 @@ describe('ActivityHandler', () => {
         transformer,
         logger,
         testBots,
-        safeFetcher
+        safeFetcher,
+        keyStorage
       )
     )
     await lb.initialize(
@@ -153,7 +154,8 @@ describe('ActivityHandler', () => {
         transformer,
         logger,
         testBots,
-        safeFetcher
+        safeFetcher,
+        keyStorage
       )
     )
 

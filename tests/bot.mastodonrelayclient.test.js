@@ -142,7 +142,8 @@ describe('MastodonRelayClientBot', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
     nockSetup(REMOTE_HOST)
     relay = nockFormat({ username: RELAY_USERNAME, domain: REMOTE_HOST })
@@ -294,7 +295,8 @@ describe('MastodonRelayClientBot', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
     const followingBot = new MastodonRelayClientBot(followingBotName, {
       relay: followingRelay
@@ -358,7 +360,8 @@ describe('MastodonRelayClientBot', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
     const announceBot = new MastodonRelayClientBot(announceBotName, {
       relay: announceRelay
@@ -450,7 +453,8 @@ describe('MastodonRelayClientBot', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
     const multiBot = new MastodonRelayClientBot(multiBotName, {
       relay: [multiA, multiB]
@@ -495,7 +499,8 @@ describe('MastodonRelayClientBot', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
 
     let diffBot = new MastodonRelayClientBot(diffBotName, {
@@ -566,7 +571,8 @@ describe('MastodonRelayClientBot', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
     const stableBot = new MastodonRelayClientBot(stableBotName, {
       relay: [stableRelay]
@@ -654,7 +660,8 @@ describe('MastodonRelayClientBot', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
 
     // First run: subscribe so the Follow activity is stored. No Accept arrives,
@@ -727,7 +734,8 @@ describe('MastodonRelayClientBot', () => {
       transformer,
       logger,
       bots,
-      safeFetcher
+      safeFetcher,
+      keyStorage
     )
     const neverBot = new MastodonRelayClientBot(neverBotName, {
       relay: [liveRelay],
