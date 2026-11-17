@@ -302,6 +302,7 @@ describe('FollowBack bot', async () => {
       // Re-trigger initialize to run reconciliation against seeded state
       const bot = app.locals.bots[BOT_USERNAME]
       await bot.initialize(bot._context)
+      await bot._context.syncProfile(bot)
       await app.onIdle()
     })
 
@@ -350,6 +351,7 @@ describe('FollowBack bot', async () => {
       // Re-trigger initialize to run the stale sweep + synchronize
       const bot = app.locals.bots[BOT_USERNAME]
       await bot.initialize(bot._context)
+      await bot._context.syncProfile(bot)
       await app.onIdle()
     })
 
@@ -439,6 +441,7 @@ describe('FollowBack bot', async () => {
 
       const bot = app.locals.bots[BOT_USERNAME]
       await bot.initialize(bot._context)
+      await bot._context.syncProfile(bot)
       await app.onIdle()
     })
 

@@ -126,38 +126,38 @@ describe('ActivityHandler', () => {
       [bot.username]: bot,
       [lb.username]: lb
     }
-    await bot.initialize(
-      new BotContext(
-        bot.username,
-        botDataStorage,
-        objectStorage,
-        actorStorage,
-        client,
-        distributor,
-        formatter,
-        transformer,
-        logger,
-        testBots,
-        safeFetcher,
-        keyStorage
-      )
+    const context = new BotContext(
+      bot.username,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      testBots,
+      safeFetcher,
+      keyStorage
     )
-    await lb.initialize(
-      new BotContext(
-        lb.username,
-        botDataStorage,
-        objectStorage,
-        actorStorage,
-        client,
-        distributor,
-        formatter,
-        transformer,
-        logger,
-        testBots,
-        safeFetcher,
-        keyStorage
-      )
+    await bot.initialize(context)
+    await context.syncProfile(bot)
+    const loggingContext = new BotContext(
+      lb.username,
+      botDataStorage,
+      objectStorage,
+      actorStorage,
+      client,
+      distributor,
+      formatter,
+      transformer,
+      logger,
+      testBots,
+      safeFetcher,
+      keyStorage
     )
+    await lb.initialize(loggingContext)
+    await loggingContext.syncProfile(lb)
 
     botId = formatter.format({ username: botName })
     lbId = formatter.format({ username: loggerBotName })

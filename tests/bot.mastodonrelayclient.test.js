@@ -179,6 +179,7 @@ describe('MastodonRelayClientBot', () => {
 
   it('subscribes to a remote relay on initialize', async () => {
     await bot.initialize(context)
+    await context.syncProfile(bot)
     await context.onIdle()
     assert.equal(postInbox[RELAY_USERNAME], 1)
 
@@ -304,6 +305,7 @@ describe('MastodonRelayClientBot', () => {
     bots[followingBotName] = followingBot
 
     await followingBot.initialize(followingContext)
+    await followingContext.syncProfile(followingBot)
     await followingContext.onIdle()
 
     const inbox = nockFormat({
@@ -369,6 +371,7 @@ describe('MastodonRelayClientBot', () => {
     bots[announceBotName] = announceBot
 
     await announceBot.initialize(announceContext)
+    await announceContext.syncProfile(announceBot)
     await announceContext.onIdle()
 
     const inbox = nockFormat({
@@ -461,6 +464,7 @@ describe('MastodonRelayClientBot', () => {
     })
     bots[multiBotName] = multiBot
     await multiBot.initialize(multiContext)
+    await multiContext.syncProfile(multiBot)
     await multiContext.onIdle()
 
     let foundA = false
@@ -508,6 +512,7 @@ describe('MastodonRelayClientBot', () => {
     })
     bots[diffBotName] = diffBot
     await diffBot.initialize(diffContext)
+    await diffContext.syncProfile(diffBot)
     await diffContext.onIdle()
 
     // Simulate Accepts having arrived: both relays are in following.
@@ -521,6 +526,7 @@ describe('MastodonRelayClientBot', () => {
     })
     bots[diffBotName] = diffBot
     await diffBot.initialize(diffContext)
+    await diffContext.syncProfile(diffBot)
     await diffContext.onIdle()
 
     let foundRemovedUndo = false
@@ -580,6 +586,7 @@ describe('MastodonRelayClientBot', () => {
     bots[stableBotName] = stableBot
 
     await stableBot.initialize(stableContext)
+    await stableContext.syncProfile(stableBot)
     await stableContext.onIdle()
 
     let firstCount = 0
@@ -591,6 +598,7 @@ describe('MastodonRelayClientBot', () => {
     assert.ok(firstCount > 0, 'first initialize should send at least one Follow')
 
     await stableBot.initialize(stableContext)
+    await stableContext.syncProfile(stableBot)
     await stableContext.onIdle()
 
     let secondCount = 0
@@ -669,6 +677,7 @@ describe('MastodonRelayClientBot', () => {
     let fuBot = new MastodonRelayClientBot(fuBotName, { relay: [pendingRelay] })
     bots[fuBotName] = fuBot
     await fuBot.initialize(fuContext)
+    await fuContext.syncProfile(fuBot)
     await fuContext.onIdle()
 
     let followId = null
@@ -689,6 +698,7 @@ describe('MastodonRelayClientBot', () => {
     })
     bots[fuBotName] = fuBot
     await fuBot.initialize(fuContext)
+    await fuContext.syncProfile(fuBot)
     await fuContext.onIdle()
 
     let undo = null
@@ -744,6 +754,7 @@ describe('MastodonRelayClientBot', () => {
     bots[neverBotName] = neverBot
 
     await neverBot.initialize(neverContext)
+    await neverContext.syncProfile(neverBot)
     await neverContext.onIdle()
 
     let undo = null

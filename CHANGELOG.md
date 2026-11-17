@@ -24,6 +24,11 @@ and this project adheres to
 - Add `BotContext.syncProfile(bot)` to send public profile `Update` activities
   to followers and following when the profile is new or changed.
 
+### Changed
+
+- Automatically call `syncProfile(bot)` after bot initialization, including the
+  instance actor and bots created by factories.
+
 ## [0.56.3] - 2026-11-15
 
 ### Changed

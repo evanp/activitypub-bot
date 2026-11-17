@@ -93,9 +93,11 @@ describe('LoggingBot', () => {
   it('can be initialized with a minimal context', async () => {
     const ctx = {
       botId: username,
-      logger: logger.child({ class: 'BotContext', botId: username })
+      logger: logger.child({ class: 'BotContext', botId: username }),
+      async syncProfile (bot) {}
     }
     await bot.initialize(ctx)
+    await ctx.syncProfile(bot)
   })
 
   it('onMention does not throw', async () => {

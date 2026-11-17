@@ -285,13 +285,22 @@ describe('ProvinceBotFactory', async () => {
           assert.strictEqual(typeof response.body.summaryMap, 'object')
           assert.strictEqual(typeof response.body.summaryMap.en, 'string')
         })
-        it('should omit first on an empty collection', async () => {
-          assert.strictEqual(response.body.totalItems, 0)
+        it('should omit first on an inline collection', async () => {
+          assert.strictEqual(response.body.totalItems, coll === 'outbox' ? 1 : 0)
           assert.strictEqual(response.body.first, undefined)
         })
-        it('should omit orderedItems on an empty collection', async () => {
-          assert.strictEqual(response.body.orderedItems, undefined)
-        })
+        if (coll === 'outbox') {
+          it('should include the initial profile Update in orderedItems', async () => {
+            assert.strictEqual(response.body.orderedItems.length, 1)
+            const update = await app.locals.objectStorage.read(response.body.orderedItems[0])
+            assert.strictEqual(update.type, 'https://www.w3.org/ns/activitystreams#Update')
+            assert.strictEqual(update.object.first.id, `${origin}/user/${PROVINCE_USERNAME}`)
+          })
+        } else {
+          it('should omit orderedItems on an empty collection', async () => {
+            assert.strictEqual(response.body.orderedItems, undefined)
+          })
+        }
         it(`should return an object with a ${coll}Of to the actor`, async () => {
           assert.strictEqual(typeof response.body[coll + 'Of'], 'string')
           assert.strictEqual(response.body[coll + 'Of'], `${origin}/user/${PROVINCE_USERNAME}`)

@@ -6,9 +6,10 @@ import OKBot from '../lib/bots/ok.js'
 async function replyToMention (bot, webfinger = null) {
   const replies = []
   const data = new Map()
-  await bot.initialize({
+  const context = {
     botId: bot.username,
     logger: { debug () {}, info () {} },
+    async syncProfile (bot) {},
     async toWebfinger () { return webfinger },
     async hasData (key) { return data.has(key) },
     async setData (key, value) { data.set(key, value) },
@@ -16,7 +17,9 @@ async function replyToMention (bot, webfinger = null) {
       replies.push(content)
       return { id: 'https://local.test/reply', inReplyTo: { id: object.id } }
     }
-  })
+  }
+  await bot.initialize(context)
+  await context.syncProfile(bot)
   const object = {
     id: 'https://remote.test/note',
     attributedTo: { first: { id: 'https://remote.test/actor' } }

@@ -192,6 +192,7 @@ describe('LitePubRelayClientBot', () => {
 
   it('subscribes to a remote relay on initialize', async () => {
     await bot.initialize(context)
+    await context.syncProfile(bot)
     await context.onIdle()
     assert.equal(postInbox[RELAY_USERNAME], 1)
 
@@ -418,6 +419,7 @@ describe('LitePubRelayClientBot', () => {
     assert.ok(bot)
     bots[botName] = bot
     await bot.initialize(context)
+    await context.syncProfile(bot)
     await context.onIdle()
 
     const authorUsername = 'botlitepubrelayclientauthor3'
@@ -463,6 +465,7 @@ describe('LitePubRelayClientBot', () => {
     bot = new LitePubRelayClientBot(botName, { relay: [multiA, multiB] })
     bots[botName] = bot
     await bot.initialize(context)
+    await context.syncProfile(bot)
     await context.onIdle()
 
     let foundA = false
@@ -483,6 +486,7 @@ describe('LitePubRelayClientBot', () => {
     bot = new LitePubRelayClientBot(botName, { relay: [persistRelay, removedRelay] })
     bots[botName] = bot
     await bot.initialize(context)
+    await context.syncProfile(bot)
     await context.onIdle()
 
     const persistActor = await context.getObject(persistRelay)
@@ -493,6 +497,7 @@ describe('LitePubRelayClientBot', () => {
     bot = new LitePubRelayClientBot(botName, { relay: [persistRelay] })
     bots[botName] = bot
     await bot.initialize(context)
+    await context.syncProfile(bot)
     await context.onIdle()
 
     let foundRemovedUndo = false
@@ -521,6 +526,7 @@ describe('LitePubRelayClientBot', () => {
     bot = new LitePubRelayClientBot(botName, { relay: stableRelay })
     bots[botName] = bot
     await bot.initialize(context)
+    await context.syncProfile(bot)
     await context.onIdle()
 
     let firstCount = 0
@@ -530,6 +536,7 @@ describe('LitePubRelayClientBot', () => {
     }
 
     await bot.initialize(context)
+    await context.syncProfile(bot)
     await context.onIdle()
 
     let secondCount = 0
@@ -545,6 +552,7 @@ describe('LitePubRelayClientBot', () => {
     bot = new LitePubRelayClientBot(botName, { relay: followerRelay })
     bots[botName] = bot
     await bot.initialize(context)
+    await context.syncProfile(bot)
     await context.onIdle()
 
     const relayActor = await context.getObject(followerRelay)
@@ -595,6 +603,7 @@ describe('LitePubRelayClientBot', () => {
     bot = new LitePubRelayClientBot(botName, { relay: followOnlyRelay })
     bots[botName] = bot
     await bot.initialize(context)
+    await context.syncProfile(bot)
     await context.onIdle()
 
     const relayActor = await context.getObject(followOnlyRelay)
@@ -667,6 +676,7 @@ describe('LitePubRelayClientBot', () => {
     )
 
     await fanoutBot.initialize(fanoutContext)
+    await fanoutContext.syncProfile(fanoutBot)
     await fanoutContext.onIdle()
 
     const inbox = nockFormat({

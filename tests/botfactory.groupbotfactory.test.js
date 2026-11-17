@@ -95,6 +95,7 @@ describe('GroupBotFactory', async () => {
       response = await request(app)
         .get(`/user/${GROUP_USERNAME}`)
         .set('Accept', 'application/activity+json')
+      await app.onIdle()
       assert.strictEqual(response.status, 200)
     })
     it('actor has type Group', () => {
@@ -188,11 +189,14 @@ describe('GroupBotFactory', async () => {
     it('Announces the Note from the lazy-created group', async () => {
       const { actorStorage, objectStorage } = app.locals
       const outbox = await actorStorage.getCollection(GROUP_USERNAME, 'outbox')
-      assert.strictEqual(outbox.totalItems, 1)
+      assert.strictEqual(outbox.totalItems, 2)
       const items = Array.from(outbox.get('items') ?? [])
-      assert.strictEqual(items.length, 1)
-      const announce = await objectStorage.read(items[0].id)
-      assert.strictEqual(announce.type, `${AS}Announce`)
+      assert.strictEqual(items.length, 2)
+      const activities = await Promise.all(items.map(item => objectStorage.read(item.id)))
+      assert.strictEqual(activities.filter(activity => activity.type === `${AS}Update`).length, 1)
+      const announces = activities.filter(activity => activity.type === `${AS}Announce`)
+      assert.strictEqual(announces.length, 1)
+      const announce = announces[0]
       const objects = Array.from(announce.object)
       assert.strictEqual(objects[0].id, noteId)
     })
