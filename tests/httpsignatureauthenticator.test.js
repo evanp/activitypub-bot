@@ -21,6 +21,7 @@ import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
+import { signCavage } from './utils/cavage-signature.js'
 
 describe('HTTPSignatureAuthenticator', async () => {
   const LOCAL_HOST = 'local.httpsignatureauthenticator.test'
@@ -850,5 +851,143 @@ describe('HTTPSignatureAuthenticator', async () => {
       app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
+  })
+})
+
+describe('HTTPSignatureAuthenticator Draft Cavage timestamp freshness', () => {
+  const origin = 'https://authenticator.example'
+  const host = 'authenticator.example'
+  const path = '/user/receiver/outbox'
+  const owner = 'https://remote.example/user/signer'
+  const keyId = `${owner}#main-key`
+  const now = 1800000000
+  const date = new Date(now * 1000).toUTCString()
+  const target = `(request-target): get ${path}\nhost: ${host}`
+  let privateKey
+  let authenticator
+
+  before(() => {
+    const keys = crypto.generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      publicKeyEncoding: { type: 'spki', format: 'pem' },
+      privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+    })
+    privateKey = keys.privateKey
+    const logger = Logger({ level: 'silent' })
+    const remoteKeyStorage = {
+      async getPublicKey (id, cache = true) {
+        assert.strictEqual(id, keyId)
+        return { owner, publicKeyPem: keys.publicKey }
+      }
+    }
+    authenticator = new HTTPSignatureAuthenticator(
+      remoteKeyStorage,
+      new HTTPSignature(logger),
+      new HTTPMessageSignature(logger),
+      new Digester(logger),
+      logger
+    )
+  })
+
+  function makeRequest (signedHeaders, signingString, parameters, requestDate = date) {
+    const signature = signCavage(
+      privateKey,
+      signingString,
+      `keyId="${keyId}",algorithm="hs2019",headers="${signedHeaders}",${parameters}`
+    )
+    const headers = { host, signature }
+    if (requestDate !== null) {
+      headers.date = requestDate
+    }
+    return {
+      method: 'GET',
+      originalUrl: path,
+      headers,
+      get (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: {
+        locals: {
+          origin,
+          formatter: new UrlFormatter(origin),
+          bots: {},
+          domainBlocker: { async isBlocked (url) { return false } }
+        }
+      }
+    }
+  }
+
+  async function assertAuthentication (t, req, expectedStatus = null) {
+    t.mock.method(Date, 'now', () => now * 1000)
+    const next = t.mock.fn()
+    await authenticator.authenticate(req, {}, next)
+    assert.strictEqual(next.mock.callCount(), 1)
+    const [err] = next.mock.calls[0].arguments
+    if (expectedStatus === null) {
+      assert.ifError(err)
+      assert.strictEqual(req.auth.subject, owner)
+    } else {
+      assert.ok(err, 'expected authentication to fail')
+      assert.strictEqual(err.status, expectedStatus)
+      assert.strictEqual(req.auth?.subject, undefined)
+    }
+  }
+
+  for (const { label, created, expires, status } of [
+    { label: 'accepts fresh created and future expires', created: now - 1, expires: now + 60 },
+    { label: 'accepts created at the five-minute freshness boundary', created: now - 300, expires: now + 60 },
+    { label: 'rejects stale created despite a fresh Date', created: now - 301, expires: now + 60, status: 401 },
+    { label: 'rejects created beyond the future clock-skew window', created: now + 301, expires: now + 600, status: 401 },
+    { label: 'rejects expired signatures despite fresh created and Date', created: now - 1, expires: now - 1, status: 401 },
+    { label: 'accepts expires at the current time', created: now - 1, expires: now },
+    { label: 'accepts expires more than five minutes in the future', created: now - 1, expires: now + 3600 }
+  ]) {
+    it(label, async (t) => {
+      const req = makeRequest(
+        '(request-target) host (created) (expires)',
+        `${target}\n(created): ${created}\n(expires): ${expires}`,
+        `created=${created},expires=${expires}`
+      )
+      await assertAuthentication(t, req, status ?? null)
+    })
+  }
+
+  it('accepts signed created without a Date header or expires', async (t) => {
+    const req = makeRequest(
+      '(request-target) host (created)',
+      `${target}\n(created): ${now}`,
+      `created=${now}`,
+      null
+    )
+    await assertAuthentication(t, req)
+  })
+
+  it('accepts a signed Date and expires without created', async (t) => {
+    const req = makeRequest(
+      '(request-target) host date (expires)',
+      `${target}\ndate: ${date}\n(expires): ${now + 60}`,
+      `expires=${now + 60}`
+    )
+    await assertAuthentication(t, req)
+  })
+
+  it('rejects an unsigned created parameter as a substitute for Date', async (t) => {
+    const req = makeRequest(
+      '(request-target) host',
+      target,
+      `created=${now}`,
+      null
+    )
+    await assertAuthentication(t, req, 401)
+  })
+
+  it('rejects expires alone as a substitute for Date or signed created', async (t) => {
+    const req = makeRequest(
+      '(request-target) host (expires)',
+      `${target}\n(expires): ${now + 60}`,
+      `expires=${now + 60}`,
+      null
+    )
+    await assertAuthentication(t, req, 401)
   })
 })

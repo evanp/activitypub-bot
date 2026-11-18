@@ -8,6 +8,7 @@ import { HTTPSignature } from '../lib/httpsignature.js'
 import { Digester } from '../lib/digester.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
+import { signCavage } from './utils/cavage-signature.js'
 
 function escapeRegex (str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -252,5 +253,137 @@ describe('HTTPSignature', async () => {
     const header = 'keyId="https://guiatributario.net/?author=0#main-key",algorithm="rsa-sha256",headers="(request-target) host date digest",signature="uYwm1svAGp+Njb6663o4YywQaAfXhnyvK3ASg0f+FFddFG9ZrlJI4+WYVe+ELcQD/bGEri+TuvZ8bbFsDB2Y+XXx13pcwlBWyG6Lry67+nmqp8U0WykVXlOpI/GkdPtMRY3QSzCMXcKsAWqF3Uljw0wlNRLYeyQ2YrFlKMnT1Vm7u3/4qQVqJAO2Aqu18hUBzYYFe6LyQ9nFh2fCUhbQz0wlYciSEyzdvYRb0YExJhh2a6UvhD1qE0ctImaI1wTsKTgcgXGOGO92iNyvPbotsqHykHZ0cu1YIpOZkhNs3YwYcqxxXypFzh2MEDzoK2b7hrXBAmNpq4MTczEAGLOKlA=="'
     const keyId = httpSignature.keyId(header)
     assert.strictEqual(keyId, 'https://guiatributario.net/?author=0#main-key')
+  })
+
+  describe('timestamp pseudo-headers', () => {
+    const host = 'signature.example'
+    const path = '/inbox?delivery=1'
+    const keyId = 'https://sender.example/actor#main-key'
+    const created = 1700000000
+    const expires = 1700000300
+    const headers = { host }
+    let verifier
+    let privateKey
+    let publicKey
+
+    before(async () => {
+      verifier = new HTTPSignature(Logger({ level: 'silent' }))
+      privateKey = await getPrivateKey(signerUser, remoteDomain)
+      publicKey = await getPublicKey(signerUser, remoteDomain)
+    })
+
+    for (const [field, value] of [['created', created], ['expires', expires]]) {
+      const signingString = `(request-target): get ${path}\n(${field}): ${value}\nhost: ${host}`
+      const parameters = `keyId="${keyId}",algorithm="hs2019",headers="(request-target) (${field}) host"`
+
+      for (const [label, parameter] of [['unquoted', `${value}`], ['quoted', `"${value}"`]]) {
+        it(`validates hs2019 with ${label} ${field} parameter syntax`, async () => {
+          const signature = signCavage(privateKey, signingString, `${parameters},${field}=${parameter}`)
+          assert.strictEqual(await verifier.validate(publicKey, signature, 'GET', path, headers), true)
+        })
+      }
+
+      it(`rejects (${field}) with rsa-sha256 even when an HTTP header supplies its value`, async () => {
+        const signature = signCavage(
+          privateKey,
+          signingString,
+          `${parameters.replace('hs2019', 'rsa-sha256')},${field}=${value}`
+        )
+        await assert.rejects(
+          verifier.validate(publicKey, signature, 'GET', path, { ...headers, [`(${field})`]: `${value}` }),
+          { status: 401 }
+        )
+      })
+
+      it(`rejects (${field}) without its Signature parameter despite a matching HTTP header`, async () => {
+        const signature = signCavage(privateKey, signingString, parameters)
+        await assert.rejects(
+          verifier.validate(publicKey, signature, 'GET', path, { ...headers, [`(${field})`]: `${value}` }),
+          { status: 401 }
+        )
+      })
+
+      it(`does not verify when the ${field} Signature parameter is changed`, async () => {
+        const signature = signCavage(privateKey, signingString, `${parameters},${field}=${value + 1}`)
+        assert.strictEqual(await verifier.validate(publicKey, signature, 'GET', path, headers), false)
+      })
+
+      it(`rejects a malformed ${field} parameter despite a matching HTTP header`, async () => {
+        const signature = signCavage(privateKey, signingString, `${parameters},${field}="${value}junk"`)
+        await assert.rejects(
+          verifier.validate(publicKey, signature, 'GET', path, { ...headers, [`(${field})`]: `${value}` }),
+          { status: 401 }
+        )
+      })
+
+      describe(`${field} accessor`, () => {
+        for (const [label, parameter] of [['unquoted', `${value}`], ['quoted', `"${value}"`], ['zero', '0']]) {
+          it(`returns Unix seconds from a ${label} parameter`, () => {
+            const signature = signCavage(privateKey, signingString, `${parameters},${field}=${parameter}`)
+            assert.strictEqual(verifier[field](signature), label === 'zero' ? 0 : value)
+          })
+        }
+
+        it('returns null when the parameter is absent', () => {
+          const signature = signCavage(privateKey, signingString, parameters)
+          assert.strictEqual(verifier[field](signature), null)
+        })
+
+        for (const [label, parameter] of [
+          ['non-numeric', '"invalid"'],
+          ['partly numeric', `${value}junk`],
+          ['empty', '""']
+        ]) {
+          it(`rejects a ${label} parameter`, () => {
+            const signature = signCavage(privateKey, signingString, `${parameters},${field}=${parameter}`)
+            assert.throws(() => verifier[field](signature), { status: 401 })
+          })
+        }
+
+        it('rejects duplicate parameters', () => {
+          const signature = signCavage(privateKey, signingString, `${parameters},${field}=${value},${field}=${value + 1}`)
+          assert.throws(() => verifier[field](signature), { status: 401 })
+        })
+      })
+    }
+
+    it('validates both timestamp pseudo-headers in the declared signing order', async () => {
+      const signingString = `host: ${host}\n(expires): ${expires}\n(request-target): get ${path}\n(created): ${created}`
+      const parameters = `keyId="${keyId}",algorithm="hs2019",headers="host (expires) (request-target) (created)",created=${created},expires=${expires}`
+      const signature = signCavage(privateKey, signingString, parameters)
+      assert.strictEqual(await verifier.validate(publicKey, signature, 'GET', path, headers), true)
+    })
+
+    it('takes timestamp values from Signature parameters instead of ordinary HTTP headers', async () => {
+      const signingString = `(request-target): get ${path}\n(created): ${created}\n(expires): ${expires}\nhost: ${host}`
+      const parameters = `keyId="${keyId}",algorithm="hs2019",headers="(request-target) (created) (expires) host",created=${created},expires=${expires}`
+      const signature = signCavage(privateKey, signingString, parameters)
+      const spoofedHeaders = {
+        ...headers,
+        created: `${created + 1}`,
+        expires: `${expires + 1}`,
+        '(created)': `${created + 2}`,
+        '(expires)': `${expires + 2}`
+      }
+      assert.strictEqual(await verifier.validate(publicKey, signature, 'GET', path, spoofedHeaders), true)
+    })
+
+    it('rejects fractional created values', async () => {
+      const signingString = `(request-target): get ${path}\n(created): ${created}.5\nhost: ${host}`
+      const parameters = `keyId="${keyId}",algorithm="hs2019",headers="(request-target) (created) host",created=${created}.5`
+      const signature = signCavage(privateKey, signingString, parameters)
+      assert.throws(() => verifier.created(signature), { status: 401 })
+      await assert.rejects(verifier.validate(publicKey, signature, 'GET', path, headers), { status: 401 })
+    })
+
+    it('rejects an unknown pseudo-header even when an HTTP header supplies its value', async () => {
+      const signingString = `(request-target): get ${path}\n(unknown): supplied\nhost: ${host}`
+      const parameters = `keyId="${keyId}",algorithm="hs2019",headers="(request-target) (unknown) host"`
+      const signature = signCavage(privateKey, signingString, parameters)
+      await assert.rejects(
+        verifier.validate(publicKey, signature, 'GET', path, { ...headers, '(unknown)': 'supplied' }),
+        { status: 401 }
+      )
+    })
   })
 })

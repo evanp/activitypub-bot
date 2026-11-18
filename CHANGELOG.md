@@ -39,6 +39,10 @@ and this project adheres to
 - Strip an optional leading `acct:` in `BotContext.toActorId()` before local
   address resolution so prefixed and bare local addresses return the same actor
   URL without HTTP discovery (#330).
+- Validate Draft Cavage 12 `(created)` and `(expires)` pseudo-headers for
+  `hs2019` signatures, enforce timestamp freshness and expiry, and allow signed
+  creation timestamps instead of `Date`. Support unquoted parameters and reject
+  duplicate parameters and unknown pseudo-headers (#334).
 
 ## [0.56.3] - 2026-11-15
 
