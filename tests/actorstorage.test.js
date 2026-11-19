@@ -722,9 +722,9 @@ describe('ActorStorage', () => {
         fullname: 'A Renamed Bot'
       })
       const after = await readUpdatedAt()
-      assert.notStrictEqual(after.fullname, stale.fullname)
-      assert.strictEqual(after.description, stale.description)
-      assert.strictEqual(after.icon, stale.icon)
+      assert.ok(new Date(after.fullname).getTime() > new Date(stale.fullname).getTime())
+      assert.strictEqual(new Date(after.description).getTime(), new Date(stale.description).getTime())
+      assert.strictEqual(new Date(after.icon).getTime(), new Date(stale.icon).getTime())
     })
   })
 

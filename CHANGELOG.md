@@ -11,6 +11,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix PostgreSQL profile fingerprint tests by comparing timestamp values instead
+  of `Date` object identity.
+
 ## [0.57.0] - 2026-11-18
 
 ### Added
