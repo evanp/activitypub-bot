@@ -31,6 +31,7 @@ and this project adheres to
 - Use `actorId#main-key` public key IDs for bot and instance actors for
   interoperability with other servers. Redirect legacy
   `/user/{username}/publickey` URLs to the new IDs with HTTP 307.
+- Update dependencies: express-rate-limit, nock, and @mswjs/interceptors.
 
 ### Fixed
 
