@@ -51,6 +51,11 @@ describe('ActivityPubClient', async () => {
   const NO_FALLBACK_HOST = 'nofallback.activitypubclient.test'
   const RFC9421_POST_HOST = 'rfc9421-post.activitypubclient.test'
   const DOUBLE_KNOCK_POST_HOST = 'doubleknock-post.activitypubclient.test'
+  const PIXELFED_HOSTS = new Map([
+    ['2.0', 'pixelfed-2-0.activitypubclient.example'],
+    ['2.1', 'pixelfed-2-1.activitypubclient.example'],
+    ['2.2', 'pixelfed-2-2.activitypubclient.example']
+  ])
   const CACHED_DRAFT_POST_HOST = 'cacheddraft-post.activitypubclient.test'
   const EXPIRED_DRAFT_POST_HOST = 'expireddraft-post.activitypubclient.test'
   const NO_FALLBACK_POST_HOST = 'nofallback-post.activitypubclient.test'
@@ -176,6 +181,7 @@ describe('ActivityPubClient', async () => {
         NO_FALLBACK_HOST,
         RFC9421_POST_HOST,
         DOUBLE_KNOCK_POST_HOST,
+        ...PIXELFED_HOSTS.values(),
         CACHED_DRAFT_POST_HOST,
         EXPIRED_DRAFT_POST_HOST,
         NO_FALLBACK_POST_HOST,
@@ -261,6 +267,7 @@ describe('ActivityPubClient', async () => {
         NO_FALLBACK_HOST,
         RFC9421_POST_HOST,
         DOUBLE_KNOCK_POST_HOST,
+        ...PIXELFED_HOSTS.values(),
         CACHED_DRAFT_POST_HOST,
         EXPIRED_DRAFT_POST_HOST,
         NO_FALLBACK_POST_HOST,
@@ -367,6 +374,75 @@ describe('ActivityPubClient', async () => {
       assert.equal(error.status, 403)
     }
   })
+
+  for (const [nodeInfoVersion, pixelfedHost] of PIXELFED_HOSTS) {
+    it(`sends draft-cavage-12 on the first POST to a Pixelfed inbox using NodeInfo ${nodeInfoVersion}`, async () => {
+      const origin = `https://${pixelfedHost}`
+      const actorPath = '/users/photographer'
+      const actorUrl = `${origin}${actorPath}`
+      const inboxPath = `${actorPath}/inbox`
+      const inboxUrl = `${origin}${inboxPath}`
+      const requests = []
+
+      const scope = nock(origin)
+        .get('/.well-known/nodeinfo')
+        .reply(200, {
+          links: [{
+            rel: `http://nodeinfo.diaspora.software/ns/schema/${nodeInfoVersion}`,
+            href: `${origin}/nodeinfo/${nodeInfoVersion}`
+          }]
+        })
+        .get(`/nodeinfo/${nodeInfoVersion}`)
+        .reply(200, {
+          version: nodeInfoVersion,
+          ...(nodeInfoVersion === '2.2' ? { instance: {} } : {}),
+          software: { name: 'pixelfed', version: '0.12.0' },
+          protocols: ['activitypub'],
+          services: { inbound: [], outbound: [] },
+          openRegistrations: false,
+          usage: {
+            users: { total: 1, activeMonth: 1, activeHalfyear: 1 },
+            localPosts: 0,
+            localComments: 0
+          },
+          metadata: {}
+        })
+        .get(actorPath)
+        .reply(200, {
+          '@context': 'https://www.w3.org/ns/activitystreams',
+          id: actorUrl,
+          type: 'Person',
+          preferredUsername: 'photographer',
+          inbox: inboxUrl
+        }, { 'Content-Type': 'application/activity+json' })
+        .post(inboxPath)
+        .reply(function (request) {
+          requests.push(Object.fromEntries(request.headers))
+          return [202, 'accepted']
+        })
+
+      assert.strictEqual(await policyStorage.get(origin), null)
+
+      const actor = await client.get(actorUrl)
+      assert.strictEqual(actor.id, actorUrl)
+      assert.strictEqual(actor.inbox.first.id, inboxUrl)
+
+      const obj = as2.follow()
+        .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+        .object(actor.id)
+        .to(actor.id)
+        .publishedNow()
+        .get()
+
+      await client.post(actor.inbox.first.id, obj, LOCAL_SIGNING_USER)
+
+      assert.strictEqual(requests.length, 1)
+      assertDraftCavagePostHeaders(requests[0])
+      assert.match(requests[0].digest, /^SHA-256=[0-9a-zA-Z+/=]+$/)
+      assert.strictEqual(requests[0]['content-digest'], undefined)
+      assert.ok(scope.isDone(), 'NodeInfo discovery, actor, and inbox endpoints must be requested')
+    })
+  }
 
   it('sends draft-cavage-12 if RFC 9421 fails on POST', async () => {
     const inbox = nockFormat({
