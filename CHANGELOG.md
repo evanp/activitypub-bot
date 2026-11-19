@@ -11,6 +11,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.57.1] - 2026-11-18
+
 ### Fixed
 
 - Fix PostgreSQL profile fingerprint tests by comparing timestamp values instead
@@ -1923,7 +1925,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.57.0...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.57.1...HEAD
+[0.57.1]: https://github.com/evanp/activitypub-bot/compare/v0.57.0...v0.57.1
 [0.57.0]: https://github.com/evanp/activitypub-bot/compare/v0.56.3...v0.57.0
 [0.56.3]: https://github.com/evanp/activitypub-bot/compare/v0.56.2...v0.56.3
 [0.56.2]: https://github.com/evanp/activitypub-bot/compare/v0.56.1...v0.56.2
