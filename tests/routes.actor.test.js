@@ -168,14 +168,9 @@ describe('actor routes', async () => {
     it('should not include alsoKnownAs', async () => {
       assert.ok(!response.body.alsoKnownAs)
     })
-    it('should include url', async () => {
-      assert.strictEqual(typeof response.body.url, 'object')
-      assert.strictEqual(typeof response.body.url.href, 'string')
-      assert.strictEqual(response.body.url.href, `${origin}/profile/${BOT_USERNAME}`)
-      assert.strictEqual(typeof response.body.url.type, 'string')
-      assert.strictEqual(response.body.url.type, 'Link')
-      assert.strictEqual(typeof response.body.url.mediaType, 'string')
-      assert.strictEqual(response.body.url.mediaType, 'text/html')
+    it('should include a string-valued profile url', async () => {
+      assert.strictEqual(typeof response.body.url, 'string')
+      assert.strictEqual(response.body.url, `${origin}/profile/${BOT_USERNAME}`)
     })
     it('should include manuallyApprovesFollowers', async () => {
       assert.strictEqual(typeof response.body.manuallyApprovesFollowers, 'boolean')

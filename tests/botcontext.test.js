@@ -1445,6 +1445,8 @@ describe('BotContext', () => {
         assert.strictEqual(body.type, 'Update')
         assert.strictEqual(body.actor, formatter.format({ username }))
         assert.strictEqual(body.object.id, formatter.format({ username }))
+        assert.strictEqual(typeof body.object.url, 'string')
+        assert.strictEqual(body.object.url, formatter.format({ username, type: 'profile' }))
         assert.strictEqual(body.object.type, bot.type)
         assert.strictEqual(body.object.name, bot.fullname)
         assert.strictEqual(body.object.summary, bot.description)

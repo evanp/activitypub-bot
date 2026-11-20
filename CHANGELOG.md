@@ -11,6 +11,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Serialize actor profile URLs as strings in actor responses and profile `Update`
+  activities.
+
 ## [0.57.1] - 2026-11-18
 
 ### Fixed
