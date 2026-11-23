@@ -16,6 +16,10 @@ and this project adheres to
 - Serialize actor profile URLs as strings in actor responses and profile `Update`
   activities.
 
+### Changed
+
+- Update activitypub-nock for algorithm-less RFC 9421 signatures.
+
 ## [0.57.1] - 2026-11-18
 
 ### Fixed
