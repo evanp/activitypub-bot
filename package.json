@@ -38,6 +38,7 @@
     "csv-parse": "^7.0.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.2",
+    "http-message-sig": "^0.3.0",
     "humanhash": "^1.0.4",
     "ipaddr.js": "^2.3.0",
     "nanoid": "^6.0.1",
@@ -63,5 +64,8 @@
   "engines": {
     "node": "^22 || ^24 || ^26"
   },
-  "engineStrict": true
+  "engineStrict": true,
+  "allowScripts": {
+    "sqlite3@6.0.1": true
+  }
 }
