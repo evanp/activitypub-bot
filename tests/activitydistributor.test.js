@@ -29,7 +29,6 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { SafeFetcher } from '../lib/safefetcher.js'
 import { ActivityDistributor } from '../lib/activitydistributor.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
-import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { DistributionWorker } from '../lib/distributionworker.js'
@@ -46,6 +45,7 @@ import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
+import { assertRfc9421SignatureInput } from './utils/rfc9421-assertions.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
@@ -87,9 +87,7 @@ const LOCAL_USERNAMES = [
   LOCAL_USER7
 ]
 const MESSAGE_SIGNATURE_RE = /^sig1=:[0-9A-Za-z+/=]+:$/
-const SIGNATURE_INPUT_RE = new RegExp(
-  `^sig1=\\("@method" "@target-uri" "date" "user-agent" "content-type" "content-digest"\\);keyid="https://${LOCAL_HOST.replace(/\./g, '\\.')}/user/${LOCAL_USER0}#main-key";alg="rsa-v1_5-sha256";created=\\d+$`
-)
+const MESSAGE_COMPONENTS = ['@method', '@target-uri', 'date', 'user-agent', 'content-type', 'content-digest']
 
 describe('ActivityDistributor', () => {
   let connection = null
@@ -134,12 +132,11 @@ describe('ActivityDistributor', () => {
     objectStorage = new ObjectStorage(connection)
     keyStorage = new KeyStorage(connection, logger)
     const signer = new HTTPSignature(logger)
-    const messageSigner = new HTTPMessageSignature(logger)
     const digester = new Digester(logger)
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher(new DomainBlocker(null, connection, logger), { allowPrivate: true }), new DomainBlocker(null, connection, logger))
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, policyStorage, new SafeFetcher(new DomainBlocker(null, connection, logger), { allowPrivate: true }), new DomainBlocker(null, connection, logger))
     jobQueue = new JobQueue(connection, logger)
     distributionWorker = new DistributionWorker(jobQueue, logger, { client })
     distributionWorkerRun = distributionWorker.run()
@@ -234,7 +231,7 @@ describe('ActivityDistributor', () => {
     assert.ok(contentDigest)
     assert.ok(date)
     assert.match(signature, MESSAGE_SIGNATURE_RE)
-    assert.match(signatureInput, SIGNATURE_INPUT_RE)
+    assertRfc9421SignatureInput(signatureInput, `${ORIGIN}/user/${LOCAL_USER0}#main-key`, MESSAGE_COMPONENTS)
     assert.match(contentDigest, /^sha-256=:[0-9a-zA-Z+/=]*:$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
@@ -255,7 +252,7 @@ describe('ActivityDistributor', () => {
     assert.ok(contentDigest)
     assert.ok(date)
     assert.match(signature, MESSAGE_SIGNATURE_RE)
-    assert.match(signatureInput, SIGNATURE_INPUT_RE)
+    assertRfc9421SignatureInput(signatureInput, `${ORIGIN}/user/${LOCAL_USER0}#main-key`, MESSAGE_COMPONENTS)
     assert.match(contentDigest, /^sha-256=:[0-9a-zA-Z+/=]*:$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
@@ -291,7 +288,7 @@ describe('ActivityDistributor', () => {
     assert.ok(contentDigest)
     assert.ok(date)
     assert.match(signature, MESSAGE_SIGNATURE_RE)
-    assert.match(signatureInput, SIGNATURE_INPUT_RE)
+    assertRfc9421SignatureInput(signatureInput, `${ORIGIN}/user/${LOCAL_USER0}#main-key`, MESSAGE_COMPONENTS)
     assert.match(contentDigest, /^sha-256=:[0-9a-zA-Z+/=]*:$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })
@@ -315,7 +312,7 @@ describe('ActivityDistributor', () => {
     assert.ok(contentDigest)
     assert.ok(date)
     assert.match(signature, MESSAGE_SIGNATURE_RE)
-    assert.match(signatureInput, SIGNATURE_INPUT_RE)
+    assertRfc9421SignatureInput(signatureInput, `${ORIGIN}/user/${LOCAL_USER0}#main-key`, MESSAGE_COMPONENTS)
     assert.match(contentDigest, /^sha-256=:[0-9a-zA-Z+/=]*:$/)
     assert.match(date, /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
   })

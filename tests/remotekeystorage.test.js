@@ -12,7 +12,6 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { DomainBlocker } from '../lib/domainblocker.js'
 import { SafeFetcher } from '../lib/safefetcher.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
-import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
@@ -57,11 +56,10 @@ describe('RemoteKeyStorage', async () => {
     const formatter = new UrlFormatter(origin)
     const digester = new Digester(logger)
     const signer = new HTTPSignature(logger)
-    const messageSigner = new HTTPMessageSignature(logger)
     throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher(new DomainBlocker(null, connection, logger), { allowPrivate: true }), new DomainBlocker(null, connection, logger))
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, policyStorage, new SafeFetcher(new DomainBlocker(null, connection, logger), { allowPrivate: true }), new DomainBlocker(null, connection, logger))
     nockSetup(REMOTE_HOST)
   })
 

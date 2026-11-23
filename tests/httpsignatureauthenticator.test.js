@@ -1,13 +1,12 @@
-import { describe, before, after, it } from 'node:test'
+import { describe, before, beforeEach, after, it } from 'node:test'
 import assert from 'node:assert'
 
-import { nockSetup, nockSignature, nockKeyRotate, nockFormat, nockMessageSignature } from '@evanp/activitypub-nock'
+import { nockSetup, nockSignature, nockKeyRotate, nockFormat, nockMessageSignature, getPair } from '@evanp/activitypub-nock'
 import crypto from 'node:crypto'
 import Logger from 'pino'
 
 import { KeyStorage } from '../lib/keystorage.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
-import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { HTTPSignatureAuthenticator } from '../lib/httpsignatureauthenticator.js'
 import { Digester } from '../lib/digester.js'
 import { RemoteKeyStorage } from '../lib/remotekeystorage.js'
@@ -22,6 +21,19 @@ import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
 import { signCavage } from './utils/cavage-signature.js'
+
+function makeResponse () {
+  const headers = new Map()
+  return {
+    set (name, value) {
+      headers.set(name.toLowerCase(), String(value))
+      return this
+    },
+    get (name) {
+      return headers.get(name.toLowerCase())
+    }
+  }
+}
 
 describe('HTTPSignatureAuthenticator', async () => {
   const LOCAL_HOST = 'local.httpsignatureauthenticator.test'
@@ -59,7 +71,6 @@ describe('HTTPSignatureAuthenticator', async () => {
   let authenticator = null
   let logger = null
   let signer = null
-  let messageSigner = null
   let digester = null
   let formatter = null
   let remoteKeyStorage = null
@@ -99,14 +110,13 @@ describe('HTTPSignatureAuthenticator', async () => {
       remoteDomains: [REMOTE_HOST, BLOCKED_HOST]
     })
     signer = new HTTPSignature(logger)
-    messageSigner = new HTTPMessageSignature(logger)
     digester = new Digester(logger)
     formatter = new UrlFormatter(origin)
     const keyStorage = new KeyStorage(connection, logger)
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
-    const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, new SafeFetcher(new DomainBlocker(null, connection, logger), { allowPrivate: true }), new DomainBlocker(null, connection, logger))
+    const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, policyStorage, new SafeFetcher(new DomainBlocker(null, connection, logger), { allowPrivate: true }), new DomainBlocker(null, connection, logger))
     remoteKeyStorage = new RemoteKeyStorage(client, connection, logger)
     nockSetup(REMOTE_HOST)
     nockSetup(BLOCKED_HOST)
@@ -125,7 +135,6 @@ describe('HTTPSignatureAuthenticator', async () => {
     authenticator = new HTTPSignatureAuthenticator(
       remoteKeyStorage,
       signer,
-      messageSigner,
       digester,
       logger)
   })
@@ -145,7 +154,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -174,7 +183,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = `/.well-known/webfinger?resource=acct:${lname}@${LOCAL_HOST}`
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -202,7 +211,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -262,7 +271,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host,
       digest
     }
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -284,7 +293,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       date,
       host: URL.parse(origin).host
     }
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -312,7 +321,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -350,7 +359,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host,
       digest
     }
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -386,7 +395,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       signature,
       host: URL.parse(origin).host
     }
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -414,7 +423,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -441,7 +450,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -470,7 +479,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -510,7 +519,7 @@ describe('HTTPSignatureAuthenticator', async () => {
         }
       }
     }
-    const res = {}
+    const res = makeResponse()
     await authenticator.authenticate(req, res, next)
   })
 
@@ -531,7 +540,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -571,7 +580,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       'content-digest': contentDigest,
       host: URL.parse(origin).host
     }
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -596,7 +605,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -644,7 +653,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -695,7 +704,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const method = 'GET'
     const originalUrl = OUTBOX_PATH
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -722,7 +731,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       signature,
       host: URL.parse(origin).host
     }
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl: OUTBOX_PATH,
@@ -761,7 +770,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       host: URL.parse(origin).host,
       digest
     }
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl,
@@ -790,7 +799,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       signature,
       host: URL.parse(origin).host
     }
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl: OUTBOX_PATH,
@@ -814,7 +823,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       signature,
       host: URL.parse(origin).host
     }
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl: OUTBOX_PATH,
@@ -840,7 +849,7 @@ describe('HTTPSignatureAuthenticator', async () => {
       signature,
       host: URL.parse(origin).host
     }
-    const res = {}
+    const res = makeResponse()
     const req = {
       headers,
       originalUrl: OUTBOX_PATH,
@@ -851,6 +860,161 @@ describe('HTTPSignatureAuthenticator', async () => {
       app: { locals: { formatter, origin, bots: {}, domainBlocker } }
     }
     await authenticator.authenticate(req, res, next)
+  })
+})
+
+describe('HTTPSignatureAuthenticator RFC 9421 request requirements', () => {
+  const origin = 'https://authenticator.example'
+  const domain = 'signer.authentication.example'
+  const username = 'signer'
+  const owner = `https://${domain}/user/${username}`
+  const keyId = `${owner}#main-key`
+  const path = '/user/receiver/outbox'
+  const now = 1800000000
+  let privateKey
+  let authenticator
+
+  before(async () => {
+    const keys = await getPair(username, domain)
+    privateKey = keys.privateKey
+    const logger = Logger({ level: 'silent' })
+    const remoteKeyStorage = {
+      async getPublicKey (id, cache = true) {
+        assert.strictEqual(id, keyId)
+        return { owner, publicKeyPem: keys.publicKey }
+      }
+    }
+    authenticator = new HTTPSignatureAuthenticator(
+      remoteKeyStorage,
+      new HTTPSignature(logger),
+      new Digester(logger),
+      logger
+    )
+  })
+
+  beforeEach((t) => {
+    t.mock.method(Date, 'now', () => now * 1000)
+  })
+
+  function makeRequest ({ signatureInput, signature, method = 'GET', originalUrl = path, contentDigest, rawBodyText }) {
+    const headers = {
+      host: new URL(origin).host,
+      'signature-input': signatureInput,
+      signature
+    }
+    if (contentDigest) {
+      headers['content-digest'] = contentDigest
+    }
+    return {
+      method,
+      originalUrl,
+      headers,
+      rawBodyText,
+      get (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: {
+        locals: {
+          origin,
+          formatter: new UrlFormatter(origin),
+          bots: {},
+          domainBlocker: { async isBlocked (url) { return false } }
+        }
+      }
+    }
+  }
+
+  function signedRequest ({ originalUrl = path, created = now, label = 'sig1' } = {}) {
+    const parameters = [`keyid="${keyId}"`, 'alg="rsa-v1_5-sha256"']
+    if (created !== null) {
+      parameters.push(`created=${created}`)
+    }
+    const signatureParams = `("@method" "@target-uri");${parameters.join(';')}`
+    const signatureBase = [
+      '"@method": GET',
+      `"@target-uri": ${origin}${originalUrl}`,
+      `"@signature-params": ${signatureParams}`
+    ].join('\n')
+    const bytes = crypto.sign('sha256', Buffer.from(signatureBase), {
+      key: privateKey,
+      padding: crypto.constants.RSA_PKCS1_PADDING
+    })
+    return makeRequest({
+      originalUrl,
+      signatureInput: `${label}=${signatureParams}`,
+      signature: `${label}=:${bytes.toString('base64')}:`
+    })
+  }
+
+  async function assertAuthentication (t, req, expectedStatus = null) {
+    const next = t.mock.fn()
+    await authenticator.authenticate(req, makeResponse(), next)
+    assert.strictEqual(next.mock.callCount(), 1)
+    const [err] = next.mock.calls[0].arguments
+    if (expectedStatus === null) {
+      assert.ifError(err)
+      assert.strictEqual(req.auth.subject, owner)
+    } else {
+      assert.ok(err, 'expected authentication to fail')
+      assert.strictEqual(err.status, expectedStatus)
+      assert.strictEqual(req.auth?.subject, undefined)
+    }
+  }
+
+  it('authenticates a signature with a fragment key ID', async (t) => {
+    await assertAuthentication(t, signedRequest())
+  })
+
+  it('authenticates a signature covering a target URI with a query string', async (t) => {
+    await assertAuthentication(t, signedRequest({ originalUrl: `${path}?cursor=next&limit=10` }))
+  })
+
+  it('authenticates a single signature with a different label', async (t) => {
+    await assertAuthentication(t, signedRequest({ label: 'sender' }))
+  })
+
+  it('accepts a signature at the five-minute freshness boundary', async (t) => {
+    await assertAuthentication(t, signedRequest({ created: now - 300 }))
+  })
+
+  it('accepts a signature at the five-minute future clock-skew boundary', async (t) => {
+    await assertAuthentication(t, signedRequest({ created: now + 300 }))
+  })
+
+  it('authenticates a valid POST signature without an alg parameter', async (t) => {
+    const originalUrl = '/user/receiver/inbox'
+    const rawBodyText = JSON.stringify({ type: 'Create' })
+    const contentDigest = `sha-256=:${crypto.createHash('sha256').update(rawBodyText).digest('base64')}:`
+    const { 'signature-input': signatureInput, signature } = await nockMessageSignature({
+      method: 'POST',
+      url: `${origin}${originalUrl}`,
+      username,
+      domain,
+      keyId,
+      contentDigest,
+      algorithm: null
+    })
+    assert.doesNotMatch(signatureInput, /;alg=/)
+    const req = makeRequest({ signatureInput, signature, method: 'POST', originalUrl, contentDigest, rawBodyText })
+    await assertAuthentication(t, req)
+  })
+
+  for (const { label, created } of [
+    { label: 'rejects a signature without a created timestamp', created: null },
+    { label: 'rejects a signature older than five minutes', created: now - 301 },
+    { label: 'rejects a signature created too far in the future', created: now + 301 }
+  ]) {
+    it(label, async (t) => {
+      await assertAuthentication(t, signedRequest({ created }), 401)
+    })
+  }
+
+  it('rejects requests containing multiple signatures', async (t) => {
+    const req = signedRequest({ label: 'first' })
+    const other = signedRequest({ label: 'second' })
+    req.headers['signature-input'] += `, ${other.headers['signature-input']}`
+    req.headers.signature += `, ${other.headers.signature}`
+    await assertAuthentication(t, req, 401)
   })
 })
 
@@ -883,7 +1047,6 @@ describe('HTTPSignatureAuthenticator Draft Cavage timestamp freshness', () => {
     authenticator = new HTTPSignatureAuthenticator(
       remoteKeyStorage,
       new HTTPSignature(logger),
-      new HTTPMessageSignature(logger),
       new Digester(logger),
       logger
     )
@@ -920,7 +1083,7 @@ describe('HTTPSignatureAuthenticator Draft Cavage timestamp freshness', () => {
   async function assertAuthentication (t, req, expectedStatus = null) {
     t.mock.method(Date, 'now', () => now * 1000)
     const next = t.mock.fn()
-    await authenticator.authenticate(req, {}, next)
+    await authenticator.authenticate(req, makeResponse(), next)
     assert.strictEqual(next.mock.callCount(), 1)
     const [err] = next.mock.calls[0].arguments
     if (expectedStatus === null) {

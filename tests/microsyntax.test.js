@@ -13,7 +13,6 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { DomainBlocker } from '../lib/domainblocker.js'
 import { SafeFetcher } from '../lib/safefetcher.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
-import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
@@ -49,12 +48,11 @@ describe('microsyntax', async () => {
   const keyStorage = new KeyStorage(connection, logger)
   const formatter = new UrlFormatter(origin)
   const signer = new HTTPSignature(logger)
-  const messageSigner = new HTTPMessageSignature(logger)
   const throttler = new RequestThrottler(connection, logger)
   const remoteObjectCache = new RemoteObjectCache(connection, logger)
   const policyStorage = new SignaturePolicyStorage(connection, logger)
   const safeFetcher = new SafeFetcher(new DomainBlocker(null, connection, logger), { allowPrivate: true })
-  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, safeFetcher, new DomainBlocker(null, connection, logger))
+  const client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, policyStorage, safeFetcher, new DomainBlocker(null, connection, logger))
   const transformer = new Transformer(tagNamespace, client, safeFetcher, formatter)
 
   it('has transformer', () => {

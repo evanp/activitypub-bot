@@ -25,7 +25,6 @@ import { ActorStorage } from '../lib/actorstorage.js'
 import { Transformer } from '../lib/microsyntax.js'
 import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
-import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { JobQueue } from '../lib/jobqueue.js'
 import { DistributionWorker } from '../lib/distributionworker.js'
@@ -142,13 +141,12 @@ describe('BotContext', () => {
     keyStorage = new KeyStorage(connection, logger)
     actorStorage = new ActorStorage(connection, formatter)
     const signer = new HTTPSignature(logger)
-    const messageSigner = new HTTPMessageSignature(logger)
     const digester = new Digester(logger)
     const throttler = new RequestThrottler(connection, logger)
     const remoteObjectCache = new RemoteObjectCache(connection, logger)
     const policyStorage = new SignaturePolicyStorage(connection, logger)
     safeFetcher = new SafeFetcher(new DomainBlocker(null, connection, logger), { allowPrivate: true })
-    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, messageSigner, policyStorage, safeFetcher, new DomainBlocker(null, connection, logger))
+    client = new ActivityPubClient(keyStorage, formatter, signer, digester, logger, throttler, remoteObjectCache, policyStorage, safeFetcher, new DomainBlocker(null, connection, logger))
     jobQueue = new JobQueue(connection, logger)
     const endpointCache = new EndpointCache(connection, logger)
     distributor = new ActivityDistributor(client, formatter, actorStorage, logger, jobQueue, endpointCache, new DomainBlocker(null, connection, logger))

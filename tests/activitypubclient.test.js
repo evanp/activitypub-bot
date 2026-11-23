@@ -21,7 +21,6 @@ import { ActivityPubClient } from '../lib/activitypubclient.js'
 import { DomainBlocker } from '../lib/domainblocker.js'
 import as2 from '../lib/activitystreams.js'
 import { HTTPSignature } from '../lib/httpsignature.js'
-import { HTTPMessageSignature } from '../lib/httpmessagesignature.js'
 import { Digester } from '../lib/digester.js'
 import { RequestThrottler } from '../lib/requestthrottler.js'
 import { RemoteObjectCache } from '../lib/remoteobjectcache.js'
@@ -29,6 +28,7 @@ import { SafeFetcher } from '../lib/safefetcher.js'
 import { SignaturePolicyStorage } from '../lib/signaturepolicystorage.js'
 
 import { createMigratedTestConnection, cleanupTestData } from './utils/db.js'
+import { assertRfc9421Signature, assertRfc9421SignatureInput } from './utils/rfc9421-assertions.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
@@ -45,6 +45,7 @@ describe('ActivityPubClient', async () => {
   const BLOCKED_HOST = 'blocked-one.test'
   const LIMITED_HOST = 'limited.activitypubclient.test'
   const RFC9421_HOST = 'rfc9421.activitypubclient.test'
+  const RFC9421_QUERY_HOST = 'signature-query.activitypubclient.example'
   const DOUBLE_KNOCK_HOST = 'doubleknock.activitypubclient.test'
   const CACHED_DRAFT_HOST = 'cacheddraft.activitypubclient.test'
   const EXPIRED_DRAFT_HOST = 'expireddraft.activitypubclient.test'
@@ -95,6 +96,8 @@ describe('ActivityPubClient', async () => {
     `^keyId="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(LOCAL_SIGNING_USER)}#main-key",headers="\\(request-target\\) host date user-agent content-type digest",signature=".*",algorithm="rsa-sha256"$`
   )
   const MESSAGE_SIGNATURE_RE = /^sig1=:[0-9A-Za-z+/=]+:$/
+  const GET_COMPONENTS = ['@method', '@target-uri', 'accept', 'date', 'user-agent']
+  const POST_COMPONENTS = ['@method', '@target-uri', 'date', 'user-agent', 'content-type', 'content-digest']
 
   function nockFormatPlus (params) {
     return nockFormat(params.domain ? params : { domain: REMOTE_HOST, ...params })
@@ -104,12 +107,10 @@ describe('ActivityPubClient', async () => {
     assert.ok(headers)
     assert.ok(headers.signature)
     assert.match(headers.signature, MESSAGE_SIGNATURE_RE)
-    assert.equal(typeof headers['signature-input'], 'string')
-    assert.match(
+    assertRfc9421SignatureInput(
       headers['signature-input'],
-      new RegExp(
-        `^sig1=\\("@method" "@target-uri" "accept" "date" "user-agent"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}#main-key";alg="rsa-v1_5-sha256";created=\\d+$`
-      )
+      `${LOCAL_ORIGIN}/user/${username}#main-key`,
+      GET_COMPONENTS
     )
   }
 
@@ -129,12 +130,10 @@ describe('ActivityPubClient', async () => {
     assert.ok(headers)
     assert.ok(headers.signature)
     assert.match(headers.signature, MESSAGE_SIGNATURE_RE)
-    assert.equal(typeof headers['signature-input'], 'string')
-    assert.match(
+    assertRfc9421SignatureInput(
       headers['signature-input'],
-      new RegExp(
-        `^sig1=\\("@method" "@target-uri" "date" "user-agent" "content-type" "content-digest"\\);keyid="https://${escapeRegex(LOCAL_HOST)}/user/${escapeRegex(username)}#main-key";alg="rsa-v1_5-sha256";created=\\d+$`
-      )
+      `${LOCAL_ORIGIN}/user/${username}#main-key`,
+      POST_COMPONENTS
     )
   }
 
@@ -151,7 +150,6 @@ describe('ActivityPubClient', async () => {
   let client = null
   let strictClient = null
   let signer = null
-  let messageSigner = null
   let digester = null
   let logger = null
   let throttler = null
@@ -166,7 +164,6 @@ describe('ActivityPubClient', async () => {
     })
     digester = new Digester(logger)
     signer = new HTTPSignature(logger)
-    messageSigner = new HTTPMessageSignature(logger)
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       usernames: TEST_USERNAMES,
@@ -175,6 +172,7 @@ describe('ActivityPubClient', async () => {
         REMOTE_HOST,
         LIMITED_HOST,
         RFC9421_HOST,
+        RFC9421_QUERY_HOST,
         DOUBLE_KNOCK_HOST,
         CACHED_DRAFT_HOST,
         EXPIRED_DRAFT_HOST,
@@ -213,7 +211,6 @@ describe('ActivityPubClient', async () => {
       logger,
       throttler,
       remoteObjectCache,
-      messageSigner,
       policyStorage,
       safeFetcher,
       domainBlocker
@@ -226,7 +223,6 @@ describe('ActivityPubClient', async () => {
       logger,
       throttler,
       remoteObjectCache,
-      messageSigner,
       policyStorage,
       new SafeFetcher(new DomainBlocker(null, connection, logger)),
       domainBlocker
@@ -261,6 +257,7 @@ describe('ActivityPubClient', async () => {
         REMOTE_HOST,
         LIMITED_HOST,
         RFC9421_HOST,
+        RFC9421_QUERY_HOST,
         DOUBLE_KNOCK_HOST,
         CACHED_DRAFT_HOST,
         EXPIRED_DRAFT_HOST,
@@ -302,11 +299,52 @@ describe('ActivityPubClient', async () => {
     assert.equal(obj.id, id)
     const h = getRequestHeaders(id)
     assertRfc9421GetHeaders(h, LOCAL_SIGNING_USER)
+    assertRfc9421Signature({
+      headers: h,
+      keyId: `${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}#main-key`,
+      components: GET_COMPONENTS,
+      method: 'GET',
+      url: id,
+      publicKey: await keyStorage.getPublicKey(LOCAL_SIGNING_USER)
+    })
     assert.equal(typeof h.digest, 'undefined')
     assert.equal(typeof h.date, 'string')
     assert.match(h.date, /^\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/)
     assert.doesNotThrow(() => {
       Date.parse(h.date)
+    })
+  })
+
+  it('signs the complete target URI for a GET request with a query string', async () => {
+    const path = '/user/recipient/note/1'
+    const url = `https://${RFC9421_QUERY_HOST}${path}?view=compact`
+    let headers
+    const scope = nock(`https://${RFC9421_QUERY_HOST}`)
+      .get('/.well-known/nodeinfo')
+      .reply(404)
+      .get(path)
+      .query({ view: 'compact' })
+      .reply(function (request) {
+        headers = Object.fromEntries(request.headers)
+        return [200, {
+          '@context': 'https://www.w3.org/ns/activitystreams',
+          id: url,
+          type: 'Note',
+          content: 'A note with a query string.'
+        }, { 'Content-Type': 'application/activity+json' }]
+      })
+
+    const note = await client.get(url, LOCAL_SIGNING_USER)
+
+    assert.equal(note.id, url)
+    assert.ok(scope.isDone())
+    assertRfc9421Signature({
+      headers,
+      keyId: `${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}#main-key`,
+      components: GET_COMPONENTS,
+      method: 'GET',
+      url,
+      publicKey: await keyStorage.getPublicKey(LOCAL_SIGNING_USER)
     })
   })
 
@@ -354,6 +392,15 @@ describe('ActivityPubClient', async () => {
     await client.post(inbox, obj, LOCAL_SIGNING_USER)
     const h = getRequestHeaders(inbox)
     assertRfc9421PostHeaders(h, LOCAL_SIGNING_USER)
+    assertRfc9421Signature({
+      headers: h,
+      keyId: `${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}#main-key`,
+      components: POST_COMPONENTS,
+      method: 'POST',
+      url: inbox,
+      publicKey: await keyStorage.getPublicKey(LOCAL_SIGNING_USER)
+    })
+    assert.equal(h['content-digest'], await digester.contentDigest(getBody(inbox)))
     assert.equal(typeof h.digest, 'undefined')
     assert.ok(h['content-digest'])
     assert.match(h['content-digest'], /^sha-256=:[0-9a-zA-Z+/=]*:$/)
@@ -1142,7 +1189,6 @@ describe('ActivityPubClient', async () => {
         logger,
         throttler,
         remoteObjectCache,
-        messageSigner,
         policyStorage,
         permissiveFetcher,
         domainBlocker
