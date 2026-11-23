@@ -11,6 +11,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.58.0] - 2026-11-23
+
+### Security
+
+- Stop including signing private keys in RFC 9421 debug logs.
+
 ### Added
 
 - Advertise HTTP Message Signature requirements with `Accept-Signature`
@@ -24,7 +30,7 @@ and this project adheres to
 - Return HTTP 401 Unauthorized for unsigned POSTs to actor inboxes and the
   shared inbox instead of HTTP 500 (#239).
 - Serialize actor profile URLs as strings in actor responses and profile `Update`
-  activities.
+  activities (#336).
 - Accept RFC 9421 signatures without an `alg` parameter (#335).
 - Require and validate body digests for signed POST, PUT, and PATCH requests,
   including empty bodies, and reject missing or removed bodies.
@@ -33,11 +39,12 @@ and this project adheres to
 
 ### Changed
 
-- Update activitypub-nock for algorithm-less RFC 9421 signatures.
+- Update activitypub-nock to 2.1.0 for algorithm-less RFC 9421 signatures.
 - Use `http-message-sig` for RFC 9421 HTTP Message Signature signing and
   verification (#362).
-- Reject multiple RFC 9421 signatures and require `@method` and `@target-uri`
-  coverage with `rsa-v1_5-sha256`.
+- Allow the `sqlite3@6.0.1` install script in package metadata.
+- Limit incoming RFC 9421 signatures to `rsa-v1_5-sha256`, require `@method`
+  and `@target-uri` coverage, and reject requests with multiple signatures.
 
 ### Removed
 
@@ -1958,7 +1965,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.57.1...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.58.0...HEAD
+[0.58.0]: https://github.com/evanp/activitypub-bot/compare/v0.57.1...v0.58.0
 [0.57.1]: https://github.com/evanp/activitypub-bot/compare/v0.57.0...v0.57.1
 [0.57.0]: https://github.com/evanp/activitypub-bot/compare/v0.56.3...v0.57.0
 [0.56.3]: https://github.com/evanp/activitypub-bot/compare/v0.56.2...v0.56.3
