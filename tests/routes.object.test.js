@@ -307,6 +307,22 @@ describe('object collection routes', async () => {
     })
   })
 
+  describe('requests for a missing object', () => {
+    const missingNanoid = '000000000000000000000'
+    for (const suffix of ['', '/replies', '/replies/1']) {
+      for (const method of ['get', 'head']) {
+        it(`${method.toUpperCase()} missing object${suffix} returns 404 Not Found`, async () => {
+          const response = await request(app)[method](`/user/${username}/${type}/${missingNanoid}${suffix}`)
+          assert.strictEqual(response.status, 404)
+          assert.strictEqual(response.type, 'application/problem+json')
+          if (method === 'get') {
+            assert.strictEqual(response.body.status, 404)
+          }
+        })
+      }
+    }
+  })
+
   for (const suffix of ['', '/replies', '/replies/1']) {
     it(`HEAD object${suffix} should return an Accept-Signature header`, async () => {
       const response = await request(app).head(`/user/${username}/${type}/${nanoid}${suffix}`)
