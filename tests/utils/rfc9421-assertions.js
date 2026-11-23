@@ -1,6 +1,16 @@
 import assert from 'node:assert/strict'
 import crypto from 'node:crypto'
 
+export function assertAcceptSignature (response, components = ['@method', '@target-uri']) {
+  const header = response.headers['accept-signature']
+  assert.equal(typeof header, 'string', 'Expected an Accept-Signature response header')
+  const input = header.match(/^[a-z*][a-z0-9_.*-]*=\(([^)]*)\)(;.*)?$/)
+  assert.ok(input, 'Expected an Accept-Signature dictionary member with a component list')
+  const actualComponents = Array.from(input[1].matchAll(/"([^"]+)"/g), match => match[1])
+  assert.deepEqual([...actualComponents].sort(), [...components].sort())
+  assert.match(header, /;created(?:=\?1)?(?:;|$)/)
+}
+
 export function assertRfc9421SignatureInput (signatureInput, keyId, components) {
   assert.equal(typeof signatureInput, 'string')
   const input = signatureInput.match(/^sig1=\(([^)]*)\)(;.*)$/)

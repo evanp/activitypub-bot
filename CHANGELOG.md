@@ -11,6 +11,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Advertise HTTP Message Signature requirements with `Accept-Signature`
+  response headers on routes that accept signed requests.
+
 ### Fixed
 
 - Serialize actor profile URLs as strings in actor responses and profile `Update`

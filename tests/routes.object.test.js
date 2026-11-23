@@ -13,6 +13,7 @@ import OKBot from '../lib/bots/ok.js'
 import DoNothingBot from '../lib/bots/donothing.js'
 import as2 from '../lib/activitystreams.js'
 
+import { assertAcceptSignature } from './utils/rfc9421-assertions.js'
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -271,6 +272,9 @@ describe('object collection routes', async () => {
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
     })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
+    })
     it('should return AS2', async () => {
       assert.strictEqual(response.type, 'application/activity+json')
     })
@@ -302,6 +306,26 @@ describe('object collection routes', async () => {
       assert.strictEqual(response.body.shares, `${origin}/user/${username}/${type}/${nanoid}/shares`)
     })
   })
+
+  for (const suffix of ['', '/replies', '/replies/1']) {
+    it(`HEAD object${suffix} should return an Accept-Signature header`, async () => {
+      const response = await request(app).head(`/user/${username}/${type}/${nanoid}${suffix}`)
+      assert.strictEqual(response.status, 200)
+      assertAcceptSignature(response)
+    })
+  }
+
+  for (const { label, path, status, headers } of [
+    { label: 'an invalid object ID', path: `/user/${username}/${type}/invalid`, status: 400 },
+    { label: 'a missing collection page', path: `/user/${username}/${type}/${nanoid}/replies/99999999`, status: 404 },
+    { label: 'an invalid signature', path: `/user/${username}/${type}/${nanoid}`, status: 401, headers: { Signature: 'invalid' } }
+  ]) {
+    it(`should return an Accept-Signature header for ${label}`, async () => {
+      const response = await request(app).get(path).set(headers ?? {})
+      assert.strictEqual(response.status, status)
+      assertAcceptSignature(response)
+    })
+  }
 
   for (const collection of ['replies', 'likes', 'shares', 'thread']) {
     it(`GET ${collection} page Number.MAX_SAFE_INTEGER should return 404 Not Found`, async () => {
@@ -367,6 +391,9 @@ describe('object collection routes', async () => {
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
     })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
+    })
     it('should return AS2', async () => {
       assert.strictEqual(response.type, 'application/activity+json')
     })
@@ -416,6 +443,9 @@ describe('object collection routes', async () => {
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
     })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
+    })
     it('should return AS2', async () => {
       assert.strictEqual(response.type, 'application/activity+json')
     })
@@ -451,6 +481,9 @@ describe('object collection routes', async () => {
     })
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
+    })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
     })
     it('should return AS2', async () => {
       assert.strictEqual(response.type, 'application/activity+json')
@@ -501,6 +534,9 @@ describe('object collection routes', async () => {
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
     })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
+    })
     it('should return AS2', async () => {
       assert.strictEqual(response.type, 'application/activity+json')
     })
@@ -536,6 +572,9 @@ describe('object collection routes', async () => {
     })
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
+    })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
     })
     it('should return AS2', async () => {
       assert.strictEqual(response.type, 'application/activity+json')
@@ -586,6 +625,9 @@ describe('object collection routes', async () => {
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
     })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
+    })
     it('should return AS2', async () => {
       assert.strictEqual(response.type, 'application/activity+json')
     })
@@ -622,6 +664,9 @@ describe('object collection routes', async () => {
     it('should return a 403 status', async () => {
       assert.strictEqual(response.status, 403)
     })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
+    })
   })
 
   describe('Get private object collection anonymously', async () => {
@@ -634,6 +679,9 @@ describe('object collection routes', async () => {
     it('should return a 403 status', async () => {
       assert.strictEqual(response.status, 403)
     })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
+    })
   })
 
   describe('Get private object collection page anonymously', async () => {
@@ -645,6 +693,9 @@ describe('object collection routes', async () => {
     })
     it('should return a 403 status', async () => {
       assert.strictEqual(response.status, 403)
+    })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
     })
   })
 
@@ -669,6 +720,9 @@ describe('object collection routes', async () => {
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
     })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
+    })
   })
 
   describe('GET /user/{username}/{type}/{nanoid}/thread', async () => {
@@ -680,6 +734,9 @@ describe('object collection routes', async () => {
     })
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
+    })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
     })
     it('should return AS2', async () => {
       assert.strictEqual(response.type, 'application/activity+json')
@@ -721,6 +778,9 @@ describe('object collection routes', async () => {
     })
     it('should return a 200 status', async () => {
       assert.strictEqual(response.status, 200)
+    })
+    it('should return an Accept-Signature header', () => {
+      assertAcceptSignature(response)
     })
     it('should return AS2', async () => {
       assert.strictEqual(response.type, 'application/activity+json')
@@ -961,6 +1021,12 @@ describe('object collection seekItem routes', () => {
         assert.strictEqual(response.status, 200)
         assert.strictEqual(typeof response.body.seekItem, 'string')
         assert.strictEqual(new URL(response.body.seekItem).protocol, 'https:')
+      })
+
+      it('returns an Accept-Signature header with a seekItem redirect', async () => {
+        const response = await seek(collection, fixtures.get(collection).readable)
+        assert.strictEqual(response.status, 307)
+        assertAcceptSignature(response)
       })
 
       it('redirects to the collection containing a readable inline member', async () => {

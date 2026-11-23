@@ -1,4 +1,5 @@
 import { corsTests } from './utils/cors.js'
+import { assertAcceptSignature } from './utils/rfc9421-assertions.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 
@@ -74,6 +75,9 @@ describe('actor routes', async () => {
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
+    })
+    it('should advertise HTTP Message Signature requirements', () => {
+      assertAcceptSignature(response)
     })
     it('should return AS2', async () => {
       assert.strictEqual(response.type, 'application/activity+json')
@@ -186,6 +190,9 @@ describe('actor routes', async () => {
     it('should return 404 Not Found', async () => {
       assert.strictEqual(response.status, 404)
     })
+    it('should advertise HTTP Message Signature requirements', () => {
+      assertAcceptSignature(response)
+    })
     it('should return Problem Details JSON', async () => {
       assert.strictEqual(response.type, 'application/problem+json')
     })
@@ -221,10 +228,13 @@ describe('actor routes', async () => {
   describe('GET /user/{dne}/publickey', async () => {
     let response = null
     it('should work without an error', async () => {
-      response = await request(app).get(`/user/${DNE_USERNAME}`)
+      response = await request(app).get(`/user/${DNE_USERNAME}/publickey`)
     })
     it('should return 404 Not Found', async () => {
       assert.strictEqual(response.status, 404)
+    })
+    it('should advertise HTTP Message Signature requirements', () => {
+      assertAcceptSignature(response)
     })
     it('should return Problem Details JSON', async () => {
       assert.strictEqual(response.type, 'application/problem+json')
@@ -246,6 +256,9 @@ describe('actor routes', async () => {
     it('should return 307 Temporary Redirect', () => {
       assert.strictEqual(response.status, 307)
     })
+    it('should advertise HTTP Message Signature requirements', () => {
+      assertAcceptSignature(response)
+    })
     it('should redirect to the public key fragment on the actor', () => {
       assert.strictEqual(response.headers.location, `${origin}/user/${BOT_USERNAME}#main-key`)
     })
@@ -258,6 +271,9 @@ describe('actor routes', async () => {
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
+    })
+    it('should advertise HTTP Message Signature requirements', () => {
+      assertAcceptSignature(response)
     })
     it('should return image/png', async () => {
       assert.strictEqual(response.type, 'image/png')
@@ -272,6 +288,9 @@ describe('actor routes', async () => {
     it('should return 307 Temporary Redirect', async () => {
       assert.strictEqual(response.status, 307)
     })
+    it('should advertise HTTP Message Signature requirements', () => {
+      assertAcceptSignature(response)
+    })
     it('should return the right Location header', async () => {
       assert.strictEqual(response.headers.location, BOT_IMAGE)
     })
@@ -285,6 +304,9 @@ describe('actor routes', async () => {
     it('should return 404 Not Found', async () => {
       assert.strictEqual(response.status, 404)
     })
+    it('should advertise HTTP Message Signature requirements', () => {
+      assertAcceptSignature(response)
+    })
   })
 
   describe('GET /user/{botid}/image with file', async () => {
@@ -294,6 +316,9 @@ describe('actor routes', async () => {
     })
     it('should return 200 OK', async () => {
       assert.strictEqual(response.status, 200)
+    })
+    it('should advertise HTTP Message Signature requirements', () => {
+      assertAcceptSignature(response)
     })
     it('should return image/jpeg', async () => {
       assert.strictEqual(response.type, 'image/jpeg')
@@ -308,6 +333,9 @@ describe('actor routes', async () => {
     it('should return 307 Temporary Redirect', async () => {
       assert.strictEqual(response.status, 307)
     })
+    it('should advertise HTTP Message Signature requirements', () => {
+      assertAcceptSignature(response)
+    })
     it('should return the right Location header', async () => {
       assert.strictEqual(response.headers.location, BOT_IMAGE)
     })
@@ -321,6 +349,24 @@ describe('actor routes', async () => {
     it('should return 404 Not Found', async () => {
       assert.strictEqual(response.status, 404)
     })
+    it('should advertise HTTP Message Signature requirements', () => {
+      assertAcceptSignature(response)
+    })
+  })
+
+  it('should advertise HTTP Message Signature requirements on HEAD /user/{botid}', async () => {
+    const response = await request(app).head(`/user/${BOT_USERNAME}`)
+    assert.strictEqual(response.status, 200)
+    assertAcceptSignature(response)
+  })
+
+  it('should advertise HTTP Message Signature requirements on OPTIONS /user/{botid}', async () => {
+    const response = await request(app)
+      .options(`/user/${BOT_USERNAME}`)
+      .set('Origin', 'https://browser.example')
+      .set('Access-Control-Request-Method', 'GET')
+    assert.strictEqual(response.status, 200)
+    assertAcceptSignature(response)
   })
 
   describe('GET /profile/{botid}', async () => {

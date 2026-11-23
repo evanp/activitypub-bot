@@ -16,6 +16,7 @@ import { makeDigest } from './utils/digest.js'
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
 import { receiveUnicodeActivity } from './utils/unicode-receive.js'
+import { assertAcceptSignature } from './utils/rfc9421-assertions.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const BASIC_BLOCKLIST = resolve(__dirname, 'fixtures', 'blocklist-basic.csv')
@@ -103,6 +104,23 @@ describe('routes.inbox', async () => {
     { path: `/user/${BOT_USERNAME}/inbox/1`, status: 403 },
     { path: `/user/${BOT_USERNAME}/inbox`, method: 'POST', status: 401, body: {}, requestHeaders: { Signature: 'invalid' } }
   ])
+
+  for (const { label, headers, status } of [
+    { label: 'an unsigned delivery', headers: {} },
+    { label: 'an invalid signature', headers: { Signature: 'invalid' }, status: 401 }
+  ]) {
+    it(`advertises Accept-Signature in response to ${label}`, async () => {
+      const response = await request(app)
+        .post(`/user/${BOT_USERNAME}/inbox`)
+        .set(headers)
+        .set('Content-Type', 'application/activity+json')
+        .send({})
+      if (status !== undefined) {
+        assert.strictEqual(response.status, status)
+      }
+      assertAcceptSignature(response, ['@method', '@target-uri', 'content-digest'])
+    })
+  }
 
   for (const { label, username, domain } of [
     { label: 'non-ASCII username', username: 'zoë', domain: REMOTE_HOST },
@@ -240,6 +258,9 @@ describe('routes.inbox', async () => {
     it('should return a 202 status', async () => {
       assert.strictEqual(response.status, 202)
     })
+    it('should advertise Accept-Signature', () => {
+      assertAcceptSignature(response, ['@method', '@target-uri', 'content-digest'])
+    })
     it('should appear in the inbox', async () => {
       const { actorStorage } = app.locals
       assert.strictEqual(
@@ -354,6 +375,9 @@ describe('routes.inbox', async () => {
     })
     it('should return a 400 status', async () => {
       assert.strictEqual(response.status, 400)
+    })
+    it('should advertise Accept-Signature', () => {
+      assertAcceptSignature(response, ['@method', '@target-uri', 'content-digest'])
     })
     it('should not appear in the inbox', async () => {
       const { actorStorage } = app.locals
@@ -519,6 +543,9 @@ describe('routes.inbox', async () => {
     })
     it('should return a 202 status', async () => {
       assert.strictEqual(response.status, 202)
+    })
+    it('should advertise Accept-Signature', () => {
+      assertAcceptSignature(response, ['@method', '@target-uri', 'content-digest'])
     })
     it('should appear in the inbox', async () => {
       const { actorStorage } = app.locals

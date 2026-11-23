@@ -1,4 +1,5 @@
 import { corsTests } from './utils/cors.js'
+import { assertAcceptSignature } from './utils/rfc9421-assertions.js'
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
@@ -85,6 +86,9 @@ describe('actor collection routes', async () => {
         it('should return 200 OK', async () => {
           assert.strictEqual(response.status, 200)
         })
+        it('should advertise HTTP Message Signature requirements', () => {
+          assertAcceptSignature(response)
+        })
         it('should return AS2', async () => {
           assert.strictEqual(response.type, 'application/activity+json')
         })
@@ -151,6 +155,9 @@ describe('actor collection routes', async () => {
         it('should return 404 Not Found', async () => {
           assert.strictEqual(response.status, 404)
         })
+        it('should advertise HTTP Message Signature requirements', () => {
+          assertAcceptSignature(response)
+        })
         it('should return Problem Details JSON', async () => {
           assert.strictEqual(response.type, 'application/problem+json')
         })
@@ -190,6 +197,9 @@ describe('actor collection routes', async () => {
         })
         it('should return 200 OK', async () => {
           assert.strictEqual(response.status, 200)
+        })
+        it('should advertise HTTP Message Signature requirements', () => {
+          assertAcceptSignature(response)
         })
         it('should return AS2', async () => {
           assert.strictEqual(response.type, 'application/activity+json')
@@ -237,6 +247,14 @@ describe('actor collection routes', async () => {
         })
       })
 
+      for (const path of [`/user/${BOT_USERNAME}/${coll}`, `/user/${BOT_USERNAME}/${coll}/1`]) {
+        it(`should advertise HTTP Message Signature requirements on HEAD ${path}`, async () => {
+          const response = await request(app).head(path)
+          assert.strictEqual(response.status, 200)
+          assertAcceptSignature(response)
+        })
+      }
+
       it(`GET ${coll} page Number.MAX_SAFE_INTEGER should return 404 Not Found`, async () => {
         const response = await request(app).get(`/user/${BOT_USERNAME}/${coll}/${Number.MAX_SAFE_INTEGER}`)
         assert.strictEqual(response.status, 404)
@@ -256,6 +274,9 @@ describe('actor collection routes', async () => {
         })
         it('should return 404 Not Found', async () => {
           assert.strictEqual(response.status, 404)
+        })
+        it('should advertise HTTP Message Signature requirements', () => {
+          assertAcceptSignature(response)
         })
         it('should return Problem Details JSON', async () => {
           assert.strictEqual(response.type, 'application/problem+json')
@@ -296,6 +317,9 @@ describe('actor collection routes', async () => {
         })
         it('should return 404 Not Found', async () => {
           assert.strictEqual(response.status, 404)
+        })
+        it('should advertise HTTP Message Signature requirements', () => {
+          assertAcceptSignature(response)
         })
         it('should return Problem Details JSON', async () => {
           assert.strictEqual(response.type, 'application/problem+json')
@@ -761,6 +785,12 @@ describe('actor collection seekItem routes', () => {
         assert.strictEqual(target.type, 'application/activity+json')
         assert.strictEqual(target.body.id, id)
         assert.ok(target.body.orderedItems.includes(readable.id))
+      })
+
+      it('should advertise HTTP Message Signature requirements on a seekItem redirect', async () => {
+        const response = await seek(collection, fixtures.get(collection).readable)
+        assert.strictEqual(response.status, 307)
+        assertAcceptSignature(response)
       })
 
       it('returns 404 for a readable item that is not a member', async () => {

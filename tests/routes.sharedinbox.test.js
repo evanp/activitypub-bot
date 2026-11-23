@@ -24,6 +24,7 @@ import DoNothingBot from '../lib/bots/donothing.js'
 import { makeDigest } from './utils/digest.js'
 import EventLoggingBot from './fixtures/eventloggingbot.js'
 import { receiveUnicodeActivity } from './utils/unicode-receive.js'
+import { assertAcceptSignature } from './utils/rfc9421-assertions.js'
 import { cleanupTestData, getTestDatabaseUrl, getTestRedisUrl, cleanupRedis } from './utils/db.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -168,6 +169,23 @@ describe('routes.sharedinbox', async () => {
     { path: '/shared/inbox', method: 'POST', status: 401, body: {}, requestHeaders: { Signature: 'invalid' } }
   ])
 
+  for (const { label, headers, status } of [
+    { label: 'an unsigned delivery', headers: {} },
+    { label: 'an invalid signature', headers: { Signature: 'invalid' }, status: 401 }
+  ]) {
+    it(`advertises Accept-Signature in response to ${label}`, async () => {
+      const response = await request(app)
+        .post('/shared/inbox')
+        .set(headers)
+        .set('Content-Type', 'application/activity+json')
+        .send({})
+      if (status !== undefined) {
+        assert.strictEqual(response.status, status)
+      }
+      assertAcceptSignature(response, ['@method', '@target-uri', 'content-digest'])
+    })
+  }
+
   for (const { label, username, domain } of [
     { label: 'non-ASCII username', username: 'zoë', domain: REMOTE_HOST },
     { label: 'non-ASCII domain', username: 'unicodeactor', domain: 'café.routes-sharedinbox.test' },
@@ -230,6 +248,9 @@ describe('routes.sharedinbox', async () => {
     })
     it('should return a 202 status', async () => {
       assert.strictEqual(response.status, 202)
+    })
+    it('should advertise Accept-Signature', () => {
+      assertAcceptSignature(response, ['@method', '@target-uri', 'content-digest'])
     })
     it('should appear in the inbox', async () => {
       assert.strictEqual(
@@ -789,6 +810,9 @@ describe('routes.sharedinbox', async () => {
     it('should return a 202 status', async () => {
       assert.strictEqual(response.status, 202)
     })
+    it('should advertise Accept-Signature', () => {
+      assertAcceptSignature(response, ['@method', '@target-uri', 'content-digest'])
+    })
     it('should appear in the inbox', async () => {
       assert.strictEqual(
         true,
@@ -838,6 +862,9 @@ describe('routes.sharedinbox', async () => {
     })
     it('should return a 400 status', async () => {
       assert.strictEqual(response.status, 400)
+    })
+    it('should advertise Accept-Signature', () => {
+      assertAcceptSignature(response, ['@method', '@target-uri', 'content-digest'])
     })
   })
 
