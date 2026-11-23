@@ -39,7 +39,8 @@ and this project adheres to
 
 ### Changed
 
-- Update activitypub-nock to 2.1.0 for algorithm-less RFC 9421 signatures.
+- Update express-rate-limit, supertest, and transitive superagent.
+- Update activitypub-nock for algorithm-less RFC 9421 signatures.
 - Use `http-message-sig` for RFC 9421 HTTP Message Signature signing and
   verification (#362).
 - Allow the `sqlite3@6.0.1` install script in package metadata.
