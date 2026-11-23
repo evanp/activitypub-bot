@@ -169,6 +169,23 @@ describe('routes.sharedinbox', async () => {
     { path: '/shared/inbox', method: 'POST', status: 401, body: {}, requestHeaders: { Signature: 'invalid' } }
   ])
 
+  it('returns 401 Unauthorized for an unsigned POST to the shared inbox', async () => {
+    const activity = await as2.import({
+      id: 'https://sender.example/activities/follow',
+      type: 'Follow',
+      actor: 'https://sender.example/actors/sender',
+      object: `${origin}/user/${BOT_DIRECT}`,
+      to: `${origin}/user/${BOT_DIRECT}`
+    })
+    const response = await request(app)
+      .post('/shared/inbox')
+      .set('Content-Type', as2.mediaType)
+      .send(await activity.write())
+    assert.strictEqual(response.status, 401)
+    assert.strictEqual(response.type, 'application/problem+json')
+    assert.strictEqual(response.body.status, 401)
+  })
+
   for (const { label, headers, status } of [
     { label: 'an unsigned delivery', headers: {} },
     { label: 'an invalid signature', headers: { Signature: 'invalid' }, status: 401 }

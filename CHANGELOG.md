@@ -18,6 +18,8 @@ and this project adheres to
 
 ### Fixed
 
+- Return HTTP 401 Unauthorized for unsigned POSTs to actor inboxes and the
+  shared inbox instead of HTTP 500 (#239).
 - Serialize actor profile URLs as strings in actor responses and profile `Update`
   activities.
 - Accept RFC 9421 signatures without an `alg` parameter (#335).
