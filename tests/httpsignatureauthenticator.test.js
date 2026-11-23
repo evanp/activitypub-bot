@@ -157,6 +157,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -186,6 +187,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -214,6 +216,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -236,6 +239,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const req2 = {
       headers: headers2,
+      rawHeaders: Object.entries(headers2).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -274,6 +278,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -296,6 +301,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -324,6 +330,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -362,6 +369,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -398,6 +406,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -426,6 +435,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -453,6 +463,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -482,6 +493,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -503,6 +515,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -543,6 +556,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -583,6 +597,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -608,6 +623,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -626,6 +642,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const req2 = {
       headers: headers2,
+      rawHeaders: Object.entries(headers2).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -656,6 +673,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -678,6 +696,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     }
     const req2 = {
       headers: headers2,
+      rawHeaders: Object.entries(headers2).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -707,6 +726,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -734,6 +754,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl: OUTBOX_PATH,
       method: 'GET',
       get: function (name) {
@@ -773,6 +794,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl,
       method,
       get: function (name) {
@@ -802,6 +824,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl: OUTBOX_PATH,
       method: 'GET',
       get: function (name) {
@@ -826,6 +849,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl: OUTBOX_PATH,
       method: 'GET',
       get: function (name) {
@@ -852,6 +876,7 @@ describe('HTTPSignatureAuthenticator', async () => {
     const res = makeResponse()
     const req = {
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       originalUrl: OUTBOX_PATH,
       method: 'GET',
       get: function (name) {
@@ -909,6 +934,7 @@ describe('HTTPSignatureAuthenticator RFC 9421 request requirements', () => {
       method,
       originalUrl,
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       rawBodyText,
       get (name) {
         return this.headers[name.toLowerCase()]
@@ -1012,10 +1038,134 @@ describe('HTTPSignatureAuthenticator RFC 9421 request requirements', () => {
   it('rejects requests containing multiple signatures', async (t) => {
     const req = signedRequest({ label: 'first' })
     const other = signedRequest({ label: 'second' })
-    req.headers['signature-input'] += `, ${other.headers['signature-input']}`
-    req.headers.signature += `, ${other.headers.signature}`
-    await assertAuthentication(t, req, 401)
+    const combined = makeRequest({
+      signatureInput: `${req.headers['signature-input']}, ${other.headers['signature-input']}`,
+      signature: `${req.headers.signature}, ${other.headers.signature}`
+    })
+    await assertAuthentication(t, combined, 401)
   })
+})
+
+describe('HTTPSignatureAuthenticator body validation', () => {
+  const origin = 'https://authenticator.example'
+  const host = new URL(origin).host
+  const path = '/user/receiver/inbox'
+  const owner = 'https://body-validation.example/user/signer'
+  const keyId = `${owner}#main-key`
+  const now = 1800000000
+  const date = new Date(now * 1000).toUTCString()
+  const body = JSON.stringify({ type: 'Create' })
+  let privateKey
+  let authenticator
+
+  before(async () => {
+    const keys = await getPair('signer', 'body-validation.example')
+    privateKey = keys.privateKey
+    const logger = Logger({ level: 'silent' })
+    const remoteKeyStorage = {
+      async getPublicKey (id, cache = true) {
+        assert.strictEqual(id, keyId)
+        return { owner, publicKeyPem: keys.publicKey }
+      }
+    }
+    authenticator = new HTTPSignatureAuthenticator(
+      remoteKeyStorage,
+      new HTTPSignature(logger),
+      new Digester(logger),
+      logger
+    )
+  })
+
+  beforeEach((t) => {
+    t.mock.method(Date, 'now', () => now * 1000)
+  })
+
+  function signedRequest (format, method, scenario) {
+    const hash = crypto.createHash('sha256').update(scenario.signedBody).digest('base64')
+    const headers = { host, date }
+    if (format === 'RFC 9421') {
+      headers['content-digest'] = `sha-256=:${hash}:`
+      const parameters = `("@method" "@target-uri" "content-digest");created=${now};keyid="${keyId}";alg="rsa-v1_5-sha256"`
+      const signatureBase = [
+        `"@method": ${method}`,
+        `"@target-uri": ${origin}${path}`,
+        `"content-digest": ${headers['content-digest']}`,
+        `"@signature-params": ${parameters}`
+      ].join('\n')
+      const signature = crypto.sign('sha256', Buffer.from(signatureBase), {
+        key: privateKey,
+        padding: crypto.constants.RSA_PKCS1_PADDING
+      })
+      headers['signature-input'] = `sig1=${parameters}`
+      headers.signature = `sig1=:${signature.toString('base64')}:`
+    } else {
+      headers.digest = `SHA-256=${hash}`
+      const signatureBase = [
+        `(request-target): ${method.toLowerCase()} ${path}`,
+        `host: ${host}`,
+        `date: ${date}`,
+        `digest: ${headers.digest}`
+      ].join('\n')
+      headers.signature = signCavage(
+        privateKey,
+        signatureBase,
+        `keyId="${keyId}",algorithm="rsa-sha256",headers="(request-target) host date digest"`
+      )
+    }
+    const req = {
+      method,
+      originalUrl: path,
+      headers,
+      rawHeaders: Object.entries(headers).flat(),
+      get (name) {
+        return this.headers[name.toLowerCase()]
+      },
+      app: {
+        locals: {
+          origin,
+          formatter: new UrlFormatter(origin),
+          bots: {},
+          domainBlocker: { async isBlocked (url) { return false } }
+        }
+      }
+    }
+    if (Object.hasOwn(scenario, 'body')) {
+      req.rawBodyText = scenario.body
+    }
+    return req
+  }
+
+  const scenarios = [
+    { label: 'accepts a signed empty body', signedBody: '', body: '' },
+    { label: 'accepts a signed nonempty body', signedBody: body, body },
+    { label: 'rejects a missing body', signedBody: '', status: 400, detail: 'No body for request' },
+    { label: 'rejects a null body', signedBody: '', body: null, status: 400, detail: 'No body for request' },
+    { label: 'rejects a signed body replaced with an empty string', signedBody: body, body: '', status: 401, detail: 'Digest mismatch' },
+    { label: 'rejects a signed body removed from the request', signedBody: body, status: 400, detail: 'No body for request' }
+  ]
+
+  for (const format of ['RFC 9421', 'Draft Cavage']) {
+    for (const method of ['POST', 'PUT', 'PATCH']) {
+      for (const scenario of scenarios) {
+        it(`${format} ${method} ${scenario.label}`, async (t) => {
+          const req = signedRequest(format, method, scenario)
+          const next = t.mock.fn()
+          await authenticator.authenticate(req, makeResponse(), next)
+          assert.strictEqual(next.mock.callCount(), 1)
+          const [err] = next.mock.calls[0].arguments
+          if (scenario.status) {
+            assert.ok(err, 'expected authentication to fail')
+            assert.strictEqual(err.status, scenario.status)
+            assert.strictEqual(err.detail, scenario.detail)
+            assert.strictEqual(req.auth?.subject, undefined)
+          } else {
+            assert.ifError(err)
+            assert.strictEqual(req.auth?.subject, owner)
+          }
+        })
+      }
+    }
+  }
 })
 
 describe('HTTPSignatureAuthenticator Draft Cavage timestamp freshness', () => {
@@ -1066,6 +1216,7 @@ describe('HTTPSignatureAuthenticator Draft Cavage timestamp freshness', () => {
       method: 'GET',
       originalUrl: path,
       headers,
+      rawHeaders: Object.entries(headers).flat(),
       get (name) {
         return this.headers[name.toLowerCase()]
       },
