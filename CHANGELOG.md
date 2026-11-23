@@ -15,10 +15,24 @@ and this project adheres to
 
 - Serialize actor profile URLs as strings in actor responses and profile `Update`
   activities.
+- Accept RFC 9421 signatures without an `alg` parameter (#335).
+- Require and validate body digests for signed POST, PUT, and PATCH requests,
+  including empty bodies, and reject missing or removed bodies.
+- Return HTTP 401 when a public key cannot be found during a key-rotation retry
+  instead of an internal server error.
 
 ### Changed
 
 - Update activitypub-nock for algorithm-less RFC 9421 signatures.
+- Use `http-message-sig` for RFC 9421 HTTP Message Signature signing and
+  verification (#362).
+- Reject multiple RFC 9421 signatures and require `@method` and `@target-uri`
+  coverage with `rsa-v1_5-sha256`.
+
+### Removed
+
+- Remove `HTTPMessageSignature` and the `messageSigner` constructor parameter
+  from `ActivityPubClient` and `HTTPSignatureAuthenticator`.
 
 ## [0.57.1] - 2026-11-18
 
