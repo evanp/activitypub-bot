@@ -392,6 +392,35 @@ describe('ActivityHandler', () => {
     assert.ok([...(add.to || []), ...(add.cc || [])].some(recipient => recipient.id === followersId),
       'Public Add to followers must address followers')
   })
+  it('embeds the original Follow in the generated Accept activity', async () => {
+    const actor = await makeActor('embeddedfollowfollower1')
+    const followId = `${actor.id}/follow/1`
+    const follow = await as2.import({
+      type: 'Follow',
+      id: followId,
+      actor: actor.id,
+      object: botId,
+      to: botId
+    })
+    await handler.handleActivity(bot, follow)
+    await handler.onIdle()
+    let accept
+    for await (const ref of actorStorage.items(botName, 'outbox')) {
+      const candidate = await objectStorage.read(ref.id)
+      if (candidate.type === ACCEPT && candidate.object?.first?.id === followId) {
+        accept = candidate
+        break
+      }
+    }
+    assert.ok(accept, 'Follow must generate an Accept')
+    const { object } = await accept.export()
+    assert.strictEqual(typeof object, 'object', 'Accept must embed the original Follow')
+    assert.ok(object)
+    assert.strictEqual(object.id, followId)
+    assert.strictEqual(object.type, 'Follow')
+    assert.strictEqual(object.actor, actor.id)
+    assert.strictEqual(object.object, botId)
+  })
   it('ccs followers when accepting a public follow activity', async () => {
     const actor = await makeActor('publicfollower1')
     const followId = `${actor.id}/follow/public1`

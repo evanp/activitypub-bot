@@ -11,6 +11,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Embed the accepted `Follow` activity in outgoing `Accept` activities so Pixelfed
+  can complete follow requests
+  ([pixelfed/pixelfed#8004](https://github.com/pixelfed/pixelfed/issues/8004)).
+
 ## [0.58.0] - 2026-11-23
 
 ### Security
