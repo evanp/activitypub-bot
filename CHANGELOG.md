@@ -25,6 +25,11 @@ and this project adheres to
   to `initializeNetwork()` in `FollowBackBot`, `LitePubRelayClientBot`, and
   `MastodonRelayClientBot`.
 
+### Fixed
+
+- Start CLI workers and invoke bot network hooks after the HTTP server starts
+  listening, allowing signing keys to be served during startup federation.
+
 ## [0.58.1] - 2026-11-24
 
 ### Fixed

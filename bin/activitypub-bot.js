@@ -123,8 +123,12 @@ const app = await makeApp({
   domainBlockFileName: DOMAIN_BLOCK_LIST
 })
 
-const server = app.listen(parseInt(PORT), () => {
+const server = app.listen(parseInt(PORT), async () => {
   app.locals.logger.info(`Listening on port ${PORT}`)
+  app.locals.logger.info('Starting workers')
+  await app.startWorkers()
+  app.locals.logger.info('Initializing bots for network interactions')
+  await app.initializeNetwork()
 })
 
 process.on('SIGTERM', () => {

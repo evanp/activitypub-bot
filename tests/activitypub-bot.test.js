@@ -87,7 +87,8 @@ describe('activitypub-bot CLI', () => {
     let proc = null
 
     it('should start and respond to health checks', async () => {
-      proc = spawn(process.execPath, [BIN, '--port', String(TEST_PORT), '--origin', TEST_ORIGIN], {
+      proc = spawn(process.execPath, [BIN, '--port', String(TEST_PORT), '--origin', TEST_ORIGIN,
+        '--bots-config-file', resolve(__dirname, 'fixtures', 'startupbots.js')], {
         env: { ...process.env, NODE_ENV: 'test', LOG_LEVEL: 'info' }
       })
       proc.stderr.on('data', () => {})
@@ -99,6 +100,13 @@ describe('activitypub-bot CLI', () => {
     it('should respond to readyz', async () => {
       const res = await fetch(`http://localhost:${TEST_PORT}/readyz`)
       assert.strictEqual(res.status, 200)
+    })
+
+    it('should initialize bot networking', async () => {
+      const res = await fetch(`${TEST_ORIGIN}/user/startupbot`)
+      assert.strictEqual(res.status, 200)
+      const actor = await res.json()
+      assert.strictEqual(actor.name, 'Network initialized')
     })
 
     it('should shut down gracefully on SIGTERM', async () => {
