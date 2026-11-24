@@ -1351,6 +1351,47 @@ describe('BotContext', () => {
     assert.ok([body.object.to].flat().includes(recipient.id), 'Tombstone must address the recipient')
   })
 
+  it('references the target actor by URI in the delivered Undo Follow', async () => {
+    const username = 'botcontextundofollowuri1'
+    const actor = await makeActorDefault(username)
+    const follow = await context.followActor(actor)
+    await context.onIdle()
+    assert.strictEqual(postInbox[username], 1)
+    await context.unfollowActor(actor)
+    await context.onIdle()
+    assert.strictEqual(postInbox[username], 2)
+    const raw = getBody(actor.inbox.first.id)
+    assert.ok(raw, 'Expected an Undo delivered to the followed actor inbox')
+    const body = JSON.parse(raw)
+    assert.strictEqual(body.type, 'Undo')
+    assert.strictEqual(body.actor, context.botActorId)
+    assert.strictEqual(body.object.id, follow.id)
+    assert.strictEqual(body.object.type, 'Follow')
+    assert.strictEqual(body.object.object, actor.id,
+      'Undone Follow must reference the target actor by URI')
+  })
+
+  it('references the target Note by URI in the delivered Undo Announce', async () => {
+    const username = 'botcontextundoannounceuri1'
+    const owner = await makeActorDefault(username)
+    const note = await makeObjectDefault(username, 'Note', 1)
+    const announce = await context.announceObject(note)
+    await context.onIdle()
+    assert.strictEqual(postInbox[username], 1)
+    await context.unannounceObject(note)
+    await context.onIdle()
+    assert.strictEqual(postInbox[username], 2)
+    const raw = getBody(owner.inbox.first.id)
+    assert.ok(raw, 'Expected an Undo delivered to the announced Note owner inbox')
+    const body = JSON.parse(raw)
+    assert.strictEqual(body.type, 'Undo')
+    assert.strictEqual(body.actor, context.botActorId)
+    assert.strictEqual(body.object.id, announce.id)
+    assert.strictEqual(body.object.type, 'Announce')
+    assert.strictEqual(body.object.object, note.id,
+      'Undone Announce must reference the target Note by URI')
+  })
+
   it('sends actor as a string URI in outgoing activities', async () => {
     const username = 'botcontextstringactor1'
     const actor = await makeActorDefault(username)

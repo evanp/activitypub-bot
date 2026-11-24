@@ -28,6 +28,8 @@ and this project adheres to
 - Sign GET requests to `https://threads.net` on the first attempt and use Draft
   Cavage 12 signatures for GET and POST, fixing Threads key retrieval and owner
   verification (#364).
+- Use URI references for targets inside outgoing `Undo` activities, fixing
+  Pixelfed handling of unfollows and undone announcements.
 
 ## [0.58.0] - 2026-11-23
 
