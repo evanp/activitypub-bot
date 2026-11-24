@@ -11,6 +11,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.58.1] - 2026-11-24
+
 ### Fixed
 
 - Embed the accepted `Follow` activity in outgoing `Accept` activities so Pixelfed
@@ -1986,7 +1988,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.58.0...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.58.1...HEAD
+[0.58.1]: https://github.com/evanp/activitypub-bot/compare/v0.58.0...v0.58.1
 [0.58.0]: https://github.com/evanp/activitypub-bot/compare/v0.57.1...v0.58.0
 [0.57.1]: https://github.com/evanp/activitypub-bot/compare/v0.57.0...v0.57.1
 [0.57.0]: https://github.com/evanp/activitypub-bot/compare/v0.56.3...v0.57.0
