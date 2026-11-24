@@ -1286,6 +1286,25 @@ describe('BotContext', () => {
     )
   })
 
+  it('embeds the Note in the delivered Create activity', async () => {
+    const username = 'botcontextembeddednote1'
+    const recipient = await makeActorDefault(username)
+    const note = await context.sendNote('A note for embedding', { to: recipient.id })
+    await context.onIdle()
+    assert.strictEqual(postInbox[username], 1)
+    const raw = getBody(recipient.inbox.first.id)
+    assert.ok(raw, 'Expected a Create delivered to the recipient inbox')
+    const body = JSON.parse(raw)
+    assert.strictEqual(body.type, 'Create')
+    assert.strictEqual(typeof body.object, 'object', 'Create must embed the Note')
+    assert.ok(body.object)
+    assert.strictEqual(body.object.id, note.id)
+    assert.strictEqual(body.object.type, 'Note')
+    assert.strictEqual(body.object.content, '<p>A note for embedding</p>')
+    assert.strictEqual(body.object.attributedTo, context.botActorId)
+    assert.ok([body.object.to].flat().includes(recipient.id), 'Note must address the recipient')
+  })
+
   it('sends actor as a string URI in outgoing activities', async () => {
     const username = 'botcontextstringactor1'
     const actor = await makeActorDefault(username)
