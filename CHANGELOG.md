@@ -21,6 +21,9 @@ and this project adheres to
 
 - `makeApp()` no longer starts background workers or the job reaper. Callers
   must invoke `app.startWorkers()` explicitly as part of startup.
+- Move startup follow reconciliation and relay subscriptions from `initialize()`
+  to `initializeNetwork()` in `FollowBackBot`, `LitePubRelayClientBot`, and
+  `MastodonRelayClientBot`.
 
 ## [0.58.1] - 2026-11-24
 

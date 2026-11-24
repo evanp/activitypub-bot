@@ -175,9 +175,10 @@ describe('MastodonRelayClientBot', () => {
     bots[botName] = bot
   })
 
-  it('subscribes to a remote relay on initialize', async () => {
+  it('subscribes to a remote relay on initializeNetwork', async () => {
     await bot.initialize(context)
     await context.syncProfile(bot)
+    await bot.initializeNetwork()
     await context.onIdle()
     assert.equal(postInbox[RELAY_USERNAME], 1)
 
@@ -304,6 +305,7 @@ describe('MastodonRelayClientBot', () => {
 
     await followingBot.initialize(followingContext)
     await followingContext.syncProfile(followingBot)
+    await followingBot.initializeNetwork()
     await followingContext.onIdle()
 
     const inbox = nockFormat({
@@ -370,6 +372,7 @@ describe('MastodonRelayClientBot', () => {
 
     await announceBot.initialize(announceContext)
     await announceContext.syncProfile(announceBot)
+    await announceBot.initializeNetwork()
     await announceContext.onIdle()
 
     const inbox = nockFormat({
@@ -463,6 +466,7 @@ describe('MastodonRelayClientBot', () => {
     bots[multiBotName] = multiBot
     await multiBot.initialize(multiContext)
     await multiContext.syncProfile(multiBot)
+    await multiBot.initializeNetwork()
     await multiContext.onIdle()
 
     let foundA = false
@@ -478,7 +482,7 @@ describe('MastodonRelayClientBot', () => {
     assert.ok(foundB, 'should have followed relay B')
   })
 
-  it('unfollows relays no longer in the relay config on initialize', async () => {
+  it('unfollows relays no longer in the relay config on initializeNetwork', async () => {
     const diffBotName = 'botmastodonrelayclienttestdiff'
     const persistRelay = nockFormat({
       username: 'botmastodonrelaypersist',
@@ -511,6 +515,7 @@ describe('MastodonRelayClientBot', () => {
     bots[diffBotName] = diffBot
     await diffBot.initialize(diffContext)
     await diffContext.syncProfile(diffBot)
+    await diffBot.initializeNetwork()
     await diffContext.onIdle()
 
     // Simulate Accepts having arrived: both relays are in following.
@@ -525,6 +530,7 @@ describe('MastodonRelayClientBot', () => {
     bots[diffBotName] = diffBot
     await diffBot.initialize(diffContext)
     await diffContext.syncProfile(diffBot)
+    await diffBot.initializeNetwork()
     await diffContext.onIdle()
 
     let foundRemovedUndo = false
@@ -556,7 +562,7 @@ describe('MastodonRelayClientBot', () => {
     )
   })
 
-  it('is idempotent when re-initialized with the same relay config', async () => {
+  it('is idempotent when initializeNetwork is repeated with the same relay config', async () => {
     const stableBotName = 'botmastodonrelayclientteststable'
     const stableRelay = nockFormat({
       username: 'botmastodonrelaystable',
@@ -585,6 +591,7 @@ describe('MastodonRelayClientBot', () => {
 
     await stableBot.initialize(stableContext)
     await stableContext.syncProfile(stableBot)
+    await stableBot.initializeNetwork()
     await stableContext.onIdle()
 
     let firstCount = 0
@@ -593,10 +600,11 @@ describe('MastodonRelayClientBot', () => {
       if (!isRelayFollow(activity)) continue
       if (activity.to?.first?.id === stableRelay) firstCount++
     }
-    assert.ok(firstCount > 0, 'first initialize should send at least one Follow')
+    assert.ok(firstCount > 0, 'first initializeNetwork should send at least one Follow')
 
     await stableBot.initialize(stableContext)
     await stableContext.syncProfile(stableBot)
+    await stableBot.initializeNetwork()
     await stableContext.onIdle()
 
     let secondCount = 0
@@ -608,7 +616,7 @@ describe('MastodonRelayClientBot', () => {
     assert.strictEqual(
       secondCount,
       firstCount,
-      're-initializing with the same config should not send extra Follows'
+      'repeating initializeNetwork with the same config should not send extra Follows'
     )
   })
 
@@ -676,6 +684,7 @@ describe('MastodonRelayClientBot', () => {
     bots[fuBotName] = fuBot
     await fuBot.initialize(fuContext)
     await fuContext.syncProfile(fuBot)
+    await fuBot.initializeNetwork()
     await fuContext.onIdle()
 
     let followId = null
@@ -687,7 +696,7 @@ describe('MastodonRelayClientBot', () => {
         break
       }
     }
-    assert.ok(followId, 'first initialize should have stored a Follow to the relay')
+    assert.ok(followId, 'first initializeNetwork should have stored a Follow to the relay')
 
     // Second run: keep a separate live relay, force-unsubscribe the pending one.
     fuBot = new MastodonRelayClientBot(fuBotName, {
@@ -697,6 +706,7 @@ describe('MastodonRelayClientBot', () => {
     bots[fuBotName] = fuBot
     await fuBot.initialize(fuContext)
     await fuContext.syncProfile(fuBot)
+    await fuBot.initializeNetwork()
     await fuContext.onIdle()
 
     let undo = null
@@ -753,6 +763,7 @@ describe('MastodonRelayClientBot', () => {
 
     await neverBot.initialize(neverContext)
     await neverContext.syncProfile(neverBot)
+    await neverBot.initializeNetwork()
     await neverContext.onIdle()
 
     let undo = null

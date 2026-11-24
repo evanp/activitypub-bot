@@ -188,9 +188,10 @@ describe('LitePubRelayClientBot', () => {
     assert.strictEqual(bot.type, 'Application')
   })
 
-  it('subscribes to a remote relay on initialize', async () => {
+  it('subscribes to a remote relay during network initialization', async () => {
     await bot.initialize(context)
     await context.syncProfile(bot)
+    await bot.initializeNetwork()
     await context.onIdle()
     assert.equal(postInbox[RELAY_USERNAME], 1)
 
@@ -418,6 +419,7 @@ describe('LitePubRelayClientBot', () => {
     bots[botName] = bot
     await bot.initialize(context)
     await context.syncProfile(bot)
+    await bot.initializeNetwork()
     await context.onIdle()
 
     const authorUsername = 'botlitepubrelayclientauthor3'
@@ -464,6 +466,7 @@ describe('LitePubRelayClientBot', () => {
     bots[botName] = bot
     await bot.initialize(context)
     await context.syncProfile(bot)
+    await bot.initializeNetwork()
     await context.onIdle()
 
     let foundA = false
@@ -477,7 +480,7 @@ describe('LitePubRelayClientBot', () => {
     assert.ok(foundB, 'should have followed relay B')
   })
 
-  it('unfollows relays no longer in the relay config on initialize', async () => {
+  it('unfollows relays no longer in the relay config during network initialization', async () => {
     const persistRelay = nockFormat({ username: 'botlitepubpersist', domain: REMOTE_HOST })
     const removedRelay = nockFormat({ username: 'botlitepubremoved', domain: REMOTE_HOST })
 
@@ -485,6 +488,7 @@ describe('LitePubRelayClientBot', () => {
     bots[botName] = bot
     await bot.initialize(context)
     await context.syncProfile(bot)
+    await bot.initializeNetwork()
     await context.onIdle()
 
     const persistActor = await context.getObject(persistRelay)
@@ -496,6 +500,7 @@ describe('LitePubRelayClientBot', () => {
     bots[botName] = bot
     await bot.initialize(context)
     await context.syncProfile(bot)
+    await bot.initializeNetwork()
     await context.onIdle()
 
     let foundRemovedUndo = false
@@ -519,12 +524,13 @@ describe('LitePubRelayClientBot', () => {
     )
   })
 
-  it('is idempotent when re-initialized with same relay config', async () => {
+  it('is idempotent when network initialization repeats with the same relay config', async () => {
     const stableRelay = nockFormat({ username: 'botlitepubstable', domain: REMOTE_HOST })
     bot = new LitePubRelayClientBot(botName, { relay: stableRelay })
     bots[botName] = bot
     await bot.initialize(context)
     await context.syncProfile(bot)
+    await bot.initializeNetwork()
     await context.onIdle()
 
     let firstCount = 0
@@ -532,9 +538,11 @@ describe('LitePubRelayClientBot', () => {
       const activity = await objectStorage.read(item.id)
       if (isRelayFollow(activity, stableRelay)) firstCount++
     }
+    assert.ok(firstCount > 0, 'first network initialization should send at least one Follow')
 
     await bot.initialize(context)
     await context.syncProfile(bot)
+    await bot.initializeNetwork()
     await context.onIdle()
 
     let secondCount = 0
@@ -542,7 +550,7 @@ describe('LitePubRelayClientBot', () => {
       const activity = await objectStorage.read(item.id)
       if (isRelayFollow(activity, stableRelay)) secondCount++
     }
-    assert.strictEqual(secondCount, firstCount, 're-initialize should not produce a new Follow')
+    assert.strictEqual(secondCount, firstCount, 'repeated network initialization should not produce a new Follow')
   })
 
   it('announces on onPublic when at least one relay is a follower', async () => {
@@ -551,6 +559,7 @@ describe('LitePubRelayClientBot', () => {
     bots[botName] = bot
     await bot.initialize(context)
     await context.syncProfile(bot)
+    await bot.initializeNetwork()
     await context.onIdle()
 
     const relayActor = await context.getObject(followerRelay)
@@ -602,6 +611,7 @@ describe('LitePubRelayClientBot', () => {
     bots[botName] = bot
     await bot.initialize(context)
     await context.syncProfile(bot)
+    await bot.initializeNetwork()
     await context.onIdle()
 
     const relayActor = await context.getObject(followOnlyRelay)
@@ -675,6 +685,7 @@ describe('LitePubRelayClientBot', () => {
 
     await fanoutBot.initialize(fanoutContext)
     await fanoutContext.syncProfile(fanoutBot)
+    await fanoutBot.initializeNetwork()
     await fanoutContext.onIdle()
 
     const inbox = nockFormat({

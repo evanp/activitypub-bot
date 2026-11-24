@@ -261,7 +261,7 @@ describe('FollowBack bot', async () => {
     })
   })
 
-  describe('reconciles missing follows on initialize', async () => {
+  describe('reconciles missing follows during network initialization', async () => {
     const driftUsername = 'reconciledrift'
     const existingUsername = 'reconcileexisting'
     const pendingUsername = 'reconcilepending'
@@ -301,10 +301,10 @@ describe('FollowBack bot', async () => {
       await actorStorage.setLastActivity(BOT_USERNAME, pendingFollow)
       await actorStorage.addToCollection(BOT_USERNAME, 'pendingFollowing', pendingFollow)
 
-      // Re-trigger initialize to run reconciliation against seeded state
+      // Re-run network initialization against seeded state
       const bot = app.locals.bots[BOT_USERNAME]
-      await bot.initialize(bot._context)
       await bot._context.syncProfile(bot)
+      await bot.initializeNetwork()
       await app.onIdle()
     })
 
@@ -324,7 +324,7 @@ describe('FollowBack bot', async () => {
     })
   })
 
-  describe('abandons stale pending Follows on initialize', async () => {
+  describe('abandons stale pending Follows during network initialization', async () => {
     const staleUsername = 'reconcilestale'
     const staleId = nockFormat({ username: staleUsername, domain: REMOTE_HOST })
     let stalePendingFollow
@@ -350,10 +350,10 @@ describe('FollowBack bot', async () => {
       await actorStorage.setLastActivity(BOT_USERNAME, stalePendingFollow)
       await actorStorage.addToCollection(BOT_USERNAME, 'pendingFollowing', stalePendingFollow)
 
-      // Re-trigger initialize to run the stale sweep + synchronize
+      // Re-run network initialization to sweep stale follows and synchronize
       const bot = app.locals.bots[BOT_USERNAME]
-      await bot.initialize(bot._context)
       await bot._context.syncProfile(bot)
+      await bot.initializeNetwork()
       await app.onIdle()
     })
 
@@ -404,7 +404,7 @@ describe('FollowBack bot', async () => {
     })
   })
 
-  describe('cleans up legacy bare-actor pending entries on initialize', async () => {
+  describe('cleans up legacy bare-actor pending entries during network initialization', async () => {
     // Pre-March-2026 bug: pendingFollowing was sometimes populated with the
     // bare actor URL instead of the Follow activity URL. Those entries can't
     // be aged by published date (no Follow activity is fetched — getObject
@@ -442,8 +442,8 @@ describe('FollowBack bot', async () => {
       )
 
       const bot = app.locals.bots[BOT_USERNAME]
-      await bot.initialize(bot._context)
       await bot._context.syncProfile(bot)
+      await bot.initializeNetwork()
       await app.onIdle()
     })
 
