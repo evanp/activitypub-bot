@@ -1305,6 +1305,28 @@ describe('BotContext', () => {
     assert.ok([body.object.to].flat().includes(recipient.id), 'Note must address the recipient')
   })
 
+  it('embeds the updated Note in the delivered Update activity', async () => {
+    const username = 'botcontextembeddedupdate1'
+    const recipient = await makeActorDefault(username)
+    const note = await context.sendNote('Original note content', { to: recipient.id })
+    await context.onIdle()
+    assert.strictEqual(postInbox[username], 1)
+    await context.updateNote(note, 'Updated note content')
+    await context.onIdle()
+    assert.strictEqual(postInbox[username], 2)
+    const raw = getBody(recipient.inbox.first.id)
+    assert.ok(raw, 'Expected an Update delivered to the recipient inbox')
+    const body = JSON.parse(raw)
+    assert.strictEqual(body.type, 'Update')
+    assert.strictEqual(typeof body.object, 'object', 'Update must embed the updated Note')
+    assert.ok(body.object)
+    assert.strictEqual(body.object.id, note.id)
+    assert.strictEqual(body.object.type, 'Note')
+    assert.strictEqual(body.object.content, 'Updated note content')
+    assert.strictEqual(body.object.attributedTo, context.botActorId)
+    assert.ok([body.object.to].flat().includes(recipient.id), 'Note must address the recipient')
+  })
+
   it('sends actor as a string URI in outgoing activities', async () => {
     const username = 'botcontextstringactor1'
     const actor = await makeActorDefault(username)
