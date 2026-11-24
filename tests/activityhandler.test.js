@@ -2479,6 +2479,18 @@ describe('ActivityHandler', () => {
     const collection2 = await objectStorage.getCollection(oid, 'thread')
     assert.equal(collection2.totalItems, 2)
     await handler.onIdle()
+    let threadAdd
+    for await (const ref of actorStorage.items(botName, 'outbox')) {
+      const candidate = await objectStorage.read(ref.id)
+      if (candidate.type === ADD && candidate.target?.first?.id === threadId) {
+        threadAdd = await candidate.export()
+        break
+      }
+    }
+    assert.ok(threadAdd, 'Reply must generate an Add to the thread')
+    assert.strictEqual(threadAdd.object, activity.object.first.id,
+      'Thread Add must reference the reply by URI')
+    assert.strictEqual(threadAdd.target, threadId)
   })
   it('can notify a bot of an unfollow activity', async () => {
     const username = 'undoer30'
