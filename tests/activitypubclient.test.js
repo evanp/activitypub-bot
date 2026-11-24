@@ -12,6 +12,7 @@ import {
   addToCollection,
   nockFormat,
   getBody,
+  getPublicKey,
   makeObject
 } from '@evanp/activitypub-nock'
 
@@ -70,6 +71,9 @@ describe('ActivityPubClient', async () => {
   const AUTH_404_HOST = 'auth-404.activitypubclient.test'
   const AUTH_410_HOST = 'auth-410.activitypubclient.test'
   const UNSIGNED_410_HOST = 'unsigned-410.activitypubclient.test'
+  const UNSIGNED_500_KEY_HOST = 'unsigned-500-key.activitypubclient.example'
+  const UNSIGNED_500_GET_HOST = 'unsigned-500-get.activitypubclient.example'
+  const THREADS_HOST = 'threads.net'
   const LOCAL_ORIGIN = `https://${LOCAL_HOST}`
   const LOCAL_SIGNING_USER = 'activitypubclienttestfoobot'
   const REMOTE_PROFILE_USER = 'activitypubclientevan'
@@ -192,7 +196,10 @@ describe('ActivityPubClient', async () => {
         FALLBACK_BODY_POST_HOST,
         AUTH_404_HOST,
         AUTH_410_HOST,
-        UNSIGNED_410_HOST
+        UNSIGNED_410_HOST,
+        UNSIGNED_500_KEY_HOST,
+        UNSIGNED_500_GET_HOST,
+        THREADS_HOST
       ]
     })
     keyStorage = new KeyStorage(connection, logger)
@@ -277,7 +284,10 @@ describe('ActivityPubClient', async () => {
         FALLBACK_BODY_POST_HOST,
         AUTH_404_HOST,
         AUTH_410_HOST,
-        UNSIGNED_410_HOST
+        UNSIGNED_410_HOST,
+        UNSIGNED_500_KEY_HOST,
+        UNSIGNED_500_GET_HOST,
+        THREADS_HOST
       ]
     })
     await connection.close()
@@ -420,6 +430,110 @@ describe('ActivityPubClient', async () => {
       assert.ok(error)
       assert.equal(error.status, 403)
     }
+  })
+
+  describe('Threads signature policy', () => {
+    const origin = `https://${THREADS_HOST}`
+
+    before(() => nock.disableNetConnect())
+    after(() => nock.enableNetConnect())
+    beforeEach(async () => {
+      await connection.query('DELETE FROM signature_policy WHERE origin = ?', {
+        replacements: [origin]
+      })
+    })
+
+    it('uses draft-cavage-12 for the first signed GET without NodeInfo discovery', async t => {
+      const url = `${origin}/ap/users/getpolicy`
+      const requests = []
+      const fetch = t.mock.method(safeFetcher, 'fetch', safeFetcher.fetch.bind(safeFetcher))
+      const scope = nock(origin)
+        .get('/ap/users/getpolicy')
+        .reply(function (request) {
+          requests.push(Object.fromEntries(request.headers))
+          return [200, {
+            '@context': 'https://www.w3.org/ns/activitystreams',
+            id: url,
+            type: 'Person'
+          }, { 'Content-Type': 'application/activity+json' }]
+        })
+
+      assert.strictEqual(await policyStorage.get(origin), null)
+      const actor = await client.get(url, LOCAL_SIGNING_USER)
+
+      assert.strictEqual(actor.id, url)
+      assert.strictEqual(requests.length, 1)
+      assertDraftCavageGetHeaders(requests[0])
+      assert.deepStrictEqual(fetch.mock.calls.map(call => String(call.arguments[0])), [url])
+      assert.ok(scope.isDone())
+    })
+
+    it('uses draft-cavage-12 for the first POST without NodeInfo discovery', async t => {
+      const actorId = `${origin}/ap/users/postpolicy`
+      const inbox = `${actorId}/inbox`
+      const follow = as2.follow()
+        .actor(`${LOCAL_ORIGIN}/user/${LOCAL_SIGNING_USER}`)
+        .object(actorId)
+        .to(actorId)
+        .publishedNow()
+        .get()
+      const requests = []
+      const fetch = t.mock.method(safeFetcher, 'fetch', safeFetcher.fetch.bind(safeFetcher))
+      const scope = nock(origin)
+        .post('/ap/users/postpolicy/inbox')
+        .reply(function (request) {
+          requests.push(Object.fromEntries(request.headers))
+          return [202, 'accepted']
+        })
+
+      assert.strictEqual(await policyStorage.get(origin), null)
+      await client.post(inbox, follow, LOCAL_SIGNING_USER)
+
+      assert.strictEqual(requests.length, 1)
+      assertDraftCavagePostHeaders(requests[0])
+      assert.match(requests[0].digest, /^SHA-256=[0-9a-zA-Z+/=]+$/)
+      assert.strictEqual(requests[0]['content-digest'], undefined)
+      assert.deepStrictEqual(fetch.mock.calls.map(call => String(call.arguments[0])), [inbox])
+      assert.ok(scope.isDone())
+    })
+
+    it('fetches a key with an instance-signed draft-cavage-12 request immediately', async t => {
+      const actorId = `${origin}/ap/users/keypolicy`
+      const keyId = `${actorId}#main-key`
+      const publicKeyPem = await getPublicKey('keypolicy', THREADS_HOST)
+      const requests = []
+      const fetch = t.mock.method(safeFetcher, 'fetch', safeFetcher.fetch.bind(safeFetcher))
+      const scope = nock(origin)
+        .get('/ap/users/keypolicy')
+        .reply(function (request) {
+          const headers = Object.fromEntries(request.headers)
+          requests.push(headers)
+          if (!headers.signature) {
+            return [500, 'Internal Server Error', { 'Content-Type': 'text/plain' }]
+          }
+          return [200, {
+            '@context': [
+              'https://www.w3.org/ns/activitystreams',
+              'https://w3id.org/security/v1'
+            ],
+            id: actorId,
+            type: 'Person',
+            publicKey: { id: keyId, type: 'CryptographicKey', owner: actorId, publicKeyPem }
+          }, { 'Content-Type': 'application/activity+json' }]
+        })
+
+      assert.strictEqual(await policyStorage.get(origin), null)
+      const key = await client.getKey(keyId)
+
+      assert.ok(key)
+      assert.strictEqual(key.id, keyId)
+      assert.strictEqual(key.get('https://w3id.org/security#owner').first.id, actorId)
+      assert.strictEqual(key.get('https://w3id.org/security#publicKeyPem').first, publicKeyPem)
+      assert.strictEqual(requests.length, 1)
+      assertDraftCavageGetHeaders(requests[0], LOCAL_HOST)
+      assert.deepStrictEqual(fetch.mock.calls.map(call => String(call.arguments[0])), [actorId])
+      assert.ok(scope.isDone())
+    })
   })
 
   for (const [nodeInfoVersion, pixelfedHost] of PIXELFED_HOSTS) {
@@ -1598,6 +1712,44 @@ describe('ActivityPubClient', async () => {
     assert.equal(requests[0].signature, undefined)
     assert.equal(requests[0]['signature-input'], undefined)
     assertRfc9421GetHeaders(requests[1], LOCAL_HOST)
+  })
+
+  it('does not retry an unrelated unsigned key fetch returning 500', async () => {
+    const origin = `https://${UNSIGNED_500_KEY_HOST}`
+    const url = `${origin}/users/keyowner#main-key`
+    const requests = []
+    const scope = nock(origin)
+      .get('/users/keyowner')
+      .reply(function (request) {
+        requests.push(Object.fromEntries(request.headers))
+        return [500, 'Internal Server Error', { 'Content-Type': 'text/plain' }]
+      })
+
+    await assert.rejects(() => client.getKey(url), error => error.status === 500)
+
+    assert.ok(scope.isDone())
+    assert.strictEqual(requests.length, 1)
+    assert.strictEqual(requests[0].signature, undefined)
+    assert.strictEqual(requests[0]['signature-input'], undefined)
+  })
+
+  it('does not retry an unrelated unsigned GET returning 500', async () => {
+    const origin = `https://${UNSIGNED_500_GET_HOST}`
+    const url = `${origin}/notes/1`
+    const requests = []
+    const scope = nock(origin)
+      .get('/notes/1')
+      .reply(function (request) {
+        requests.push(Object.fromEntries(request.headers))
+        return [500, 'Internal Server Error', { 'Content-Type': 'text/plain' }]
+      })
+
+    await assert.rejects(() => client.get(url), error => error.status === 500)
+
+    assert.ok(scope.isDone())
+    assert.strictEqual(requests.length, 1)
+    assert.strictEqual(requests[0].signature, undefined)
+    assert.strictEqual(requests[0]['signature-input'], undefined)
   })
 
   it('get() throws BlockedDomainError for a blocked domain', async () => {

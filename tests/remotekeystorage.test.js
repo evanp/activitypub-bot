@@ -34,6 +34,8 @@ const MISMATCH_ID_HOST = 'mismatchid.remotekeystorage.test'
 const MISMATCH_ID_USER = 'remotekeystoragemismatchid1'
 const UNSIGNED_OWNER_HOST = 'unsigned-owner.remotekeystorage.test'
 const UNSIGNED_OWNER_USER = 'remotekeystorageunsignedowner1'
+const THREADS_HOST = 'threads.net'
+const THREADS_USER = 'keyowner'
 
 describe('RemoteKeyStorage', async () => {
   const origin = `https://${LOCAL_HOST}`
@@ -50,7 +52,7 @@ describe('RemoteKeyStorage', async () => {
     connection = await createMigratedTestConnection()
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST, MISMATCH_ID_HOST, UNSIGNED_OWNER_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST, MISMATCH_ID_HOST, UNSIGNED_OWNER_HOST, THREADS_HOST]
     })
     const keyStorage = new KeyStorage(connection, logger)
     const formatter = new UrlFormatter(origin)
@@ -66,7 +68,7 @@ describe('RemoteKeyStorage', async () => {
   after(async () => {
     await cleanupTestData(connection, {
       localDomain: LOCAL_HOST,
-      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST, MISMATCH_ID_HOST, UNSIGNED_OWNER_HOST]
+      remoteDomains: [REMOTE_HOST, MISMATCH_HOST, NOSEC_HOST, DUPLICATE_KEY_HOST, MISMATCH_ID_HOST, UNSIGNED_OWNER_HOST, THREADS_HOST]
     })
     await connection.close()
   })
@@ -153,6 +155,68 @@ describe('RemoteKeyStorage', async () => {
     assert.strictEqual(requests.length, 1)
     assert.strictEqual(requests[0].signature, undefined, 'owner verification must try an unsigned request first')
     assert.strictEqual(requests[0]['signature-input'], undefined)
+  })
+
+  it('fetches and confirms a Threads key with instance-signed draft-cavage-12 requests', async (t) => {
+    nock.disableNetConnect()
+    t.after(() => nock.enableNetConnect())
+    const actorId = `https://${THREADS_HOST}/ap/users/${THREADS_USER}`
+    const keyId = `${actorId}/main-key`
+    const publicKeyPem = await getPublicKey(REMOTE_USER_1, REMOTE_HOST)
+    const actor = {
+      '@context': [
+        'https://www.w3.org/ns/activitystreams',
+        'https://w3id.org/security/v1'
+      ],
+      id: actorId,
+      type: 'Person',
+      publicKey: {
+        id: keyId,
+        type: 'CryptographicKey',
+        owner: actorId,
+        publicKeyPem
+      }
+    }
+    const keyRequests = []
+    const ownerRequests = []
+    const responseHeaders = { 'Content-Type': 'application/activity+json' }
+    const instanceKeyId = `${origin}/user/${LOCAL_HOST}#main-key`
+
+    function respond (requests) {
+      return function (request) {
+        const headers = Object.fromEntries(request.headers)
+        requests.push(headers)
+        if (!headers.signature?.startsWith('keyId=') || headers['signature-input']) {
+          return [500, 'draft-cavage-12 signature required']
+        }
+        return [200, JSON.stringify(actor), responseHeaders]
+      }
+    }
+
+    const scope = nock(`https://${THREADS_HOST}`)
+      .get(`/ap/users/${THREADS_USER}/main-key`)
+      .reply(respond(keyRequests))
+      .get(`/ap/users/${THREADS_USER}`)
+      .reply(respond(ownerRequests))
+
+    const remote = await remoteKeyStorage.getPublicKey(keyId)
+
+    assert.ok(remote, 'Threads key retrieval and owner confirmation must use signed requests')
+    assert.strictEqual(remote.publicKeyPem, publicKeyPem)
+    assert.strictEqual(remote.owner, actorId)
+    assert.ok(scope.isDone())
+    for (const requests of [keyRequests, ownerRequests]) {
+      assert.strictEqual(requests.length, 1)
+      assert.ok(requests[0].signature.startsWith(`keyId="${instanceKeyId}"`))
+      assert.ok(requests[0].signature.includes('algorithm="rsa-sha256"'))
+      assert.strictEqual(requests[0]['signature-input'], undefined)
+    }
+
+    const cached = await remoteKeyStorage.getPublicKey(keyId)
+
+    assert.deepStrictEqual(cached, remote)
+    assert.strictEqual(keyRequests.length, 1)
+    assert.strictEqual(ownerRequests.length, 1)
   })
 
   it('returns null when owner actor publicKey does not match key id', async () => {

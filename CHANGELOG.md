@@ -25,6 +25,9 @@ and this project adheres to
   `deleteNote()`, including its type, former type, and deletion timestamp.
 - Reference replies by ID in outgoing thread `Add` activities so recipients can
   resolve remote objects under their own authorization and block policies.
+- Sign GET requests to `https://threads.net` on the first attempt and use Draft
+  Cavage 12 signatures for GET and POST, fixing Threads key retrieval and owner
+  verification (#364).
 
 ## [0.58.0] - 2026-11-23
 
