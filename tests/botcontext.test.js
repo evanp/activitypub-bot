@@ -1327,6 +1327,30 @@ describe('BotContext', () => {
     assert.ok([body.object.to].flat().includes(recipient.id), 'Note must address the recipient')
   })
 
+  it('embeds the Tombstone in the delivered Delete activity', async () => {
+    const username = 'botcontextembeddeddelete1'
+    const recipient = await makeActorDefault(username)
+    const note = await context.sendNote('A note to delete', { to: recipient.id })
+    await context.onIdle()
+    assert.strictEqual(postInbox[username], 1)
+    await context.deleteNote(note)
+    await context.onIdle()
+    assert.strictEqual(postInbox[username], 2)
+    const raw = getBody(recipient.inbox.first.id)
+    assert.ok(raw, 'Expected a Delete delivered to the recipient inbox')
+    const body = JSON.parse(raw)
+    assert.strictEqual(body.type, 'Delete')
+    assert.strictEqual(typeof body.object, 'object', 'Delete must embed the Tombstone')
+    assert.ok(body.object)
+    assert.strictEqual(body.object.id, note.id)
+    assert.strictEqual(body.object.type, 'Tombstone')
+    assert.strictEqual(body.object.formerType, 'Note')
+    assert.strictEqual(typeof body.object.deleted, 'string')
+    assert.ok(Number.isFinite(Date.parse(body.object.deleted)), 'Tombstone must have a valid deletion timestamp')
+    assert.strictEqual(body.object.attributedTo, context.botActorId)
+    assert.ok([body.object.to].flat().includes(recipient.id), 'Tombstone must address the recipient')
+  })
+
   it('sends actor as a string URI in outgoing activities', async () => {
     const username = 'botcontextstringactor1'
     const actor = await makeActorDefault(username)
