@@ -335,10 +335,10 @@ public information.
 A *MastodonRelayClientBot* can be the client of one or more Mastodon-style
 relays. Its `relay` option accepts either a single actor URL as a string or
 an array of actor URLs; the bot sends a Mastodon-style `Follow`
-(`object: https://www.w3.org/ns/activitystreams#Public`) to each on
-initialize. To unsubscribe from a relay, remove it from the array and
-re-initialize — the bot diffs the new config against the current `following`
-collection and sends an `Undo`/`Follow` for each removed relay. It also
+(`object: https://www.w3.org/ns/activitystreams#Public`) to each during
+`initializeNetwork()`. To unsubscribe from a relay, remove it from the array
+and restart the server. The bot compares the new config with its current
+`following` collection and sends an `Undo`/`Follow` for each removed relay. It also
 advertises `Application` actor type, which Mastodon-style relay software
 (e.g. Pleroma-Relay) requires from subscribers.
 
@@ -404,8 +404,9 @@ The Bot interface has the following methods.
 #### constructor (username, options)
 
 The constructor; receives the `username` and an optional `options` object.
-Initialization should probably be deferred to the `initialize()` method. The
-default implementation stores the username and the following options:
+Defer setup that needs a context to `initialize()`, and startup network work to
+`initializeNetwork()`. The default implementation stores the username and the
+following options:
 
 - `fullname` — display name for the bot. Default: `'Bot'`.
 - `description` — bio text for the bot. Default: `'Default bot'`.
@@ -417,7 +418,27 @@ default implementation stores the username and the following options:
 #### async initialize (context)
 
 Initializes the bot with the given [BotContext](#botcontext). The default
-implementation stores the context for later use.
+implementation checks that the context's `botId` matches the bot's username
+and stores the context for later use through `this._context`. Overrides should
+call `await super.initialize(context)`.
+
+Use this method for local setup. Configured bots are initialized before the
+HTTP server starts listening; defer remote requests and startup activities
+such as following or unfollowing actors to `initializeNetwork()`.
+
+#### async initializeNetwork ()
+
+Initializes the bot's network interactions. The CLI calls this hook after the
+HTTP server starts listening and background workers have started, so the
+server can answer requests for its signing keys during remote interactions.
+
+Use this hook to fetch remote actors, reconcile follows, or subscribe to
+relays. It receives no arguments; the context is already available through
+`this._context`. The default implementation does nothing.
+
+The CLI awaits network initialization for each configured bot and factory
+sequentially. The hook runs again on server restarts, so implementations should
+account for existing stored state.
 
 #### get fullname ()
 
@@ -531,6 +552,32 @@ delivered to inboxes. Use with caution!
 The BotFactory interface lets you have a lot of bots that act in a similar way
 without declaring them explicitly in the bots config file.
 
+#### async initialize (context)
+
+Initializes the factory with a shared [BotContext](#botcontext). The default
+implementation stores it for later use through `this._context`. Overrides
+should call `await super.initialize(context)`.
+
+Use this method for local setup before the HTTP server starts listening. Defer
+startup network work to `initializeNetwork()`.
+
+#### async initializeNetwork ()
+
+Initializes the factory's network interactions after the HTTP server starts
+listening and background workers have started. The CLI awaits this hook along
+with the configured bots' network hooks. It receives no arguments and can use
+`this._context`; the default implementation does nothing.
+
+This hook applies to the configured factory itself. The server does not
+automatically call `initializeNetwork()` on bots returned by `create()`; the
+factory is responsible for any network setup those bots need.
+
+#### get _context ()
+
+A protected getter for the context stored by `initialize()`. Use
+`await this._context.duplicate(username)` to obtain a context scoped to a bot
+created by the factory.
+
 #### async canCreate (username)
 
 Can this factory create a bot with this username? Boolean response. For example,
@@ -540,7 +587,9 @@ for the username.
 #### async create (username)
 
 Create a bot with this username and return it. The bot must implement the
-[Bot](#bot) interface.
+[Bot](#bot) interface. Use a context scoped to that username, and await
+`bot.initialize(context)` followed by `context.syncProfile(bot)` before
+returning the bot.
 
 #### async onPublic (activity)
 
