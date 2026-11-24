@@ -11,6 +11,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.59.0] - 2026-11-24
+
 ### Added
 
 - Add explicit worker startup with `app.startWorkers()` and sequential bot and
@@ -20,7 +22,8 @@ and this project adheres to
 ### Changed
 
 - `makeApp()` no longer starts background workers or the job reaper. Callers
-  must invoke `app.startWorkers()` explicitly as part of startup.
+  must explicitly await `app.startWorkers()` followed by
+  `app.initializeNetwork()` after their HTTP server starts listening.
 - Move startup follow reconciliation and relay subscriptions from `initialize()`
   to `initializeNetwork()` in `FollowBackBot`, `LitePubRelayClientBot`, and
   `MastodonRelayClientBot`.
@@ -2007,7 +2010,8 @@ Hot patch on the `stable` branch.
 - Docker multi-platform build workflow.
 - Dependabot configuration.
 
-[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.58.1...HEAD
+[Unreleased]: https://github.com/evanp/activitypub-bot/compare/v0.59.0...HEAD
+[0.59.0]: https://github.com/evanp/activitypub-bot/compare/v0.58.1...v0.59.0
 [0.58.1]: https://github.com/evanp/activitypub-bot/compare/v0.58.0...v0.58.1
 [0.58.0]: https://github.com/evanp/activitypub-bot/compare/v0.57.1...v0.58.0
 [0.57.1]: https://github.com/evanp/activitypub-bot/compare/v0.57.0...v0.57.1
