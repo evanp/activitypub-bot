@@ -65,17 +65,19 @@ describe('object collection routes', async () => {
   let subBlockedShare = null
 
   before(async () => {
+    nockSetup(remote)
     await cleanupRedis(origin)
     app = await makeApp({
       databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST, allowPrivateNetworkRequests: true
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST,
       remoteDomains: [REMOTE_HOST]
     })
     const { formatter, objectStorage, actorStorage } = app.locals
-    nockSetup(remote)
     obj = await as2.import({
       id: formatter.format({ username, type, nanoid }),
       type: uppercase(type),
@@ -936,6 +938,8 @@ describe('object collection seekItem routes', () => {
       domainBlockFileName: fileURLToPath(new URL('./fixtures/blocklist-basic.csv', import.meta.url)),
       logLevel: 'silent'
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     await cleanupTestData(app.locals.connection, { usernames: [username], localDomain, remoteDomains })
     const { formatter, objectStorage } = app.locals
     const owner = formatter.format({ username })

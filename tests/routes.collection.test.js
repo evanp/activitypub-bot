@@ -51,6 +51,8 @@ describe('actor collection routes', async () => {
     app = await makeApp({
       databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST
@@ -673,6 +675,8 @@ describe('actor collection seekItem routes', () => {
       domainBlockFileName: fileURLToPath(new URL('./fixtures/blocklist-basic.csv', import.meta.url)),
       logLevel: 'silent'
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     await cleanupTestData(app.locals.connection, { usernames: [username], localDomain, remoteDomains })
     const { formatter, objectStorage, actorStorage } = app.locals
     const owner = formatter.format({ username })

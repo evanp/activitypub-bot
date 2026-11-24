@@ -140,6 +140,8 @@ describe('routes.sharedinbox', async () => {
       domainBlockFileName: BASIC_BLOCKLIST,
       deliveryWorkerCount: databaseUrl === 'sqlite::memory:' ? 1 : undefined
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     formatter = app.locals.formatter
     actorStorage = app.locals.actorStorage
     objectStorage = app.locals.objectStorage

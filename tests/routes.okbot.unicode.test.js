@@ -27,6 +27,8 @@ describe('OKBot replies to Unicode handles', () => {
       bots: { [botName]: new OKBot(botName) },
       logLevel: 'silent'
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     await cleanupTestData(app.locals.connection, {
       usernames: [botName], localDomain: new URL(origin).host, remoteDomains
     })

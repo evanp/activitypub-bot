@@ -17,6 +17,8 @@ describe('profile routes', () => {
       bots: { corsprofilebot: new DoNothingBot('corsprofilebot') },
       logLevel: 'silent'
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
   })
 
   after(async () => {

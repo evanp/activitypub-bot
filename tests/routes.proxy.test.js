@@ -29,15 +29,17 @@ describe('proxy for remote objects', async () => {
   let app
 
   before(async () => {
+    nockSetup(REMOTE_HOST)
     await cleanupRedis(origin)
     app = await makeApp({
       databaseUrl, origin, bots, logLevel, redisUrl: getTestRedisUrl(), domainBlockFileName: BASIC_BLOCKLIST, allowPrivateNetworkRequests: true
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     await cleanupTestData(app.locals.connection, {
       localDomain: LOCAL_HOST,
       remoteDomains: [REMOTE_HOST]
     })
-    nockSetup(REMOTE_HOST)
   })
 
   after(async () => {

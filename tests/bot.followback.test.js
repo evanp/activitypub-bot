@@ -59,6 +59,8 @@ describe('FollowBack bot', async () => {
     app = await makeApp({
       databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl(), allowPrivateNetworkRequests: true
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     assert.ok(app)
   })
 

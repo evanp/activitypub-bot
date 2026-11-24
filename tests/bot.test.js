@@ -36,6 +36,8 @@ describe('Bot interface', async () => {
       logLevel: 'silent',
       redisUrl
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     await cleanupTestData(app.locals.connection, {
       usernames: TEST_USERNAMES,
       localDomain: LOCAL_HOST

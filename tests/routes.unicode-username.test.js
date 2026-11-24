@@ -34,6 +34,8 @@ describe('server with a Unicode OKBot username', () => {
       bots: { [botName]: new OKBot(botName) },
       logLevel: 'silent'
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     await cleanupTestData(app.locals.connection, {
       usernames: [botName],
       localDomain: domain,

@@ -39,6 +39,8 @@ describe('server on a Unicode domain', () => {
       },
       logLevel: 'silent'
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     await cleanupTestData(app.locals.connection, {
       usernames: [botName, unicodeBotName],
       localDomain: asciiDomain,

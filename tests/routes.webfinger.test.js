@@ -26,6 +26,8 @@ describe('webfinger routes', async () => {
     app = await makeApp({
       databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
   })
 
   after(async () => {

@@ -24,6 +24,8 @@ describe('nodeinfo routes', async () => {
     app = await makeApp({
       databaseUrl, origin, bots: testBots, logLevel: 'silent', redisUrl: getTestRedisUrl()
     })
+    await app.startWorkers()
+    await app.initializeNetwork()
     await cleanupTestData(app.locals.connection, { localDomain: LOCAL_HOST })
   })
 

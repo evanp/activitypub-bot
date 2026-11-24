@@ -11,6 +11,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Add explicit worker startup with `app.startWorkers()` and sequential bot and
+  factory network initialization with `app.initializeNetwork()`. Both base
+  classes provide a default no-op `initializeNetwork()` hook.
+
+### Changed
+
+- `makeApp()` no longer starts background workers or the job reaper. Callers
+  must invoke `app.startWorkers()` explicitly as part of startup.
+
 ## [0.58.1] - 2026-11-24
 
 ### Fixed
