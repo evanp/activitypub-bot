@@ -27,6 +27,8 @@ and this project adheres to
 - Move startup follow reconciliation and relay subscriptions from `initialize()`
   to `initializeNetwork()` in `FollowBackBot`, `LitePubRelayClientBot`, and
   `MastodonRelayClientBot`.
+- Update @socialwebfoundation/ap-components, activitypub-webfinger,
+  activitystrea.ms, @evanp/activitypub-nock, and transitive webfinger.
 
 ### Fixed
 

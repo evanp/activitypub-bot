@@ -31,9 +31,9 @@
   "homepage": "https://github.com/evanp/activitypub-bot#readme",
   "dependencies": {
     "@isaacs/ttlcache": "^2.1.4",
-    "@socialwebfoundation/ap-components": "^1.4.2",
-    "activitypub-webfinger": "^0.5.0",
-    "activitystrea.ms": "^4.1.1",
+    "@socialwebfoundation/ap-components": "^1.4.5",
+    "activitypub-webfinger": "^0.5.1",
+    "activitystrea.ms": "^4.1.2",
     "cors": "^2.8.6",
     "csv-parse": "^7.0.0",
     "express": "^5.2.1",
@@ -50,7 +50,7 @@
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
-    "@evanp/activitypub-nock": "^2.1.0",
+    "@evanp/activitypub-nock": "^2.1.1",
     "eslint": "^9.39.5",
     "neostandard": "^0.14.0",
     "nock": "^15.0.1",
